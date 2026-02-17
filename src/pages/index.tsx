@@ -27,6 +27,11 @@ interface CustomerInfo {
 
 type OrderType = "delivery" | "pickup" | "local";
 
+// Helper function for consistent number formatting
+const formatCurrency = (amount: number): string => {
+  return amount.toLocaleString("es-PY");
+};
+
 export default function Home() {
   // Estado del sistema
   const [currentView, setCurrentView] = useState<"pos" | "sales" | "products" | "inventory" | "expenses" | "reports" | "settings">("pos");
@@ -147,7 +152,7 @@ export default function Home() {
     
     // Aquí se implementará la impresión y guardado en BD
     console.log("Venta confirmada:", saleData);
-    alert(`Venta confirmada! Pedido #${saleData.orderNumber}\nTotal: Gs. ${total.toLocaleString()}`);
+    alert(`Venta confirmada! Pedido #${saleData.orderNumber}\nTotal: Gs. ${formatCurrency(total)}`);
     
     clearCart();
   };
@@ -307,7 +312,7 @@ export default function Home() {
                         <div className="pos-quantity-display">{item.quantity}</div>
                         <button className="pos-quantity-btn" onClick={() => updateQuantity(item.product.id, 1)}>+</button>
                       </div>
-                      <div className="pos-cart-item-price">Gs. {(item.product.price * item.quantity).toLocaleString()}</div>
+                      <div className="pos-cart-item-price">Gs. {formatCurrency(item.product.price * item.quantity)}</div>
                     </div>
                   </div>
                 ))
@@ -362,17 +367,17 @@ export default function Home() {
               <div className="pos-total-section">
                 <div className="pos-total-row">
                   <span className="pos-total-label">Subtotal:</span>
-                  <span className="pos-total-value">Gs. {subtotal.toLocaleString()}</span>
+                  <span className="pos-total-value">Gs. {formatCurrency(subtotal)}</span>
                 </div>
                 {discount > 0 && (
                   <div className="pos-total-row">
                     <span className="pos-total-label">Descuento ({discount}%):</span>
-                    <span className="pos-total-value">- Gs. {discountAmount.toLocaleString()}</span>
+                    <span className="pos-total-value">- Gs. {formatCurrency(discountAmount)}</span>
                   </div>
                 )}
                 <div className="pos-total-row pos-total-final">
                   <span className="pos-total-label">Total:</span>
-                  <span className="pos-total-value">Gs. {total.toLocaleString()}</span>
+                  <span className="pos-total-value">Gs. {formatCurrency(total)}</span>
                 </div>
               </div>
               
@@ -420,7 +425,7 @@ export default function Home() {
             {filteredProducts.map(product => (
               <div key={product.id} className="pos-product-card" onClick={() => addToCart(product)}>
                 <div className="pos-product-name">{product.name}</div>
-                <div className="pos-product-price">Gs. {product.price.toLocaleString()}</div>
+                <div className="pos-product-price">Gs. {formatCurrency(product.price)}</div>
               </div>
             ))}
           </div>
