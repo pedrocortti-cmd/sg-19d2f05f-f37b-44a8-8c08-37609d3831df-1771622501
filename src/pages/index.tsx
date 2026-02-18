@@ -1726,10 +1726,12 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="pos-main">
-          {renderContent()}
-        </div>
+        {/* Main Content - cuando es POS, renderizar paneles directamente */}
+        {currentView === "pos" ? renderPOS() : (
+          <div className="pos-main">
+            {renderContent()}
+          </div>
+        )}
       </div>
     </>
   );
