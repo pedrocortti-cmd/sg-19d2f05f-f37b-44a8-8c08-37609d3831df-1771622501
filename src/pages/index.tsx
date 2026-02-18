@@ -186,6 +186,7 @@ export default function Home() {
     setEditingItemId(null);
     setTempItemNote("");
     setCurrentOrderId(null);
+    setCurrentPayments([]);
     setCustomer({
       name: "",
       phone: "",
@@ -882,6 +883,8 @@ export default function Home() {
     setSelectedDriverId(sale.deliveryDriverId || null);
     // Restaurar nota
     // setNote(sale.note || ""); // Note field removed from interface
+    // Restaurar pagos parciales
+    setCurrentPayments(sale.payments || []);
     // Guardar ID del pedido actual
     setCurrentOrderId(sale.id);
     
@@ -905,7 +908,8 @@ export default function Home() {
   const handleConfirmPayment = async (payments: Payment[], finalNote: string) => {
     setShowPaymentModal(false);
     
-    const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+    const newPayments = [...currentPayments, ...payments];
+    const paidAmount = newPayments.reduce((sum, p) => sum + p.amount, 0);
     
     if (currentOrderId) {
       // Actualizando pedido existente
@@ -930,7 +934,7 @@ export default function Home() {
           total,
           type: orderType,
           paymentMethod: payments[0]?.method || "other",
-          payments: payments,
+          payments: newPayments,
           customer: { ...customer },
           status: paidAmount >= total ? "completed" : "partial"
         };
@@ -944,9 +948,6 @@ export default function Home() {
       }
       
       // Actualizar pedido pendiente/parcial
-      const existingPayments = existingOrder.payments || [];
-      const totalPayments = existingPayments.reduce((sum, p) => sum + p.amount, 0) + paidAmount;
-      
       const updatedSale: Sale = {
         ...existingOrder,
         items: cartToSaleItems(cart),
@@ -955,15 +956,15 @@ export default function Home() {
         deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
         deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
         total,
-        payments: [...existingPayments, ...payments],
+        payments: newPayments,
         paymentMethod: payments[0]?.method || existingOrder.paymentMethod,
-        status: totalPayments >= total ? "completed" : "partial"
+        status: paidAmount >= total ? "completed" : "partial"
       };
       
       setSales(sales.map(s => s.id === currentOrderId ? updatedSale : s));
       await printSale(updatedSale);
       
-      alert(`¡Pago registrado!\nPedido #${existingOrder.saleNumber}\nTotal: Gs. ${formatCurrency(total)}\nPagado: Gs. ${formatCurrency(totalPayments)}\n\n${updatedSale.status === "completed" ? "¡Pedido completado!" : `Restante: Gs. ${formatCurrency(total - totalPayments)}`}`);
+      alert(`¡Pago registrado!\nPedido #${existingOrder.saleNumber}\nTotal: Gs. ${formatCurrency(total)}\nPagado: Gs. ${formatCurrency(paidAmount)}\n\n${updatedSale.status === "completed" ? "¡Pedido completado!" : `Restante: Gs. ${formatCurrency(total - paidAmount)}`}`);
     } else {
       // Nuevo pedido con pago inmediato
       const orderNumber = `${Date.now().toString().slice(-6)}`;
@@ -982,7 +983,7 @@ export default function Home() {
         total,
         type: orderType,
         paymentMethod: payments[0]?.method || "other",
-        payments: payments,
+        payments: newPayments,
         customer: { ...customer },
         status: paidAmount >= total ? "completed" : "partial"
       };
@@ -1627,6 +1628,7 @@ export default function Home() {
         <PaymentModal
           total={total}
           initialNote={note}
+          existingPayments={currentPayments}
           onConfirm={handleConfirmPayment}
           onCancel={() => setShowPaymentModal(false)}
         />

@@ -9,17 +9,19 @@ interface Payment {
 interface PaymentModalProps {
   total: number;
   initialNote?: string;
+  existingPayments?: Payment[];
   onConfirm: (payments: Payment[], note: string) => void;
   onCancel: () => void;
 }
 
-export function PaymentModal({ total, initialNote = "", onConfirm, onCancel }: PaymentModalProps) {
+export function PaymentModal({ total, initialNote = "", existingPayments = [], onConfirm, onCancel }: PaymentModalProps) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [currentMethod, setCurrentMethod] = useState<Payment["method"]>("cash");
   const [currentAmount, setCurrentAmount] = useState<string>("");
   const [note, setNote] = useState(initialNote);
 
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+  const previouslyPaid = existingPayments.reduce((sum, p) => sum + p.amount, 0);
+  const totalPaid = previouslyPaid + payments.reduce((sum, p) => sum + p.amount, 0);
   const remaining = total - totalPaid;
 
   const addPayment = () => {
@@ -83,9 +85,15 @@ export function PaymentModal({ total, initialNote = "", onConfirm, onCancel }: P
               <span>Total:</span>
               <span className="payment-summary-amount">Gs. {formatCurrency(total)}</span>
             </div>
+            {previouslyPaid > 0 && (
+              <div className="payment-summary-row">
+                <span>Pagado anteriormente:</span>
+                <span className="payment-summary-previous">Gs. {formatCurrency(previouslyPaid)}</span>
+              </div>
+            )}
             <div className="payment-summary-row">
-              <span>Pagado:</span>
-              <span className="payment-summary-paid">Gs. {formatCurrency(totalPaid)}</span>
+              <span>Pagando ahora:</span>
+              <span className="payment-summary-paid">Gs. {formatCurrency(payments.reduce((sum, p) => sum + p.amount, 0))}</span>
             </div>
             <div className="payment-summary-row payment-summary-remaining">
               <span>Restante:</span>
@@ -291,6 +299,11 @@ export function PaymentModal({ total, initialNote = "", onConfirm, onCancel }: P
 
         .payment-summary-paid {
           color: #10b981;
+          font-weight: 600;
+        }
+
+        .payment-summary-previous {
+          color: #3b82f6;
           font-weight: 600;
         }
 
