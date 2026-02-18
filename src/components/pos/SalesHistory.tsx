@@ -1,319 +1,534 @@
-import { useState, useMemo } from "react";
-import { Calendar, Search, Eye, XCircle, FileText, Printer, RefreshCw } from "lucide-react";
-import type { Sale, Payment } from "@/types/pos";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Eye, Calendar, Search } from "lucide-react";
+import type { Sale, SaleItem } from "@/types/pos";
 
-// Helper function
-const formatCurrency = (amount: number) => amount.toLocaleString("es-PY");
-
-interface Props {
-  sales: Sale[];
-  onCancelSale: (id: number, reason: string) => void;
-  onReopenSale?: (sale: Sale) => void;
-}
-
-export function SalesHistory({ sales, onCancelSale, onReopenSale }: Props) {
+export function SalesHistory() {
+  const [sales, setSales] = useState<Sale[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
-  const [cancelReason, setCancelReason] = useState("");
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
 
-  const filteredSales = useMemo(() => {
-    return sales.filter(sale => {
-      const saleDate = new Date(sale.date).toISOString().split("T")[0];
-      const matchesDate = !selectedDate || saleDate === selectedDate;
-      const matchesSearch = 
-        sale.orderNumber.includes(searchTerm) || 
-        sale.customer.name.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesDate && matchesSearch;
-    });
-  }, [sales, searchTerm, selectedDate]);
+  // Load mock sales data
+  useEffect(() => {
+    const mockSales: Sale[] = [
+      {
+        id: 1,
+        saleNumber: "V-00001",
+        date: "2026-02-18T14:30:00",
+        customerName: "Juan Pérez",
+        customerPhone: "0981234567",
+        type: "delivery",
+        items: [
+          { productId: 1, productName: "Carnívora", quantity: 2, price: 22000 },
+          { productId: 12, productName: "Coca Cola", quantity: 2, price: 5000 },
+        ],
+        subtotal: 54000,
+        discount: 0,
+        total: 54000,
+        paymentMethod: "cash",
+        status: "completed",
+      },
+      {
+        id: 2,
+        saleNumber: "V-00002",
+        date: "2026-02-18T15:15:00",
+        customerName: "María González",
+        type: "pickup",
+        items: [
+          { productId: 6, productName: "Clasica", quantity: 1, price: 15000 },
+          { productId: 10, productName: "Papas Fritas", quantity: 1, price: 8000 },
+        ],
+        subtotal: 23000,
+        discount: 0,
+        total: 23000,
+        paymentMethod: "qr",
+        status: "completed",
+      },
+      {
+        id: 3,
+        saleNumber: "V-00003",
+        date: "2026-02-18T16:00:00",
+        customerName: "Carlos Ramírez",
+        customerPhone: "0991234567",
+        type: "delivery",
+        items: [
+          { productId: 9, productName: "Triple", quantity: 1, price: 25000 },
+          { productId: 11, productName: "Aros de Cebolla", quantity: 1, price: 9000 },
+          { productId: 13, productName: "Sprite", quantity: 1, price: 5000 },
+        ],
+        subtotal: 39000,
+        discount: 2000,
+        total: 37000,
+        paymentMethod: "card",
+        status: "completed",
+      },
+    ];
 
-  const getStatusBadge = (status: Sale["status"]) => {
-    switch (status) {
-      case "completed": return <span style={{ padding: "4px 8px", borderRadius: "4px", background: "#dcfce7", color: "#166534", fontSize: "0.8rem", fontWeight: 700 }}>Completado</span>;
-      case "cancelled": return <span style={{ padding: "4px 8px", borderRadius: "4px", background: "#fee2e2", color: "#991b1b", fontSize: "0.8rem", fontWeight: 700 }}>Anulado</span>;
-      case "pending": return <span style={{ padding: "4px 8px", borderRadius: "4px", background: "#fef9c3", color: "#854d0e", fontSize: "0.8rem", fontWeight: 700 }}>Pendiente</span>;
-      case "partial": return <span style={{ padding: "4px 8px", borderRadius: "4px", background: "#e0f2fe", color: "#075985", fontSize: "0.8rem", fontWeight: 700 }}>Parcial</span>;
-      default: return status;
-    }
+    setSales(mockSales);
+  }, []);
+
+  // Format date/time
+  const formatDateTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
-  const getPaymentMethodsString = (payments: Payment[]) => {
-    if (!payments || payments.length === 0) return "-";
-    const methods = Array.from(new Set(payments.map(p => p.method)));
-    return methods.map(m => {
-       switch(m) {
-         case "cash": return "Efectivo";
-         case "card": return "Tarjeta";
-         case "qr": return "QR";
-         case "transfer": return "Transferencia";
-         case "other": return "Otro";
-         default: return m;
-       }
-    }).join(", ");
+  // Format currency
+  const formatCurrency = (amount: number): string => {
+    return `Gs. ${amount.toLocaleString("es-PY")}`;
   };
 
-  const handleReopen = (sale: Sale) => {
-    if (onReopenSale) {
-        if (confirm("¿Desea reabrir esta venta? Los productos se cargarán al carrito actual.")) {
-            onReopenSale(sale);
-        }
-    }
+  // Get sale type label
+  const getSaleTypeLabel = (type: string): string => {
+    const labels: { [key: string]: string } = {
+      delivery: "Delivery",
+      pickup: "Para Retirar",
+      dineIn: "En Local",
+    };
+    return labels[type] || type;
+  };
+
+  // Get payment method label
+  const getPaymentMethodLabel = (method: string): string => {
+    const labels: { [key: string]: string } = {
+      cash: "Efectivo",
+      qr: "QR",
+      card: "Tarjeta",
+      transfer: "Transferencia",
+    };
+    return labels[method] || method;
+  };
+
+  // Filter sales
+  const filteredSales = sales.filter((sale) => {
+    const matchesSearch =
+      sale.saleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sale.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      "";
+
+    const saleDate = new Date(sale.date);
+    const matchesStartDate = !startDate || saleDate >= new Date(startDate);
+    const matchesEndDate = !endDate || saleDate <= new Date(endDate);
+
+    return matchesSearch && matchesStartDate && matchesEndDate;
+  });
+
+  // Calculate totals
+  const totalSales = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
+
+  // Handle view sale detail
+  const handleViewDetail = (sale: Sale) => {
+    setSelectedSale(sale);
+    setIsDetailDialogOpen(true);
   };
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Header */}
-      <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-          <FileText /> Historial de Ventas
-        </h2>
-        <div className="flex gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Buscar por Nro o Cliente..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+    <div className="sales-history">
+      <div className="sales-history-header">
+        <h2>Historial de Ventas</h2>
+        <div className="sales-summary">
+          <span className="summary-label">Total ventas:</span>
+          <span className="summary-value">{formatCurrency(totalSales)}</span>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="sales-filters">
+        <div className="search-box">
+          <Search className="search-icon" />
+          <Input
+            type="text"
+            placeholder="Buscar por número o cliente..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="date-filters">
+          <div className="date-input-group">
+            <Calendar className="date-icon" />
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              placeholder="Fecha desde"
             />
           </div>
-          <div className="relative">
-             <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-             <input
+          <span className="date-separator">-</span>
+          <div className="date-input-group">
+            <Calendar className="date-icon" />
+            <Input
               type="date"
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              placeholder="Fecha hasta"
             />
           </div>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="flex-1 overflow-auto p-6">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th className="py-3 px-4 font-semibold text-gray-600">Nro</th>
-              <th className="py-3 px-4 font-semibold text-gray-600">Hora</th>
-              <th className="py-3 px-4 font-semibold text-gray-600">Cliente</th>
-              <th className="py-3 px-4 font-semibold text-gray-600">Tipo</th>
-              <th className="py-3 px-4 font-semibold text-gray-600">Pago</th>
-              <th className="py-3 px-4 font-semibold text-gray-600 text-right">Total</th>
-              <th className="py-3 px-4 font-semibold text-gray-600 text-center">Estado</th>
-              <th className="py-3 px-4 font-semibold text-gray-600 text-center">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredSales.map(sale => (
-              <tr key={sale.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3 px-4 text-gray-800 font-medium">#{sale.orderNumber}</td>
-                <td className="py-3 px-4 text-gray-600">
-                  {new Date(sale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </td>
-                <td className="py-3 px-4 text-gray-800">
-                  {sale.customer.name || "Cliente Ocasional"}
-                </td>
-                <td className="py-3 px-4 text-gray-600 capitalize">
-                  {sale.orderType === "delivery" ? "Delivery" : sale.orderType === "pickup" ? "Retiro" : "Local"}
-                </td>
-                <td className="py-3 px-4 text-gray-600 text-sm">
-                  {getPaymentMethodsString(sale.payments)}
-                </td>
-                <td className="py-3 px-4 text-gray-800 font-bold text-right">
-                  Gs. {formatCurrency(sale.total)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  {getStatusBadge(sale.status)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <div className="flex justify-center gap-2">
-                    <button 
-                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
-                      title="Ver Detalle"
-                      onClick={() => setSelectedSale(sale)}
+      {/* Sales Table */}
+      <div className="sales-table-container">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nro. Venta</TableHead>
+              <TableHead>Fecha/Hora</TableHead>
+              <TableHead>Cliente</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Pago</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredSales.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">
+                  No se encontraron ventas
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredSales.map((sale) => (
+                <TableRow key={sale.id}>
+                  <TableCell className="font-medium">
+                    {sale.saleNumber}
+                  </TableCell>
+                  <TableCell>{formatDateTime(sale.date)}</TableCell>
+                  <TableCell>{sale.customerName || "-"}</TableCell>
+                  <TableCell>{getSaleTypeLabel(sale.type)}</TableCell>
+                  <TableCell className="font-semibold">
+                    {formatCurrency(sale.total)}
+                  </TableCell>
+                  <TableCell>{getPaymentMethodLabel(sale.paymentMethod)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewDetail(sale)}
                     >
-                      <Eye size={18} />
-                    </button>
-                    {sale.status !== "cancelled" && (
-                       <>
-                         <button 
-                            className="p-1.5 text-orange-600 hover:bg-orange-50 rounded"
-                            title="Modificar / Reabrir"
-                            onClick={() => handleReopen(sale)}
-                          >
-                            <RefreshCw size={18} />
-                          </button>
-                          <button 
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                            title="Anular Venta"
-                            onClick={() => {
-                              setSelectedSale(sale);
-                              // Simple trigger to show modal in details
-                            }}
-                          >
-                            <XCircle size={18} />
-                          </button>
-                       </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {filteredSales.length === 0 && (
-              <tr>
-                <td colSpan={8} className="py-8 text-center text-gray-400">
-                  No se encontraron ventas para esta fecha
-                </td>
-              </tr>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
-      {/* Detail Modal */}
-      {selectedSale && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-gray-800">Detalle de Venta #{selectedSale.orderNumber}</h3>
-              <button onClick={() => setSelectedSale(null)} className="text-gray-400 hover:text-gray-600">
-                <XCircle size={24} />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto flex-1">
-              <div className="grid grid-cols-2 gap-6 mb-6">
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">Cliente</h4>
-                  <p className="font-medium text-gray-800">{selectedSale.customer.name || "Cliente Ocasional"}</p>
-                  <p className="text-gray-600">{selectedSale.customer.phone}</p>
-                  <p className="text-gray-600">{selectedSale.customer.address}</p>
-                  {selectedSale.customer.ruc && <p className="text-gray-600">RUC: {selectedSale.customer.ruc}</p>}
+      {/* Sale Detail Dialog */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalle de Venta</DialogTitle>
+          </DialogHeader>
+
+          {selectedSale && (
+            <div className="sale-detail">
+              <div className="detail-header">
+                <div className="detail-row">
+                  <span className="detail-label">Nro. Venta:</span>
+                  <span className="detail-value">{selectedSale.saleNumber}</span>
                 </div>
-                <div className="text-right">
-                  <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">Detalles</h4>
-                  <p className="text-gray-600">{new Date(selectedSale.date).toLocaleString()}</p>
-                  <p className="text-gray-600 capitalize">Tipo: {selectedSale.orderType}</p>
-                  <div className="mt-2">
-                     {getStatusBadge(selectedSale.status)}
-                  </div>
+                <div className="detail-row">
+                  <span className="detail-label">Fecha/Hora:</span>
+                  <span className="detail-value">
+                    {formatDateTime(selectedSale.date)}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Tipo:</span>
+                  <span className="detail-value">
+                    {getSaleTypeLabel(selectedSale.type)}
+                  </span>
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-left text-sm text-gray-500 border-b border-gray-200">
-                      <th className="pb-2">Producto</th>
-                      <th className="pb-2 text-center">Cant</th>
-                      <th className="pb-2 text-right">Precio</th>
-                      <th className="pb-2 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedSale.items.map((item, idx) => (
-                      <tr key={idx} className="border-b border-gray-100 last:border-0">
-                        <td className="py-2 text-gray-800">{item.product.name}</td>
-                        <td className="py-2 text-center text-gray-600">{item.quantity}</td>
-                        <td className="py-2 text-right text-gray-600">{formatCurrency(item.product.price)}</td>
-                        <td className="py-2 text-right text-gray-800 font-medium">
-                          {formatCurrency(item.product.price * item.quantity)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot className="border-t border-gray-200">
-                    <tr>
-                      <td colSpan={3} className="pt-3 text-right font-semibold text-gray-600">Subtotal:</td>
-                      <td className="pt-3 text-right font-bold text-gray-800">Gs. {formatCurrency(selectedSale.subtotal)}</td>
-                    </tr>
-                    {selectedSale.discount > 0 && (
-                      <tr>
-                        <td colSpan={3} className="pt-1 text-right text-gray-600">Descuento:</td>
-                        <td className="pt-1 text-right text-red-600">- Gs. {formatCurrency(selectedSale.discount)}</td>
-                      </tr>
-                    )}
-                    <tr>
-                      <td colSpan={3} className="pt-1 text-right font-bold text-gray-800 text-lg">Total:</td>
-                      <td className="pt-1 text-right font-bold text-green-600 text-lg">Gs. {formatCurrency(selectedSale.total)}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-               <div className="mb-6">
-                 <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">Pagos</h4>
-                 <div className="bg-gray-50 rounded-lg p-3">
-                   {selectedSale.payments && selectedSale.payments.length > 0 ? (
-                     selectedSale.payments.map((p, i) => (
-                       <div key={i} className="flex justify-between text-sm mb-1 last:mb-0">
-                         <span>
-                           {p.method === 'cash' ? 'Efectivo' : p.method === 'card' ? 'Tarjeta' : p.method === 'qr' ? 'QR' : 'Transferencia'}
-                           {p.reference && <span className="text-gray-400 ml-2">({p.reference})</span>}
-                         </span>
-                         <span className="font-medium">Gs. {formatCurrency(p.amount)}</span>
-                       </div>
-                     ))
-                   ) : (
-                     <div className="text-gray-400 text-sm">Sin registro de pagos</div>
-                   )}
-                   <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between font-bold">
-                     <span>Pagado:</span>
-                     <span className="text-green-600">Gs. {formatCurrency(selectedSale.paidAmount || 0)}</span>
-                   </div>
-                 </div>
-               </div>
-
-              {selectedSale.status !== "cancelled" && (
-                <div className="border-t border-gray-200 pt-6">
-                  <h4 className="text-sm font-semibold text-gray-500 uppercase mb-3">Anular Venta</h4>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
-                      placeholder="Motivo de anulación..."
-                      value={cancelReason}
-                      onChange={(e) => setCancelReason(e.target.value)}
-                    />
-                    <button 
-                      className="bg-red-50 text-red-600 px-4 py-2 rounded font-medium hover:bg-red-100 disabled:opacity-50"
-                      onClick={() => {
-                        onCancelSale(selectedSale.id, cancelReason || "Sin motivo especificado");
-                        setSelectedSale(null);
-                        setCancelReason("");
-                      }}
-                      disabled={!cancelReason}
-                    >
-                      Confirmar Anulación
-                    </button>
+              {selectedSale.customerName && (
+                <div className="customer-info">
+                  <h4>Información del Cliente</h4>
+                  <div className="detail-row">
+                    <span className="detail-label">Cliente:</span>
+                    <span className="detail-value">
+                      {selectedSale.customerName}
+                    </span>
                   </div>
+                  {selectedSale.customerPhone && (
+                    <div className="detail-row">
+                      <span className="detail-label">Teléfono:</span>
+                      <span className="detail-value">
+                        {selectedSale.customerPhone}
+                      </span>
+                    </div>
+                  )}
+                  {selectedSale.customerAddress && (
+                    <div className="detail-row">
+                      <span className="detail-label">Dirección:</span>
+                      <span className="detail-value">
+                        {selectedSale.customerAddress}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
+
+              <div className="items-section">
+                <h4>Productos</h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Producto</TableHead>
+                      <TableHead className="text-center">Cant.</TableHead>
+                      <TableHead className="text-right">Precio Unit.</TableHead>
+                      <TableHead className="text-right">Subtotal</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedSale.items.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell className="text-center">
+                          {item.quantity}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.price)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.quantity * item.price)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="totals-section">
+                <div className="total-row">
+                  <span>Subtotal:</span>
+                  <span>{formatCurrency(selectedSale.subtotal)}</span>
+                </div>
+                {selectedSale.discount > 0 && (
+                  <div className="total-row discount">
+                    <span>Descuento:</span>
+                    <span>-{formatCurrency(selectedSale.discount)}</span>
+                  </div>
+                )}
+                <div className="total-row final">
+                  <span>Total:</span>
+                  <span>{formatCurrency(selectedSale.total)}</span>
+                </div>
+                <div className="total-row">
+                  <span>Medio de Pago:</span>
+                  <span>{getPaymentMethodLabel(selectedSale.paymentMethod)}</span>
+                </div>
+              </div>
             </div>
-            
-            <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-              <button 
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-white flex items-center gap-2"
-                onClick={() => {
-                   // Lógica para reimprimir (simulada o llamando a prop)
-                   alert("Enviando a imprimir copia...");
-                }}
-              >
-                <Printer size={18} /> Reimprimir Ticket
-              </button>
-              <button 
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-                onClick={() => setSelectedSale(null)}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <style jsx>{`
+        .sales-history {
+          padding: 24px;
+        }
+
+        .sales-history-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 24px;
+        }
+
+        .sales-history-header h2 {
+          font-size: 24px;
+          font-weight: 600;
+          color: #1e293b;
+        }
+
+        .sales-summary {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 20px;
+          background: #f8fafc;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+        }
+
+        .summary-label {
+          font-size: 14px;
+          color: #64748b;
+        }
+
+        .summary-value {
+          font-size: 20px;
+          font-weight: 700;
+          color: #16a34a;
+        }
+
+        .sales-filters {
+          display: flex;
+          gap: 16px;
+          margin-bottom: 24px;
+          flex-wrap: wrap;
+        }
+
+        .search-box {
+          position: relative;
+          flex: 1;
+          min-width: 250px;
+        }
+
+        .search-icon {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 20px;
+          height: 20px;
+          color: #64748b;
+          pointer-events: none;
+        }
+
+        .search-box input {
+          padding-left: 40px;
+        }
+
+        .date-filters {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .date-input-group {
+          position: relative;
+        }
+
+        .date-icon {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 18px;
+          height: 18px;
+          color: #64748b;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .date-input-group input {
+          padding-left: 38px;
+          width: 160px;
+        }
+
+        .date-separator {
+          color: #94a3b8;
+          font-weight: 500;
+        }
+
+        .sales-table-container {
+          background: white;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+          overflow: hidden;
+        }
+
+        .sale-detail {
+          padding: 16px;
+        }
+
+        .detail-header,
+        .customer-info {
+          margin-bottom: 24px;
+          padding: 16px;
+          background: #f8fafc;
+          border-radius: 8px;
+        }
+
+        .customer-info h4,
+        .items-section h4 {
+          font-size: 16px;
+          font-weight: 600;
+          color: #1e293b;
+          margin-bottom: 12px;
+        }
+
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 0;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .detail-row:last-child {
+          border-bottom: none;
+        }
+
+        .detail-label {
+          color: #64748b;
+          font-size: 14px;
+        }
+
+        .detail-value {
+          color: #1e293b;
+          font-weight: 500;
+          font-size: 14px;
+        }
+
+        .items-section {
+          margin-bottom: 24px;
+        }
+
+        .totals-section {
+          padding: 16px;
+          background: #f8fafc;
+          border-radius: 8px;
+        }
+
+        .total-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 0;
+          font-size: 14px;
+        }
+
+        .total-row.discount {
+          color: #dc2626;
+        }
+
+        .total-row.final {
+          font-size: 18px;
+          font-weight: 700;
+          color: #1e293b;
+          padding-top: 12px;
+          margin-top: 8px;
+          border-top: 2px solid #e2e8f0;
+        }
+      `}</style>
     </div>
   );
 }

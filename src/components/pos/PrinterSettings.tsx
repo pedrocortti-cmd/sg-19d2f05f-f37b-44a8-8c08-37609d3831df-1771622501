@@ -1,350 +1,491 @@
 import { useState, useEffect } from "react";
-import { Printer, CheckCircle, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Printer, Check, AlertCircle } from "lucide-react";
 
 interface PrinterInfo {
-  id: number;
   name: string;
   vendorId: number;
   productId: number;
 }
 
-interface PrinterConfig {
-  kitchenPrinter: number;
-  clientPrinter: number;
-  paperSize: "80mm" | "58mm";
-  copies: number;
-}
-
 export function PrinterSettings() {
   const [printers, setPrinters] = useState<PrinterInfo[]>([]);
-  const [config, setConfig] = useState<PrinterConfig>({
-    kitchenPrinter: 0,
-    clientPrinter: 0,
-    paperSize: "80mm",
-    copies: 1
-  });
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
-  const [printServerAvailable, setPrintServerAvailable] = useState(false);
+  const [kitchenPrinter, setKitchenPrinter] = useState("");
+  const [clientPrinter, setClientPrinter] = useState("");
+  const [copies, setCopies] = useState(1);
+  const [serverStatus, setServerStatus] = useState<"connected" | "disconnected">("disconnected");
+  const [testResult, setTestResult] = useState<"success" | "error" | null>(null);
 
+  // Check print server connection
   useEffect(() => {
     checkPrintServer();
   }, []);
 
   const checkPrintServer = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/printers");
+      const response = await fetch("http://localhost:3001/printers");
       if (response.ok) {
         const data = await response.json();
         setPrinters(data.printers || []);
-        setPrintServerAvailable(true);
+        setServerStatus("connected");
       } else {
-        setPrintServerAvailable(false);
+        setServerStatus("disconnected");
       }
     } catch (error) {
-      setPrintServerAvailable(false);
-      console.error("Print Server no disponible:", error);
+      setServerStatus("disconnected");
     }
   };
 
-  const handleTestPrint = async (printerIndex: number) => {
-    setLoading(true);
-    setMessage(null);
-    
+  const handleTestPrint = async (type: "kitchen" | "client") => {
+    const printerName = type === "kitchen" ? kitchenPrinter : clientPrinter;
+
+    if (!printerName) {
+      alert("Por favor selecciona una impresora primero");
+      return;
+    }
+
     try {
-      const response = await fetch("http://localhost:3001/api/print/test", {
+      const testData = {
+        type,
+        printerName,
+        content: type === "kitchen" ? 
+          {
+            orderNumber: "TEST-001",
+            date: new Date().toLocaleString("es-PY"),
+            type: "test",
+            items: [
+              { name: "Producto de Prueba", quantity: 1 }
+            ],
+            notes: "Esta es una impresión de prueba"
+          } : 
+          {
+            storeName: "De la Gran Burger",
+            saleNumber: "TEST-001",
+            date: new Date().toLocaleString("es-PY"),
+            items: [
+              { name: "Producto de Prueba", quantity: 1, price: 10000, subtotal: 10000 }
+            ],
+            subtotal: 10000,
+            discount: 0,
+            total: 10000,
+            paymentMethod: "Efectivo"
+          }
+      };
+
+      const response = await fetch("http://localhost:3001/print", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ printerIndex })
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(testData),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        setMessage({ type: "success", text: "Impresión de prueba enviada correctamente" });
+      if (response.ok) {
+        setTestResult("success");
+        setTimeout(() => setTestResult(null), 3000);
       } else {
-        setMessage({ type: "error", text: data.error || "Error en la impresión" });
+        setTestResult("error");
+        setTimeout(() => setTestResult(null), 3000);
       }
     } catch (error) {
-      setMessage({ type: "error", text: "No se pudo conectar con el Print Server" });
-    } finally {
-      setLoading(false);
+      setTestResult("error");
+      setTimeout(() => setTestResult(null), 3000);
     }
   };
 
-  const handleSaveConfig = () => {
-    localStorage.setItem("printerConfig", JSON.stringify(config));
-    setMessage({ type: "success", text: "Configuración guardada correctamente" });
-    setTimeout(() => setMessage(null), 3000);
+  const handleSaveSettings = () => {
+    // Save settings to localStorage
+    const settings = {
+      kitchenPrinter,
+      clientPrinter,
+      copies,
+    };
+    localStorage.setItem("printerSettings", JSON.stringify(settings));
+    alert("Configuración guardada correctamente");
   };
 
+  // Load settings on mount
   useEffect(() => {
-    const savedConfig = localStorage.getItem("printerConfig");
-    if (savedConfig) {
-      setConfig(JSON.parse(savedConfig));
+    const savedSettings = localStorage.getItem("printerSettings");
+    if (savedSettings) {
+      const settings = JSON.parse(savedSettings);
+      setKitchenPrinter(settings.kitchenPrinter || "");
+      setClientPrinter(settings.clientPrinter || "");
+      setCopies(settings.copies || 1);
     }
   }, []);
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "1000px", margin: "0 auto" }}>
-      <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "1.875rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.5rem" }}>
-          Configuración de Impresoras
-        </h1>
-        <p style={{ color: "#64748b" }}>Configura las impresoras térmicas para comandas y tickets</p>
-      </div>
-
-      {/* Estado del Print Server */}
-      <div style={{
-        background: printServerAvailable ? "#d1fae5" : "#fee2e2",
-        border: `2px solid ${printServerAvailable ? "#10b981" : "#ef4444"}`,
-        borderRadius: "12px",
-        padding: "1.5rem",
-        marginBottom: "2rem",
-        display: "flex",
-        alignItems: "center",
-        gap: "1rem"
-      }}>
-        {printServerAvailable ? (
-          <CheckCircle size={24} color="#10b981" />
-        ) : (
-          <AlertCircle size={24} color="#ef4444" />
-        )}
-        <div>
-          <div style={{ fontWeight: 700, marginBottom: "0.25rem" }}>
-            {printServerAvailable ? "Print Server Conectado" : "Print Server No Disponible"}
-          </div>
-          <div style={{ fontSize: "0.875rem", color: "#64748b" }}>
-            {printServerAvailable 
-              ? `Impresoras detectadas: ${printers.length}`
-              : "Asegúrate de que el Print Server esté corriendo en http://localhost:3001"
-            }
-          </div>
+    <div className="printer-settings">
+      <div className="settings-header">
+        <h2>Configuración de Impresoras</h2>
+        <div className={`server-status ${serverStatus}`}>
+          <div className="status-indicator"></div>
+          <span>
+            {serverStatus === "connected"
+              ? "Print Server Conectado"
+              : "Print Server Desconectado"}
+          </span>
         </div>
-        <button
-          onClick={checkPrintServer}
-          style={{
-            marginLeft: "auto",
-            padding: "0.625rem 1.25rem",
-            background: "white",
-            border: "2px solid #e2e8f0",
-            borderRadius: "8px",
-            fontWeight: 600,
-            cursor: "pointer"
-          }}
-        >
-          Actualizar
-        </button>
       </div>
 
-      {/* Impresoras disponibles */}
-      {printServerAvailable && printers.length > 0 && (
-        <div style={{
-          background: "white",
-          border: "2px solid #e2e8f0",
-          borderRadius: "12px",
-          padding: "2rem",
-          marginBottom: "2rem"
-        }}>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1.5rem" }}>
-            Impresoras Detectadas
-          </h2>
-          
-          <div style={{ display: "grid", gap: "1rem" }}>
-            {printers.map((printer) => (
-              <div key={printer.id} style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "1rem",
-                background: "#f8fafc",
-                borderRadius: "8px",
-                border: "1px solid #e2e8f0"
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                  <Printer size={24} color="#3b82f6" />
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{printer.name}</div>
-                    <div style={{ fontSize: "0.875rem", color: "#64748b" }}>
-                      VID: {printer.vendorId} | PID: {printer.productId}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleTestPrint(printer.id)}
-                  disabled={loading}
-                  style={{
-                    padding: "0.625rem 1.25rem",
-                    background: "#3b82f6",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    fontWeight: 600,
-                    cursor: "pointer"
-                  }}
-                >
-                  Probar
-                </button>
-              </div>
-            ))}
+      {serverStatus === "disconnected" && (
+        <div className="alert alert-warning">
+          <AlertCircle className="alert-icon" />
+          <div>
+            <h4>Print Server no detectado</h4>
+            <p>
+              Asegúrate de que el Print Server esté instalado y ejecutándose en tu PC.
+              <br />
+              Para instalar, sigue las instrucciones en el archivo README.md del proyecto.
+            </p>
+            <Button variant="outline" size="sm" onClick={checkPrintServer} className="mt-2">
+              Reintentar Conexión
+            </Button>
           </div>
         </div>
       )}
 
-      {/* Configuración */}
-      {printServerAvailable && (
-        <div style={{
-          background: "white",
-          border: "2px solid #e2e8f0",
-          borderRadius: "12px",
-          padding: "2rem"
-        }}>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1.5rem" }}>
-            Configuración de Impresión
-          </h2>
+      <div className="settings-grid">
+        {/* Kitchen Printer */}
+        <div className="settings-section">
+          <div className="section-header">
+            <Printer className="section-icon" />
+            <h3>Impresora de Cocina</h3>
+          </div>
 
-          <div style={{ display: "grid", gap: "1.5rem" }}>
-            <div>
-              <label style={{
-                display: "block",
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                color: "#475569",
-                marginBottom: "0.5rem"
-              }}>
-                Impresora de Cocina (Comandas)
-              </label>
-              <select
-                value={config.kitchenPrinter}
-                onChange={(e) => setConfig({ ...config, kitchenPrinter: Number(e.target.value) })}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "8px",
-                  fontSize: "0.95rem"
-                }}
-              >
-                {printers.map((printer) => (
-                  <option key={printer.id} value={printer.id}>
-                    {printer.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="form-group">
+            <Label>Seleccionar Impresora</Label>
+            <Select value={kitchenPrinter} onValueChange={setKitchenPrinter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar impresora..." />
+              </SelectTrigger>
+              <SelectContent>
+                {printers.length === 0 ? (
+                  <SelectItem value="none" disabled>
+                    No hay impresoras disponibles
+                  </SelectItem>
+                ) : (
+                  printers.map((printer, index) => (
+                    <SelectItem key={index} value={printer.name}>
+                      {printer.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div>
-              <label style={{
-                display: "block",
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                color: "#475569",
-                marginBottom: "0.5rem"
-              }}>
-                Impresora de Cliente (Tickets)
-              </label>
-              <select
-                value={config.clientPrinter}
-                onChange={(e) => setConfig({ ...config, clientPrinter: Number(e.target.value) })}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "8px",
-                  fontSize: "0.95rem"
-                }}
-              >
-                {printers.map((printer) => (
-                  <option key={printer.id} value={printer.id}>
-                    {printer.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <Button
+            onClick={() => handleTestPrint("kitchen")}
+            disabled={!kitchenPrinter || serverStatus === "disconnected"}
+            className="w-full"
+          >
+            Imprimir Prueba - Cocina
+          </Button>
+        </div>
 
-            <div>
-              <label style={{
-                display: "block",
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                color: "#475569",
-                marginBottom: "0.5rem"
-              }}>
-                Copias de Comanda
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="5"
-                value={config.copies}
-                onChange={(e) => setConfig({ ...config, copies: Number(e.target.value) })}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "8px",
-                  fontSize: "0.95rem"
-                }}
-              />
-            </div>
+        {/* Client Printer */}
+        <div className="settings-section">
+          <div className="section-header">
+            <Printer className="section-icon" />
+            <h3>Impresora de Cliente</h3>
+          </div>
 
-            <button
-              onClick={handleSaveConfig}
-              style={{
-                padding: "0.875rem 1.5rem",
-                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                fontWeight: 700,
-                fontSize: "1rem",
-                cursor: "pointer",
-                boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)"
-              }}
-            >
-              Guardar Configuración
-            </button>
+          <div className="form-group">
+            <Label>Seleccionar Impresora</Label>
+            <Select value={clientPrinter} onValueChange={setClientPrinter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar impresora..." />
+              </SelectTrigger>
+              <SelectContent>
+                {printers.length === 0 ? (
+                  <SelectItem value="none" disabled>
+                    No hay impresoras disponibles
+                  </SelectItem>
+                ) : (
+                  printers.map((printer, index) => (
+                    <SelectItem key={index} value={printer.name}>
+                      {printer.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button
+            onClick={() => handleTestPrint("client")}
+            disabled={!clientPrinter || serverStatus === "disconnected"}
+            className="w-full"
+          >
+            Imprimir Prueba - Cliente
+          </Button>
+        </div>
+      </div>
+
+      {/* Additional Settings */}
+      <div className="settings-section">
+        <h3>Configuración Adicional</h3>
+
+        <div className="form-group">
+          <Label>Número de Copias</Label>
+          <Input
+            type="number"
+            min="1"
+            max="5"
+            value={copies}
+            onChange={(e) => setCopies(parseInt(e.target.value) || 1)}
+          />
+          <span className="help-text">
+            Define cuántas copias se imprimirán de cada ticket
+          </span>
+        </div>
+
+        <div className="form-group">
+          <Label>Tamaño de Papel</Label>
+          <div className="paper-size-badge">
+            80mm (Configurado)
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Mensajes */}
-      {message && (
-        <div style={{
-          position: "fixed",
-          bottom: "2rem",
-          right: "2rem",
-          padding: "1rem 1.5rem",
-          background: message.type === "success" ? "#10b981" : "#ef4444",
-          color: "white",
-          borderRadius: "8px",
-          fontWeight: 600,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-          zIndex: 1000
-        }}>
-          {message.text}
+      {/* Save Button */}
+      <div className="settings-footer">
+        <Button onClick={handleSaveSettings} className="save-button">
+          <Check className="mr-2 h-4 w-4" />
+          Guardar Configuración
+        </Button>
+      </div>
+
+      {/* Test Result */}
+      {testResult && (
+        <div className={`test-result ${testResult}`}>
+          {testResult === "success" ? (
+            <>
+              <Check className="result-icon" />
+              <span>Impresión de prueba enviada correctamente</span>
+            </>
+          ) : (
+            <>
+              <AlertCircle className="result-icon" />
+              <span>Error al enviar la impresión</span>
+            </>
+          )}
         </div>
       )}
 
-      {/* Instrucciones */}
-      <div style={{
-        marginTop: "2rem",
-        padding: "1.5rem",
-        background: "#f8fafc",
-        border: "2px solid #e2e8f0",
-        borderRadius: "12px"
-      }}>
-        <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "1rem" }}>
-          Instrucciones de Configuración
-        </h3>
-        <ol style={{ paddingLeft: "1.5rem", lineHeight: "1.8", color: "#64748b" }}>
-          <li>Asegúrate de que las impresoras térmicas USB estén conectadas a la PC</li>
-          <li>Inicia el Print Server ejecutando <code style={{ background: "#e2e8f0", padding: "0.25rem 0.5rem", borderRadius: "4px" }}>npm start</code> en la carpeta print-server</li>
-          <li>Selecciona la impresora para cocina y para cliente</li>
-          <li>Usa el botón "Probar" para verificar que las impresoras funcionen correctamente</li>
-          <li>Guarda la configuración para que se aplique en todas las ventas</li>
-        </ol>
-      </div>
+      <style jsx>{`
+        .printer-settings {
+          padding: 24px;
+          max-width: 1200px;
+        }
+
+        .settings-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 24px;
+        }
+
+        .settings-header h2 {
+          font-size: 24px;
+          font-weight: 600;
+          color: #1e293b;
+        }
+
+        .server-status {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .server-status.connected {
+          background: #dcfce7;
+          color: #16a34a;
+        }
+
+        .server-status.disconnected {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+
+        .status-indicator {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: currentColor;
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+
+        .alert {
+          padding: 16px;
+          border-radius: 8px;
+          margin-bottom: 24px;
+          display: flex;
+          gap: 12px;
+        }
+
+        .alert-warning {
+          background: #fef3c7;
+          border: 1px solid #fbbf24;
+          color: #92400e;
+        }
+
+        .alert-icon {
+          width: 24px;
+          height: 24px;
+          flex-shrink: 0;
+        }
+
+        .alert h4 {
+          font-weight: 600;
+          margin-bottom: 4px;
+        }
+
+        .alert p {
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        .settings-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+          gap: 24px;
+          margin-bottom: 24px;
+        }
+
+        .settings-section {
+          background: white;
+          padding: 24px;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+        }
+
+        .section-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+
+        .section-icon {
+          width: 24px;
+          height: 24px;
+          color: #3b82f6;
+        }
+
+        .section-header h3 {
+          font-size: 18px;
+          font-weight: 600;
+          color: #1e293b;
+        }
+
+        .settings-section h3 {
+          font-size: 18px;
+          font-weight: 600;
+          color: #1e293b;
+          margin-bottom: 16px;
+        }
+
+        .form-group {
+          margin-bottom: 20px;
+        }
+
+        .form-group:last-child {
+          margin-bottom: 0;
+        }
+
+        .help-text {
+          display: block;
+          font-size: 12px;
+          color: #64748b;
+          margin-top: 4px;
+        }
+
+        .paper-size-badge {
+          display: inline-flex;
+          padding: 8px 16px;
+          background: #f1f5f9;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 500;
+          color: #475569;
+        }
+
+        .settings-footer {
+          display: flex;
+          justify-content: flex-end;
+          padding-top: 24px;
+          border-top: 1px solid #e2e8f0;
+        }
+
+        .save-button {
+          min-width: 200px;
+        }
+
+        .test-result {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px 24px;
+          border-radius: 8px;
+          font-weight: 500;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+          from {
+            transform: translateX(400px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        .test-result.success {
+          background: #dcfce7;
+          color: #16a34a;
+        }
+
+        .test-result.error {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+
+        .result-icon {
+          width: 20px;
+          height: 20px;
+        }
+      `}</style>
     </div>
   );
 }
