@@ -484,6 +484,246 @@ export default function Home() {
       printWindow.close();
     }, 250);
   };
+
+  // Función para imprimir comanda (sin precios, para cocina)
+  const handlePrintComanda = () => {
+    if (cart.length === 0) {
+      alert("No hay productos en el carrito para imprimir");
+      return;
+    }
+
+    const orderNumber = currentOrderId ? 
+      sales.find(s => s.id === currentOrderId)?.orderNumber || `${Date.now().toString().slice(-6)}` :
+      `${Date.now().toString().slice(-6)}`;
+      
+    const printWindow = window.open('', '', 'width=300,height=600');
+    
+    if (!printWindow) {
+      alert("Por favor permite las ventanas emergentes para imprimir");
+      return;
+    }
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Comanda #${orderNumber}</title>
+        <style>
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+          
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          body {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 10mm;
+            width: 80mm;
+          }
+          
+          .header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px double #000;
+          }
+          
+          .title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+          }
+          
+          .subtitle {
+            font-size: 12px;
+            margin-bottom: 3px;
+          }
+          
+          .section {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #000;
+          }
+          
+          .label {
+            font-weight: bold;
+            display: inline-block;
+            width: 90px;
+          }
+          
+          .value {
+            display: inline;
+          }
+          
+          .row {
+            margin-bottom: 6px;
+          }
+          
+          .items-header {
+            font-weight: bold;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #000;
+            text-transform: uppercase;
+          }
+          
+          .item {
+            display: flex;
+            margin-bottom: 8px;
+            padding: 5px;
+            background: #f5f5f5;
+            border-radius: 3px;
+          }
+          
+          .item .cant {
+            width: 50px;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            background: #000;
+            color: #fff;
+            border-radius: 3px;
+            padding: 2px;
+            margin-right: 10px;
+          }
+          
+          .item .desc {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 600;
+          }
+          
+          .item-note {
+            margin-left: 60px;
+            font-size: 12px;
+            font-style: italic;
+            background: #fff;
+            padding: 5px;
+            border-left: 3px solid #000;
+            margin-top: 5px;
+            margin-bottom: 8px;
+          }
+          
+          .separator {
+            border-top: 3px double #000;
+            margin: 15px 0;
+          }
+          
+          .note-section {
+            margin-top: 15px;
+            padding: 10px;
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 5px;
+          }
+          
+          .note-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            text-decoration: underline;
+          }
+          
+          .note-content {
+            font-size: 13px;
+            line-height: 1.6;
+          }
+          
+          .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 11px;
+            color: #666;
+          }
+          
+          @media print {
+            body {
+              padding: 5mm;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">🍔 COMANDA COCINA 🍔</div>
+          <div class="subtitle">De la Gran Burger</div>
+        </div>
+        
+        <div class="section">
+          <div class="row">
+            <span class="label">Nº Pedido:</span>
+            <span class="value" style="font-size: 16px; font-weight: bold;">${orderNumber}</span>
+          </div>
+          <div class="row">
+            <span class="label">Cliente:</span>
+            <span class="value">${customer.name || 'Cliente General'}</span>
+          </div>
+          ${customer.phone ? `
+          <div class="row">
+            <span class="label">Teléfono:</span>
+            <span class="value">${customer.phone}</span>
+          </div>
+          ` : ''}
+          <div class="row">
+            <span class="label">Tipo:</span>
+            <span class="value" style="font-weight: bold; font-size: 14px;">${orderType === 'delivery' ? '🚴 DELIVERY' : '🏪 PARA RETIRAR'}</span>
+          </div>
+          ${customer.address && orderType === 'delivery' ? `
+          <div class="row">
+            <span class="label">Dirección:</span>
+            <span class="value">${customer.address}</span>
+          </div>
+          ` : ''}
+        </div>
+        
+        <div class="section">
+          <div class="items-header">
+            📋 PRODUCTOS A PREPARAR
+          </div>
+          ${cart.map(item => `
+            <div class="item">
+              <div class="cant">${item.quantity}x</div>
+              <div class="desc">${item.product.name}</div>
+            </div>
+            ${item.itemNote ? `<div class="item-note">⚠️ ${item.itemNote}</div>` : ''}
+          `).join('')}
+        </div>
+        
+        <div class="separator"></div>
+        
+        ${note ? `
+        <div class="note-section">
+          <div class="note-title">⚠️ NOTA IMPORTANTE:</div>
+          <div class="note-content">${note}</div>
+        </div>
+        ` : ''}
+        
+        <div class="footer">
+          📅 ${new Date().toLocaleString('es-PY')}
+        </div>
+      </body>
+      </html>
+    `;
+    
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
   
   // Cálculos
   const subtotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
@@ -1156,17 +1396,17 @@ export default function Home() {
             <div className="pos-total-section">
               <div className="pos-total-row">
                 <span className="pos-total-label">Subtotal:</span>
-                <span className="pos-total-value">Gs. {formatCurrency(subtotal)}</span>
+                <span className="pos-total-value">Gs. ${formatCurrency(subtotal)}</span>
               </div>
               {orderType === "delivery" && deliveryCost > 0 && (
                 <div className="pos-total-row">
                   <span className="pos-total-label">Delivery:</span>
-                  <span className="pos-total-value">Gs. {formatCurrency(deliveryCost)}</span>
+                  <span className="pos-total-value">Gs. ${formatCurrency(deliveryCost)}</span>
                 </div>
               )}
               <div className="pos-total-row pos-total-final">
                 <span className="pos-total-label">Total:</span>
-                <span className="pos-total-value">Gs. {formatCurrency(total)}</span>
+                <span className="pos-total-value">Gs. ${formatCurrency(total)}</span>
               </div>
             </div>
             
@@ -1176,13 +1416,17 @@ export default function Home() {
                   <Trash2 size={18} />
                   Vaciar
                 </button>
+                <button className="pos-btn pos-btn-print-comanda" onClick={handlePrintComanda} disabled={cart.length === 0}>
+                  <Printer size={18} />
+                  Impr. Comanda
+                </button>
                 <button className="pos-btn pos-btn-print" onClick={handlePrintOrder} disabled={cart.length === 0}>
                   <Printer size={18} />
-                  Imprimir
+                  Impr. Pedido
                 </button>
                 <button className="pos-btn pos-btn-confirm" onClick={handleConfirmOrder} disabled={cart.length === 0}>
                   <Clock size={18} />
-                  Confirmar Pedido
+                  Confirmar
                 </button>
               </div>
               <div className="pos-action-buttons-row">
@@ -1355,78 +1599,6 @@ export default function Home() {
           onCancel={() => setShowPaymentModal(false)}
         />
       )}
-    </>
-  );
-  
-  return (
-    <>
-      <Head>
-        <title>De la Gran Burger - Sistema POS</title>
-        <meta name="description" content="Sistema de punto de venta para De la Gran Burger" />
-      </Head>
-      
-      <div className="pos-layout">
-        {/* Sidebar navegación */}
-        <div className="pos-sidebar">
-          <div className="pos-sidebar-header">
-            <div className="pos-sidebar-logo">DB</div>
-            <div className="pos-sidebar-title">De la Gran Burger</div>
-          </div>
-          
-          <nav className="pos-sidebar-nav">
-            <a href="#" className={`pos-nav-item ${currentView === "pos" ? "active" : ""}`} onClick={() => setCurrentView("pos")}>
-              <ShoppingCart className="pos-nav-icon" />
-              <span>Punto de Venta</span>
-            </a>
-            <a href="#" className={`pos-nav-item ${currentView === "sales" ? "active" : ""}`} onClick={() => setCurrentView("sales")}>
-              <TrendingUp className="pos-nav-icon" />
-              <span>Ventas</span>
-            </a>
-            <a href="#" className={`pos-nav-item ${currentView === "products" ? "active" : ""}`} onClick={() => setCurrentView("products")}>
-              <Package className="pos-nav-icon" />
-              <span>Productos y Servicios</span>
-            </a>
-            <a href="#" className={`pos-nav-item ${currentView === "drivers" ? "active" : ""}`} onClick={() => setCurrentView("drivers")}>
-              <Bike className="pos-nav-icon" />
-              <span>Repartidores</span>
-            </a>
-            <a href="#" className={`pos-nav-item ${currentView === "inventory" ? "active" : ""}`} onClick={() => setCurrentView("inventory")}>
-              <Warehouse className="pos-nav-icon" />
-              <span>Inventario</span>
-            </a>
-            <a href="#" className={`pos-nav-item ${currentView === "expenses" ? "active" : ""}`} onClick={() => setCurrentView("expenses")}>
-              <FileText className="pos-nav-icon" />
-              <span>Gastos</span>
-            </a>
-            <a href="#" className={`pos-nav-item ${currentView === "reports" ? "active" : ""}`} onClick={() => setCurrentView("reports")}>
-              <FileText className="pos-nav-icon" />
-              <span>Informes</span>
-            </a>
-            <a href="#" className={`pos-nav-item ${currentView === "settings" ? "active" : ""}`} onClick={() => setCurrentView("settings")}>
-              <Settings className="pos-nav-icon" />
-              <span>Ajustes</span>
-            </a>
-            <a href="#" className="pos-nav-item">
-              <HelpCircle className="pos-nav-icon" />
-              <span>Soporte</span>
-            </a>
-          </nav>
-          
-          <div className="pos-sidebar-footer">
-            <a href="#" className="pos-nav-item">
-              <LogOut className="pos-nav-icon" />
-              <span>Cerrar Sesión</span>
-            </a>
-          </div>
-        </div>
-        
-        {/* Contenido principal */}
-        {currentView === "pos" ? renderPOS() : (
-          <div style={{ gridColumn: "2 / -1", overflow: "auto" }}>
-            {renderContent()}
-          </div>
-        )}
-      </div>
     </>
   );
 }
