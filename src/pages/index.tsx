@@ -203,18 +203,8 @@ export default function Home() {
       return;
     }
 
-    const deliveryInfo = orderType === "delivery" && deliveryCost > 0 ? `
-      <div class="row">
-        <span class="label">Delivery:</span>
-        <span class="value">Gs. ${formatCurrency(deliveryCost)}</span>
-      </div>
-      ${selectedDriverId ? `
-      <div class="row">
-        <span class="label">Repartidor:</span>
-        <span class="value">${deliveryDrivers.find(d => d.id === selectedDriverId)?.name || ''}</span>
-      </div>
-      ` : ''}
-    ` : '';
+    const deliveryDriverInfo = orderType === "delivery" && selectedDriverId ? 
+      deliveryDrivers.find(d => d.id === selectedDriverId) : null;
 
     const printContent = `
       <!DOCTYPE html>
@@ -314,6 +304,11 @@ export default function Home() {
             flex: 1;
           }
           
+          .item .price {
+            text-align: right;
+            min-width: 80px;
+          }
+          
           .item-note {
             margin-left: 40px;
             font-size: 11px;
@@ -323,9 +318,40 @@ export default function Home() {
             margin-bottom: 5px;
           }
           
+          .delivery-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+            padding-top: 5px;
+            border-top: 1px dashed #000;
+          }
+          
+          .delivery-item .desc {
+            flex: 1;
+            font-weight: bold;
+          }
+          
+          .delivery-item .price {
+            text-align: right;
+            min-width: 80px;
+            font-weight: bold;
+          }
+          
           .separator {
             border-top: 2px dashed #000;
             margin: 15px 0;
+          }
+          
+          .total-section {
+            margin-top: 10px;
+          }
+          
+          .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: bold;
           }
           
           .note-section {
@@ -361,7 +387,11 @@ export default function Home() {
         
         <div class="section">
           <div class="row">
-            <span class="label">Nombre:</span>
+            <span class="label">Nº Pedido:</span>
+            <span class="value">${orderNumber}</span>
+          </div>
+          <div class="row">
+            <span class="label">Cliente:</span>
             <span class="value">${customer.name || 'Cliente General'}</span>
           </div>
           ${customer.phone ? `
@@ -370,7 +400,17 @@ export default function Home() {
             <span class="value">${customer.phone}</span>
           </div>
           ` : ''}
-          ${customer.address ? `
+          <div class="row">
+            <span class="label">Tipo:</span>
+            <span class="value">${orderType === 'delivery' ? 'DELIVERY' : 'PARA RETIRAR'}</span>
+          </div>
+          ${orderType === 'delivery' && deliveryDriverInfo ? `
+          <div class="row">
+            <span class="label">Repartidor:</span>
+            <span class="value">${deliveryDriverInfo.name}</span>
+          </div>
+          ` : ''}
+          ${customer.address && orderType === 'delivery' ? `
           <div class="row">
             <span class="label">Dirección:</span>
             <span class="value">${customer.address}</span>
@@ -388,29 +428,35 @@ export default function Home() {
             <span class="value">${customer.businessName}</span>
           </div>
           ` : ''}
-          <div class="row">
-            <span class="label">Tipo:</span>
-            <span class="value">${orderType === 'delivery' ? 'Delivery' : 'Para Retirar'}</span>
-          </div>
-          ${deliveryInfo}
-          <div class="row">
-            <span class="label">Nº Pedido:</span>
-            <span class="value">${orderNumber}</span>
-          </div>
         </div>
         
         <div class="section">
           <div class="items-header">
             <div class="cant">CANT</div>
             <div class="desc">DESCRIPCION</div>
+            <div class="price">PRECIO</div>
           </div>
           ${cart.map(item => `
             <div class="item">
               <div class="cant">${item.quantity}</div>
               <div class="desc">${item.product.name}</div>
+              <div class="price">Gs. ${formatCurrency(item.product.price * item.quantity)}</div>
             </div>
             ${item.itemNote ? `<div class="item-note">(${item.itemNote})</div>` : ''}
           `).join('')}
+          ${orderType === 'delivery' && deliveryCost > 0 ? `
+            <div class="delivery-item">
+              <div class="desc">Delivery</div>
+              <div class="price">Gs. ${formatCurrency(deliveryCost)}</div>
+            </div>
+          ` : ''}
+        </div>
+        
+        <div class="total-section">
+          <div class="total-row">
+            <span>TOTAL:</span>
+            <span>Gs. ${formatCurrency(total)}</span>
+          </div>
         </div>
         
         <div class="separator"></div>
