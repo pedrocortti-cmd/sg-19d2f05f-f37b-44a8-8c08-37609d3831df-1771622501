@@ -20,6 +20,7 @@ export interface Category {
 export interface CartItem {
   product: Product;
   quantity: number;
+  itemNote?: string;
 }
 
 export interface CustomerInfo {

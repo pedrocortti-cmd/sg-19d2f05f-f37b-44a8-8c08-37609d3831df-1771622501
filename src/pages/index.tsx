@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import Head from "next/head";
-import { ShoppingCart, Package, Warehouse, TrendingUp, FileText, Settings, HelpCircle, LogOut, Search, Trash2, X, ChevronDown, ChevronUp, Printer } from "lucide-react";
+import { ShoppingCart, Package, Warehouse, TrendingUp, FileText, Settings, HelpCircle, LogOut, Search, Trash2, X, ChevronDown, ChevronUp, Printer, Edit2, Check } from "lucide-react";
 import { ProductsManager } from "@/components/pos/ProductsManager";
 import { SalesHistory } from "@/components/pos/SalesHistory";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
@@ -21,8 +21,9 @@ export default function Home() {
   // Estado del carrito
   const [cart, setCart] = useState<CartItemType[]>([]);
   const [orderType, setOrderType] = useState<OrderType>("delivery");
-  const [discount, setDiscount] = useState<number>(0);
   const [note, setNote] = useState<string>("");
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [tempItemNote, setTempItemNote] = useState<string>("");
   
   // Estado del cliente
   const [customer, setCustomer] = useState<CustomerInfo>({
@@ -77,23 +78,23 @@ export default function Home() {
   // Funciones del carrito
   const addToCart = (product: ProductType) => {
     setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.product.id === product.id);
+      const existingItem = prevCart.find(item => item.product.id === product.id && !item.itemNote);
       if (existingItem) {
         return prevCart.map(item =>
-          item.product.id === product.id
+          item.product.id === product.id && !item.itemNote
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       } else {
-        return [...prevCart, { product, quantity: 1 }];
+        return [...prevCart, { product, quantity: 1, itemNote: "" }];
       }
     });
   };
   
-  const updateQuantity = (productId: number, delta: number) => {
+  const updateQuantity = (productId: number, itemNote: string | undefined, delta: number) => {
     setCart(prevCart => {
       return prevCart.map(item => {
-        if (item.product.id === productId) {
+        if (item.product.id === productId && item.itemNote === itemNote) {
           const newQuantity = item.quantity + delta;
           return newQuantity > 0 ? { ...item, quantity: newQuantity } : item;
         }
@@ -102,14 +103,36 @@ export default function Home() {
     });
   };
   
-  const removeFromCart = (productId: number) => {
-    setCart(prevCart => prevCart.filter(item => item.product.id !== productId));
+  const removeFromCart = (productId: number, itemNote: string | undefined) => {
+    setCart(prevCart => prevCart.filter(item => !(item.product.id === productId && item.itemNote === itemNote)));
+  };
+  
+  const startEditingItemNote = (productId: number, currentNote: string | undefined) => {
+    setEditingItemId(productId);
+    setTempItemNote(currentNote || "");
+  };
+  
+  const saveItemNote = (productId: number, oldNote: string | undefined) => {
+    setCart(prevCart => prevCart.map(item => {
+      if (item.product.id === productId && item.itemNote === oldNote) {
+        return { ...item, itemNote: tempItemNote };
+      }
+      return item;
+    }));
+    setEditingItemId(null);
+    setTempItemNote("");
+  };
+  
+  const cancelEditingItemNote = () => {
+    setEditingItemId(null);
+    setTempItemNote("");
   };
   
   const clearCart = () => {
     setCart([]);
-    setDiscount(0);
     setNote("");
+    setEditingItemId(null);
+    setTempItemNote("");
     setCustomer({
       name: "",
       phone: "",
@@ -233,6 +256,15 @@ export default function Home() {
             flex: 1;
           }
           
+          .item-note {
+            margin-left: 40px;
+            font-size: 11px;
+            font-style: italic;
+            color: #333;
+            margin-top: 2px;
+            margin-bottom: 5px;
+          }
+          
           .separator {
             border-top: 2px dashed #000;
             margin: 15px 0;
@@ -318,6 +350,7 @@ export default function Home() {
               <div class="cant">${item.quantity}</div>
               <div class="desc">${item.product.name}</div>
             </div>
+            ${item.itemNote ? `<div class="item-note">(${item.itemNote})</div>` : ''}
           `).join('')}
         </div>
         
@@ -349,8 +382,7 @@ export default function Home() {
   
   // Cálculos
   const subtotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  const discountAmount = (subtotal * discount) / 100;
-  const total = subtotal - discountAmount;
+  const total = subtotal;
   
   // Función para reabrir venta
   const handleReopenSale = (sale: Sale) => {
@@ -360,13 +392,7 @@ export default function Home() {
     setCustomer(sale.customer);
     // Restaurar tipo de orden
     setOrderType(sale.orderType);
-    // Restaurar descuento (aproximado por porcentaje si es posible, o resetear)
-    // Aquí simplificamos reseteando descuento para evitar conflictos, o calculamos %
-    if (sale.subtotal > 0) {
-        setDiscount(Math.round((sale.discount / sale.subtotal) * 100));
-    } else {
-        setDiscount(0);
-    }
+    // Restaurar nota
     setNote(sale.note);
     
     // Cambiar a vista POS
@@ -395,10 +421,10 @@ export default function Home() {
       date: saleDate,
       items: [...cart],
       subtotal,
-      discount: discountAmount,
+      discount: 0,
       total,
       orderType,
-      payments: payments, // Nuevo campo array
+      payments: payments,
       paidAmount: paidAmount,
       remainingAmount: total - paidAmount,
       customer: { ...customer },
@@ -599,22 +625,59 @@ export default function Home() {
                 <div>No hay productos en el carrito</div>
               </div>
             ) : (
-              cart.map(item => (
-                <div key={item.product.id} className="pos-cart-item">
+              cart.map((item, index) => (
+                <div key={`${item.product.id}-${index}`} className="pos-cart-item">
                   <div className="pos-cart-item-header">
                     <div className="pos-cart-item-name">{item.product.name}</div>
-                    <button className="pos-cart-item-remove" onClick={() => removeFromCart(item.product.id)}>
+                    <button className="pos-cart-item-remove" onClick={() => removeFromCart(item.product.id, item.itemNote)}>
                       <X size={18} />
                     </button>
                   </div>
-                  <div className="pos-cart-item-controls">
-                    <div className="pos-quantity-control">
-                      <button className="pos-quantity-btn" onClick={() => updateQuantity(item.product.id, -1)}>−</button>
-                      <div className="pos-quantity-display">{item.quantity}</div>
-                      <button className="pos-quantity-btn" onClick={() => updateQuantity(item.product.id, 1)}>+</button>
+                  
+                  {editingItemId === item.product.id ? (
+                    <div className="pos-item-note-edit">
+                      <input
+                        type="text"
+                        className="pos-input pos-item-note-input"
+                        placeholder="Ej: sin cebolla, sin huevo..."
+                        value={tempItemNote}
+                        onChange={(e) => setTempItemNote(e.target.value)}
+                        autoFocus
+                      />
+                      <div className="pos-item-note-actions">
+                        <button className="pos-btn-icon pos-btn-success" onClick={() => saveItemNote(item.product.id, item.itemNote)}>
+                          <Check size={16} />
+                        </button>
+                        <button className="pos-btn-icon pos-btn-cancel" onClick={cancelEditingItemNote}>
+                          <X size={16} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="pos-cart-item-price">Gs. {formatCurrency(item.product.price * item.quantity)}</div>
-                  </div>
+                  ) : (
+                    <>
+                      {item.itemNote && (
+                        <div className="pos-item-note-display">
+                          ({item.itemNote})
+                        </div>
+                      )}
+                      <div className="pos-cart-item-controls">
+                        <div className="pos-quantity-control">
+                          <button className="pos-quantity-btn" onClick={() => updateQuantity(item.product.id, item.itemNote, -1)}>−</button>
+                          <div className="pos-quantity-display">{item.quantity}</div>
+                          <button className="pos-quantity-btn" onClick={() => updateQuantity(item.product.id, item.itemNote, 1)}>+</button>
+                        </div>
+                        <button 
+                          className="pos-btn-add-note" 
+                          onClick={() => startEditingItemNote(item.product.id, item.itemNote)}
+                          title="Agregar nota"
+                        >
+                          <Edit2 size={16} />
+                          {item.itemNote ? "Editar" : "Nota"}
+                        </button>
+                        <div className="pos-cart-item-price">Gs. {formatCurrency(item.product.price * item.quantity)}</div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))
             )}
@@ -622,24 +685,9 @@ export default function Home() {
           
           {/* Footer del carrito */}
           <div className="pos-cart-footer">
-            <div className="pos-discount-section">
-              <div className="pos-input-group">
-                <label className="pos-input-label">Descuento (%)</label>
-                <input
-                  type="number"
-                  className="pos-input"
-                  placeholder="0"
-                  min="0"
-                  max="100"
-                  value={discount || ""}
-                  onChange={(e) => setDiscount(Number(e.target.value))}
-                />
-              </div>
-            </div>
-            
             <div className="pos-note-section">
               <div className="pos-input-group">
-                <label className="pos-input-label">Nota</label>
+                <label className="pos-input-label">Nota General</label>
                 <textarea
                   className="pos-input"
                   placeholder="Nota del pedido..."
@@ -666,16 +714,6 @@ export default function Home() {
             </div>
             
             <div className="pos-total-section">
-              <div className="pos-total-row">
-                <span className="pos-total-label">Subtotal:</span>
-                <span className="pos-total-value">Gs. {formatCurrency(subtotal)}</span>
-              </div>
-              {discount > 0 && (
-                <div className="pos-total-row">
-                  <span className="pos-total-label">Descuento ({discount}%):</span>
-                  <span className="pos-total-value">- Gs. {formatCurrency(discountAmount)}</span>
-                </div>
-              )}
               <div className="pos-total-row pos-total-final">
                 <span className="pos-total-label">Total:</span>
                 <span className="pos-total-value">Gs. {formatCurrency(total)}</span>

@@ -292,6 +292,81 @@
   color: #0f172a;
 }
 
+.pos-item-note-display {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-style: italic;
+  margin-bottom: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.pos-item-note-edit {
+  margin-top: 0.5rem;
+}
+
+.pos-item-note-input {
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.pos-item-note-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pos-btn-icon {
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.pos-btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.pos-btn-success:hover {
+  background: #059669;
+}
+
+.pos-btn-cancel {
+  background: #ef4444;
+  color: white;
+}
+
+.pos-btn-cancel:hover {
+  background: #dc2626;
+}
+
+.pos-btn-add-note {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.pos-btn-add-note:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
 .pos-cart-empty {
   padding: 3rem 1.5rem;
   text-align: center;
