@@ -33,7 +33,7 @@ export default function Home() {
   
   // Estado de productos
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("Productos");
+  const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
   
   // Estado de gestión de productos y categorías
   const [products, setProducts] = useState<ProductType[]>([
@@ -60,13 +60,13 @@ export default function Home() {
   
   const [sales, setSales] = useState<Sale[]>([]);
   
-  const categoryNames = ["Productos", ...categories.filter(c => c.active).map(c => c.name)];
+  const categoryNames = ["Todos", ...categories.filter(c => c.active).sort((a, b) => a.order - b.order).map(c => c.name)];
   
   // Productos filtrados
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === "Productos" || product.category === selectedCategory;
+      const matchesCategory = selectedCategory === "Todos" || product.category === selectedCategory;
       return matchesSearch && matchesCategory && product.active;
     });
   }, [searchTerm, selectedCategory, products]);
