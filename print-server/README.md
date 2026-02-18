@@ -1,130 +1,34 @@
 # Print Server - De la Gran Burger POS
 
-Servidor de impresión local para impresoras térmicas USB ESC/POS (80mm).
+Servidor de impresión local para impresoras térmicas USB (80mm) usando ESC/POS.
 
-## Requisitos
+## 🎯 Función
 
-- Node.js 16+ instalado
-- Impresora térmica USB 80mm conectada
-- Windows (recomendado) / Linux / macOS
+Este servidor detecta automáticamente las impresoras térmicas USB conectadas y permite imprimir:
+- **Comandas de cocina** (sin precios)
+- **Tickets de cliente** (con precios)
 
-## Instalación
+## 📋 Requisitos
 
-### 1. Instalar Node.js
+- Node.js v18+
+- Impresoras térmicas USB compatibles con ESC/POS
+- Windows 10/11
 
-Si no tienes Node.js instalado:
-1. Descargar desde: https://nodejs.org/
-2. Instalar la versión LTS (recomendada)
-3. Verificar instalación abriendo CMD y ejecutar: `node --version`
-
-### 2. Instalar dependencias del Print Server
-
-Abrir CMD o PowerShell en la carpeta `print-server` y ejecutar:
+## 🚀 Instalación
 
 ```bash
 npm install
 ```
 
-### 3. Conectar impresora térmica USB
-
-1. Conectar la impresora térmica USB al puerto USB de la PC
-2. Windows detectará automáticamente la impresora
-3. Verificar en "Dispositivos e impresoras" que aparece conectada
-
-## Uso
-
-### Iniciar el servidor de impresión
-
-Desde la carpeta `print-server`:
+## ▶️ Uso
 
 ```bash
 npm start
 ```
 
-El servidor iniciará en `http://localhost:3001` y mostrará:
-- Endpoints disponibles
-- Impresoras detectadas automáticamente
+El servidor se iniciará en `http://localhost:3001` y detectará automáticamente las impresoras USB.
 
-### Configuración en la aplicación web
-
-1. Abrir la aplicación web en el navegador
-2. Ir a **Ajustes** → **Configuración de Impresoras**
-3. Seleccionar:
-   - Impresora de Cocina (para comandas)
-   - Impresora de Cliente (para tickets de venta)
-   - Número de copias
-4. Hacer clic en "Probar Impresión" para verificar
-
-## Funcionamiento
-
-Cuando confirmas una venta en el POS:
-
-1. **Comanda de Cocina** (sin precios):
-   - Se imprime automáticamente en la impresora de cocina
-   - Muestra: Nro de pedido, items con cantidades, nota, info del cliente
-   - Ideal para que cocina prepare el pedido
-
-2. **Ticket de Cliente** (con precios):
-   - Se imprime en la impresora de caja/cliente
-   - Muestra: Items con precios, subtotal, descuento, total, medio de pago
-   - Es el recibo para entregar al cliente
-
-## Solución de Problemas
-
-### Error: "No se detectan impresoras"
-
-1. Verificar que la impresora esté conectada y encendida
-2. Reiniciar el Print Server (`Ctrl+C` y volver a `npm start`)
-3. En Windows: verificar en "Dispositivos e impresoras"
-4. Probar desconectar y reconectar la impresora USB
-
-### Error: "Cannot find module 'usb'"
-
-Windows requiere compilar módulos nativos:
-
-1. Instalar Windows Build Tools:
-```bash
-npm install --global windows-build-tools
-```
-
-2. Reinstalar dependencias:
-```bash
-npm install
-```
-
-### Error: "Access denied" o permisos
-
-1. Ejecutar CMD/PowerShell como Administrador
-2. Volver a iniciar el servidor
-
-### La impresión no sale o sale mal
-
-1. Verificar que el papel esté correctamente instalado
-2. Confirmar que el tamaño es 80mm
-3. Hacer prueba de impresión desde el botón de la impresora
-4. Usar el endpoint de prueba: POST `/api/print/test`
-
-## Iniciar automáticamente al encender Windows
-
-### Opción 1: Acceso directo en Inicio
-
-1. Crear archivo `start-print-server.bat`:
-```batch
-@echo off
-cd C:\ruta\a\tu\proyecto\print-server
-npm start
-pause
-```
-
-2. Guardar en la carpeta del proyecto
-3. Crear acceso directo y mover a: 
-   `C:\Users\TuUsuario\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup`
-
-### Opción 2: Servicio de Windows (avanzado)
-
-Usar `node-windows` o `pm2-windows-service` para crear un servicio permanente.
-
-## API Endpoints
+## 📡 Endpoints API
 
 ### GET /api/printers
 Lista todas las impresoras USB detectadas.
@@ -151,12 +55,12 @@ Imprime comanda de cocina (sin precios).
 ```json
 {
   "data": {
-    "orderNumber": "001",
-    "date": "2024-01-15T10:30:00",
+    "orderNumber": "123456",
+    "date": "2026-02-18T12:00:00Z",
     "orderType": "delivery",
-    "items": [...],
+    "items": [{"product": {"name": "Carnívora"}, "quantity": 2}],
     "note": "Sin cebolla",
-    "customer": {...}
+    "customer": {"name": "Juan", "phone": "0981123456"}
   },
   "printerIndex": 0
 }
@@ -169,15 +73,13 @@ Imprime ticket de cliente (con precios).
 ```json
 {
   "data": {
-    "orderNumber": "001",
-    "date": "2024-01-15T10:30:00",
-    "orderType": "delivery",
-    "items": [...],
-    "subtotal": 50000,
-    "discountAmount": 5000,
-    "total": 45000,
-    "paymentMethod": "cash",
-    "customer": {...}
+    "orderNumber": "123456",
+    "date": "2026-02-18T12:00:00Z",
+    "items": [{"product": {"name": "Carnívora", "price": 22000}, "quantity": 2}],
+    "subtotal": 44000,
+    "discountAmount": 0,
+    "total": 44000,
+    "paymentMethod": "cash"
   },
   "printerIndex": 0
 }
@@ -191,13 +93,13 @@ Imprime ambos tickets (comanda + cliente).
 {
   "data": {...},
   "kitchenPrinter": 0,
-  "clientPrinter": 0,
-  "copies": 1
+  "clientPrinter": 1,
+  "copies": 2
 }
 ```
 
 ### POST /api/print/test
-Imprime ticket de prueba para verificar configuración.
+Imprime ticket de prueba.
 
 **Body:**
 ```json
@@ -206,6 +108,68 @@ Imprime ticket de prueba para verificar configuración.
 }
 ```
 
-## Soporte
+## 🔧 Configuración
 
-Para problemas o dudas, contactar al equipo de soporte de De la Gran Burger.
+El servidor detecta automáticamente las impresoras al iniciar. No requiere configuración adicional.
+
+Para configurar qué impresora usar para cocina/cliente, hazlo desde la aplicación web en **Ajustes**.
+
+## 🛠️ Solución de Problemas
+
+### No se detectan impresoras
+
+1. **Verifica la conexión USB**: Desconecta y vuelve a conectar
+2. **Reinicia el servidor**: `Ctrl+C` y `npm start`
+3. **Drivers**: Asegúrate de que Windows reconozca las impresoras
+4. **Permisos**: Ejecuta la terminal como Administrador si es necesario
+
+### Error de impresión
+
+1. **Papel**: Verifica que la impresora tenga papel
+2. **Estado**: Revisa que no haya atascos
+3. **Logs**: Mira la consola del servidor para mensajes de error
+4. **Prueba**: Usa el endpoint `/api/print/test` primero
+
+### Puerto ocupado
+
+Si el puerto 3001 está ocupado:
+
+```bash
+# Windows - Matar proceso en puerto 3001
+netstat -ano | findstr :3001
+taskkill /PID [PID] /F
+```
+
+## 📝 Logs
+
+El servidor muestra en consola:
+- ✅ Impresoras detectadas al iniciar
+- 📋 Requests recibidos
+- ⚠️ Errores de impresión
+- 🔄 Estado de cada operación
+
+## 🔐 Seguridad
+
+⚠️ **Importante**: Este servidor solo debe correr localmente (`localhost`). No exponerlo a internet.
+
+El servidor usa CORS para permitir solo peticiones del frontend local.
+
+## 🚀 Producción
+
+Para usar en producción (local), configura PM2:
+
+```bash
+npm install -g pm2
+pm2 start npm --name "print-server" -- start
+pm2 save
+pm2 startup
+```
+
+## 📚 Recursos
+
+- [escpos Documentation](https://github.com/song940/node-escpos)
+- [ESC/POS Commands](https://reference.epson-biz.com/modules/ref_escpos/index.php)
+
+## 📞 Soporte
+
+Para problemas específicos del Print Server, contactar al equipo técnico.
