@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
 import Head from "next/head";
-import { ShoppingCart, Package, Warehouse, TrendingUp, FileText, Settings, HelpCircle, LogOut, Search, Trash2, X, ChevronDown, ChevronUp, Printer, Edit2, Check, Clock, DollarSign } from "lucide-react";
+import { ShoppingCart, Package, Warehouse, TrendingUp, FileText, Settings, HelpCircle, LogOut, Search, Trash2, X, ChevronDown, ChevronUp, Printer, Edit2, Check, Clock, DollarSign, Bike } from "lucide-react";
 import { ProductsManager } from "@/components/pos/ProductsManager";
 import { SalesHistory } from "@/components/pos/SalesHistory";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
 import { PaymentModal } from "@/components/pos/PaymentModal";
-import type { Product as ProductType, Category, Sale, CartItem as CartItemType, CustomerInfo, OrderType, Payment } from "@/types/pos";
+import type { Product as ProductType, Category, Sale, CartItem as CartItemType, CustomerInfo, OrderType, Payment, DeliveryDriver } from "@/types/pos";
 
 // Helper function for consistent number formatting
 const formatCurrency = (amount: number): string => {
@@ -14,7 +14,7 @@ const formatCurrency = (amount: number): string => {
 
 export default function Home() {
   // Estado del sistema
-  const [currentView, setCurrentView] = useState<"pos" | "sales" | "products" | "inventory" | "expenses" | "reports" | "settings">("pos");
+  const [currentView, setCurrentView] = useState<"pos" | "sales" | "products" | "inventory" | "expenses" | "reports" | "settings" | "drivers">("pos");
   const [isCustomerCollapsed, setIsCustomerCollapsed] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showOrdersPanel, setShowOrdersPanel] = useState(false);
@@ -23,6 +23,8 @@ export default function Home() {
   // Estado del carrito y pedido actual
   const [cart, setCart] = useState<CartItemType[]>([]);
   const [orderType, setOrderType] = useState<OrderType>("delivery");
+  const [deliveryCost, setDeliveryCost] = useState<number>(0);
+  const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
   const [note, setNote] = useState<string>("");
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [tempItemNote, setTempItemNote] = useState<string>("");
@@ -64,6 +66,12 @@ export default function Home() {
     { id: 1, name: "Hamburguesas", active: true, order: 1 },
     { id: 2, name: "Acompañamientos", active: true, order: 2 },
     { id: 3, name: "Bebidas", active: true, order: 3 },
+  ]);
+  
+  const [deliveryDrivers, setDeliveryDrivers] = useState<DeliveryDriver[]>([
+    { id: 1, name: "Carlos Rodríguez", phone: "0981123456", active: true },
+    { id: 2, name: "María González", phone: "0982234567", active: true },
+    { id: 3, name: "Juan Pérez", phone: "0983345678", active: true },
   ]);
   
   const [sales, setSales] = useState<Sale[]>([]);
@@ -162,6 +170,8 @@ export default function Home() {
   const clearCart = () => {
     setCart([]);
     setNote("");
+    setDeliveryCost(0);
+    setSelectedDriverId(null);
     setEditingItemId(null);
     setTempItemNote("");
     setCurrentOrderId(null);
@@ -192,6 +202,19 @@ export default function Home() {
       alert("Por favor permite las ventanas emergentes para imprimir");
       return;
     }
+
+    const deliveryInfo = orderType === "delivery" && deliveryCost > 0 ? `
+      <div class="row">
+        <span class="label">Delivery:</span>
+        <span class="value">Gs. ${formatCurrency(deliveryCost)}</span>
+      </div>
+      ${selectedDriverId ? `
+      <div class="row">
+        <span class="label">Repartidor:</span>
+        <span class="value">${deliveryDrivers.find(d => d.id === selectedDriverId)?.name || ''}</span>
+      </div>
+      ` : ''}
+    ` : '';
 
     const printContent = `
       <!DOCTYPE html>
@@ -369,6 +392,7 @@ export default function Home() {
             <span class="label">Tipo:</span>
             <span class="value">${orderType === 'delivery' ? 'Delivery' : 'Para Retirar'}</span>
           </div>
+          ${deliveryInfo}
           <div class="row">
             <span class="label">Nº Pedido:</span>
             <span class="value">${orderNumber}</span>
@@ -417,7 +441,7 @@ export default function Home() {
   
   // Cálculos
   const subtotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  const total = subtotal;
+  const total = subtotal + (orderType === "delivery" ? deliveryCost : 0);
   
   // Función para confirmar pedido (sin cobrar)
   const handleConfirmOrder = () => {
@@ -447,6 +471,9 @@ export default function Home() {
           items: [...cart],
           subtotal,
           discount: 0,
+          deliveryCost: orderType === "delivery" ? deliveryCost : 0,
+          deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
+          deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
           total,
           orderType,
           payments: [],
@@ -468,6 +495,9 @@ export default function Home() {
         ...existingOrder,
         items: [...cart],
         subtotal,
+        deliveryCost: orderType === "delivery" ? deliveryCost : 0,
+        deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
+        deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
         total,
         orderType,
         customer: { ...customer },
@@ -492,6 +522,9 @@ export default function Home() {
       items: [...cart],
       subtotal,
       discount: 0,
+      deliveryCost: orderType === "delivery" ? deliveryCost : 0,
+      deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
+      deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
       total,
       orderType,
       payments: [],
@@ -516,6 +549,9 @@ export default function Home() {
     setCustomer(sale.customer);
     // Restaurar tipo de orden
     setOrderType(sale.orderType);
+    // Restaurar costo y repartidor de delivery
+    setDeliveryCost(sale.deliveryCost || 0);
+    setSelectedDriverId(sale.deliveryDriverId || null);
     // Restaurar nota
     setNote(sale.note);
     // Guardar ID del pedido actual
@@ -560,6 +596,9 @@ export default function Home() {
           items: [...cart],
           subtotal,
           discount: 0,
+          deliveryCost: orderType === "delivery" ? deliveryCost : 0,
+          deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
+          deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
           total,
           orderType,
           payments: payments,
@@ -584,6 +623,9 @@ export default function Home() {
         ...existingOrder,
         items: [...cart],
         subtotal,
+        deliveryCost: orderType === "delivery" ? deliveryCost : 0,
+        deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
+        deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
         total,
         payments: [...existingOrder.payments, ...payments],
         paidAmount: totalPayments,
@@ -608,6 +650,9 @@ export default function Home() {
         items: [...cart],
         subtotal,
         discount: 0,
+        deliveryCost: orderType === "delivery" ? deliveryCost : 0,
+        deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
+        deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
         total,
         orderType,
         payments: payments,
@@ -644,6 +689,8 @@ export default function Home() {
         items: sale.items,
         subtotal: sale.subtotal,
         discountAmount: sale.discount,
+        deliveryCost: sale.deliveryCost,
+        deliveryDriverName: sale.deliveryDriverName,
         total: sale.total,
         payments: sale.payments,
         customer: sale.customer,
@@ -699,6 +746,128 @@ export default function Home() {
         );
       case "settings":
         return <PrinterSettings />;
+      case "drivers":
+        return (
+          <div style={{ padding: "2rem" }}>
+            <div style={{ marginBottom: "2rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 style={{ fontSize: "1.5rem", fontWeight: 700 }}>Gestión de Repartidores</h2>
+              <button
+                style={{
+                  padding: "0.75rem 1.5rem",
+                  background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem"
+                }}
+                onClick={() => {
+                  const name = prompt("Nombre del repartidor:");
+                  if (!name) return;
+                  const phone = prompt("Teléfono:");
+                  if (!phone) return;
+                  const newDriver: DeliveryDriver = {
+                    id: deliveryDrivers.length + 1,
+                    name,
+                    phone,
+                    active: true
+                  };
+                  setDeliveryDrivers([...deliveryDrivers, newDriver]);
+                }}
+              >
+                <Bike size={20} />
+                Agregar Repartidor
+              </button>
+            </div>
+            
+            <div style={{ display: "grid", gap: "1rem" }}>
+              {deliveryDrivers.map(driver => (
+                <div
+                  key={driver.id}
+                  style={{
+                    background: "white",
+                    border: "2px solid #e2e8f0",
+                    borderRadius: "12px",
+                    padding: "1.5rem",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    opacity: driver.active ? 1 : 0.5
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                    <Bike size={32} color={driver.active ? "#3b82f6" : "#94a3b8"} />
+                    <div>
+                      <div style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.25rem" }}>
+                        {driver.name}
+                      </div>
+                      <div style={{ color: "#64748b", fontSize: "0.9rem" }}>
+                        📱 {driver.phone}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button
+                      style={{
+                        padding: "0.5rem 1rem",
+                        background: driver.active ? "#fef3c7" : "#dcfce7",
+                        color: driver.active ? "#92400e" : "#166534",
+                        border: "none",
+                        borderRadius: "6px",
+                        fontWeight: 600,
+                        cursor: "pointer"
+                      }}
+                      onClick={() => {
+                        setDeliveryDrivers(deliveryDrivers.map(d =>
+                          d.id === driver.id ? { ...d, active: !d.active } : d
+                        ));
+                      }}
+                    >
+                      {driver.active ? "Desactivar" : "Activar"}
+                    </button>
+                    
+                    <button
+                      style={{
+                        padding: "0.5rem 1rem",
+                        background: "#dbeafe",
+                        color: "#1e40af",
+                        border: "none",
+                        borderRadius: "6px",
+                        fontWeight: 600,
+                        cursor: "pointer"
+                      }}
+                      onClick={() => {
+                        const name = prompt("Nuevo nombre:", driver.name);
+                        if (!name) return;
+                        const phone = prompt("Nuevo teléfono:", driver.phone);
+                        if (!phone) return;
+                        setDeliveryDrivers(deliveryDrivers.map(d =>
+                          d.id === driver.id ? { ...d, name, phone } : d
+                        ));
+                      }}
+                    >
+                      Editar
+                    </button>
+                  </div>
+                </div>
+              ))}
+              
+              {deliveryDrivers.length === 0 && (
+                <div style={{ textAlign: "center", padding: "3rem", color: "#94a3b8" }}>
+                  <Bike size={64} style={{ margin: "0 auto 1rem", opacity: 0.3 }} />
+                  <p>No hay repartidores registrados</p>
+                  <p style={{ fontSize: "0.9rem", marginTop: "0.5rem" }}>
+                    Haz click en "Agregar Repartidor" para comenzar
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
       case "inventory":
         return (
           <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>
@@ -907,7 +1076,48 @@ export default function Home() {
               </button>
             </div>
             
+            {/* Campos de Delivery */}
+            {orderType === "delivery" && (
+              <div className="pos-delivery-section">
+                <div className="pos-input-group">
+                  <label className="pos-input-label">Costo Delivery</label>
+                  <input
+                    type="number"
+                    className="pos-input"
+                    placeholder="0"
+                    value={deliveryCost || ""}
+                    onChange={(e) => setDeliveryCost(Number(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="pos-input-group">
+                  <label className="pos-input-label">Repartidor</label>
+                  <select
+                    className="pos-input"
+                    value={selectedDriverId || ""}
+                    onChange={(e) => setSelectedDriverId(Number(e.target.value) || null)}
+                  >
+                    <option value="">Seleccionar repartidor...</option>
+                    {deliveryDrivers.filter(d => d.active).map(driver => (
+                      <option key={driver.id} value={driver.id}>
+                        {driver.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+            
             <div className="pos-total-section">
+              <div className="pos-total-row">
+                <span className="pos-total-label">Subtotal:</span>
+                <span className="pos-total-value">Gs. {formatCurrency(subtotal)}</span>
+              </div>
+              {orderType === "delivery" && deliveryCost > 0 && (
+                <div className="pos-total-row">
+                  <span className="pos-total-label">Delivery:</span>
+                  <span className="pos-total-value">Gs. {formatCurrency(deliveryCost)}</span>
+                </div>
+              )}
               <div className="pos-total-row pos-total-final">
                 <span className="pos-total-label">Total:</span>
                 <span className="pos-total-value">Gs. {formatCurrency(total)}</span>
@@ -1056,6 +1266,11 @@ export default function Home() {
                 <div className="pos-order-item-customer">
                   {order.customer.name || "CLIENTE GENERAL"}
                 </div>
+                {order.orderType === "delivery" && order.deliveryDriverName && (
+                  <div className="pos-order-item-delivery">
+                    🚴 {order.deliveryDriverName}
+                  </div>
+                )}
                 {order.status === "completed" && order.payments.length > 0 && (
                   <div className="pos-order-item-payment">
                     💳 {order.payments.map(p => p.method).join(", ")}
@@ -1120,6 +1335,10 @@ export default function Home() {
             <a href="#" className={`pos-nav-item ${currentView === "products" ? "active" : ""}`} onClick={() => setCurrentView("products")}>
               <Package className="pos-nav-icon" />
               <span>Productos y Servicios</span>
+            </a>
+            <a href="#" className={`pos-nav-item ${currentView === "drivers" ? "active" : ""}`} onClick={() => setCurrentView("drivers")}>
+              <Bike className="pos-nav-icon" />
+              <span>Repartidores</span>
             </a>
             <a href="#" className={`pos-nav-item ${currentView === "inventory" ? "active" : ""}`} onClick={() => setCurrentView("inventory")}>
               <Warehouse className="pos-nav-icon" />

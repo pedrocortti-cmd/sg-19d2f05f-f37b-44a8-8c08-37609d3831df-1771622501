@@ -17,6 +17,13 @@ export interface Category {
   order: number;
 }
 
+export interface DeliveryDriver {
+  id: number;
+  name: string;
+  phone: string;
+  active: boolean;
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;
@@ -51,6 +58,9 @@ export interface Sale {
   items: CartItem[];
   subtotal: number;
   discount: number;
+  deliveryCost: number;
+  deliveryDriverId?: number;
+  deliveryDriverName?: string;
   total: number;
   orderType: OrderType;
   payments: Payment[];
