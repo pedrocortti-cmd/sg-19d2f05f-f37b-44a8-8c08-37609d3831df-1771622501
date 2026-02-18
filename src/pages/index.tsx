@@ -40,6 +40,7 @@ export default function Home() {
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [tempItemNote, setTempItemNote] = useState<string>("");
   const [currentOrderId, setCurrentOrderId] = useState<number | null>(null);
+  const [currentPayments, setCurrentPayments] = useState<Payment[]>([]);
   
   // Estado del cliente
   const [customer, setCustomer] = useState<CustomerInfo>({
