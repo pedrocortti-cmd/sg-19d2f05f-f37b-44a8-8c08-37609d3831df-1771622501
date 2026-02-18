@@ -8,7 +8,7 @@ interface ReportsProps {
   products: ProductType[];
 }
 
-type DateFilter = "today" | "yesterday" | "last7days" | "last30days" | "thisMonth" | "lastMonth" | "custom";
+type DateFilter = "today" | "yesterday" | "last7days" | "last30days" | "thisMonth" | "lastMonth" | "custom" | "all";
 
 interface ReportMetrics {
   totalSales: number;
@@ -76,6 +76,8 @@ export function Reports({ sales, products }: ReportsProps) {
           const from = new Date(customDateFrom);
           const to = new Date(customDateTo);
           return saleDate >= from && saleDate <= to;
+        case "all":
+          return true;
         default:
           return true;
       }
@@ -231,347 +233,198 @@ export function Reports({ sales, products }: ReportsProps) {
       case "thisMonth": return "Este mes";
       case "lastMonth": return "Mes anterior";
       case "custom": return `${customDateFrom} a ${customDateTo}`;
+      case "all": return "Todo el período";
       default: return "";
     }
   };
 
   return (
-    <div style={{ 
-      padding: "2rem",
-      maxWidth: "100%",
-      overflowX: "hidden"
-    }}>
-      {/* Header con título y filtros */}
-      <div style={{ 
-        display: "flex", 
-        justifyContent: "space-between", 
-        alignItems: "center",
-        marginBottom: "2rem",
-        flexWrap: "wrap",
-        gap: "1rem"
-      }}>
-        <h2 style={{ 
-          fontSize: "1.5rem", 
-          fontWeight: "600",
-          margin: 0,
-          color: "var(--foreground)"
-        }}>
-          Informes
-        </h2>
-
+    <div className="reports-container">
+      {/* Encabezado con selector de fecha */}
+      <div className="reports-header">
+        <h2 style={{ margin: 0, fontSize: "1.5rem", fontWeight: "700" }}>Informes</h2>
         <select
+          className="reports-date-selector"
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-          style={{
-            padding: "0.5rem 1rem",
-            borderRadius: "8px",
-            border: "1px solid var(--border)",
-            backgroundColor: "var(--background)",
-            color: "var(--foreground)",
-            fontSize: "0.875rem",
-            cursor: "pointer"
-          }}
         >
           <option value="today">Hoy</option>
-          <option value="yesterday">Ayer</option>
-          <option value="week">Últimos 7 días</option>
-          <option value="month">Últimos 30 días</option>
+          <option value="last7days">Últimos 7 días</option>
+          <option value="thisMonth">Este mes</option>
           <option value="all">Todo el período</option>
         </select>
       </div>
 
-      {/* Tabs */}
-      <div className="report-tabs">
+      {/* Tabs de reportes */}
+      <div className="reports-tabs">
         <button 
-          className={`report-tab ${activeTab === "sales" ? "active" : ""}`}
+          className={`reports-tab ${activeTab === "sales" ? "active" : ""}`}
           onClick={() => setActiveTab("sales")}
         >
-          <FileText size={18} />
-          REPORTE DE VENTAS
+          📊 REPORTE DE VENTAS
         </button>
         <button 
-          className={`report-tab ${activeTab === "expenses" ? "active" : ""}`}
+          className={`reports-tab ${activeTab === "expenses" ? "active" : ""}`}
           onClick={() => setActiveTab("expenses")}
         >
-          <TrendingUp size={18} />
-          REPORTE DE GASTOS
+          📉 REPORTE DE GASTOS
         </button>
       </div>
 
-      {activeTab === "sales" && (
-        <div className="report-content">
-          {/* Tarjetas de métricas principales */}
-          <div style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "1.5rem",
-            marginBottom: "2rem"
-          }}>
-            {/* Tarjeta 1: Ventas Totales */}
-            <div style={{
-              flex: "1 1 calc(33.333% - 1rem)",
-              minWidth: "250px",
-              backgroundColor: "white",
-              padding: "1.5rem",
-              borderRadius: "12px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-            }}>
-              <div style={{
-                fontSize: "0.75rem",
-                fontWeight: "600",
-                color: "#64748b",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                marginBottom: "0.75rem"
-              }}>
-                Ventas Totales
-              </div>
-              <div style={{
-                fontSize: "2rem",
-                fontWeight: "700",
-                color: "#1e293b"
-              }}>
-                Gs. {metrics.totalSales.toLocaleString()}
-              </div>
-            </div>
-
-            {/* Tarjeta 2: Cantidad de Ventas */}
-            <div style={{
-              flex: "1 1 calc(33.333% - 1rem)",
-              minWidth: "250px",
-              backgroundColor: "white",
-              padding: "1.5rem",
-              borderRadius: "12px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-            }}>
-              <div style={{
-                fontSize: "0.75rem",
-                fontWeight: "600",
-                color: "#64748b",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                marginBottom: "0.75rem"
-              }}>
-                Cantidad de Ventas
-              </div>
-              <div style={{
-                fontSize: "2rem",
-                fontWeight: "700",
-                color: "#1e293b"
-              }}>
-                {metrics.salesCount}
-              </div>
-            </div>
-
-            {/* Tarjeta 3: Valor Promedio */}
-            <div style={{
-              flex: "1 1 calc(33.333% - 1rem)",
-              minWidth: "250px",
-              backgroundColor: "white",
-              padding: "1.5rem",
-              borderRadius: "12px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-            }}>
-              <div style={{
-                fontSize: "0.75rem",
-                fontWeight: "600",
-                color: "#64748b",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                marginBottom: "0.75rem"
-              }}>
-                Valor Promedio de Pedido
-              </div>
-              <div style={{
-                fontSize: "2rem",
-                fontWeight: "700",
-                color: "#1e293b"
-              }}>
-                Gs. {metrics.averageOrderValue.toLocaleString()}
-              </div>
-            </div>
-
-            {/* Tarjeta 4: Facturas Pendientes */}
-            <div style={{
-              flex: "1 1 calc(50% - 0.75rem)",
-              minWidth: "250px",
-              backgroundColor: "white",
-              padding: "1.5rem",
-              borderRadius: "12px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-            }}>
-              <div style={{
-                fontSize: "0.75rem",
-                fontWeight: "600",
-                color: "#64748b",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                marginBottom: "0.75rem"
-              }}>
-                Facturas Pendientes de Cobro
-              </div>
-              <div style={{
-                fontSize: "2rem",
-                fontWeight: "700",
-                color: "#1e293b"
-              }}>
-                {metrics.pendingInvoices}
-              </div>
-            </div>
-
-            {/* Tarjeta 5: Monto Total a Cobrar */}
-            <div style={{
-              flex: "1 1 calc(50% - 0.75rem)",
-              minWidth: "250px",
-              backgroundColor: "white",
-              padding: "1.5rem",
-              borderRadius: "12px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-            }}>
-              <div style={{
-                fontSize: "0.75rem",
-                fontWeight: "600",
-                color: "#64748b",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                marginBottom: "0.75rem"
-              }}>
-                Monto Total a Cobrar
-              </div>
-              <div style={{
-                fontSize: "2rem",
-                fontWeight: "700",
-                color: "#1e293b"
-              }}>
-                Gs. {metrics.totalPending.toLocaleString()}
-              </div>
-            </div>
+      {/* Tarjetas de métricas principales */}
+      <div className="reports-metrics-grid">
+        {/* Tarjeta 1: Ventas Totales */}
+        <div className="reports-metric-card">
+          <div className="reports-metric-label">
+            Ventas Totales
           </div>
-
-          {/* Tablas de detalles */}
-          <div className="details-grid">
-            {/* Ventas por cliente */}
-            <div className="detail-table-container">
-              <h3>VENTAS POR CLIENTE</h3>
-              <table className="detail-table">
-                <thead>
-                  <tr>
-                    <th>Cliente</th>
-                    <th>Total Gastado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {salesByClient.length > 0 ? (
-                    salesByClient.slice(0, 5).map((client, index) => (
-                      <tr key={index}>
-                        <td>{client.client}</td>
-                        <td>Gs. {client.totalSpent.toLocaleString()}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={2} style={{ textAlign: "center" }}>
-                        Ningún dato disponible en esta tabla
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-              {salesByClient.length > 5 && (
-                <div className="table-pagination">
-                  <button>Anterior</button>
-                  <span>1</span>
-                  <button>Siguiente</button>
-                </div>
-              )}
-            </div>
-
-            {/* Detalle productos vendidos */}
-            <div className="detail-table-container">
-              <h3>DETALLE PRODUCTOS VENDIDOS</h3>
-              <table className="detail-table">
-                <thead>
-                  <tr>
-                    <th>Producto</th>
-                    <th>Cantidad Vendida</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {productSales.length > 0 ? (
-                    productSales.slice(0, 5).map((product, index) => (
-                      <tr key={index}>
-                        <td>{product.productName}</td>
-                        <td>{product.quantitySold}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={2} style={{ textAlign: "center" }}>
-                        Ningún dato disponible en esta tabla
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-              {productSales.length > 5 && (
-                <div className="table-pagination">
-                  <button>Anterior</button>
-                  <span>1</span>
-                  <button>Siguiente</button>
-                </div>
-              )}
-            </div>
-
-            {/* Monto a cobrar por cliente */}
-            <div className="detail-table-container">
-              <h3>MONTO A COBRAR POR CLIENTE</h3>
-              <table className="detail-table">
-                <thead>
-                  <tr>
-                    <th>Cliente</th>
-                    <th>Monto Adeudado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingByClient.length > 0 ? (
-                    pendingByClient.slice(0, 5).map((client, index) => (
-                      <tr key={index}>
-                        <td>{client.client}</td>
-                        <td>Gs. {client.pendingAmount.toLocaleString()}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={2} style={{ textAlign: "center" }}>
-                        Ningún dato disponible en esta tabla
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-              {pendingByClient.length > 5 && (
-                <div className="table-pagination">
-                  <button>Anterior</button>
-                  <span>1</span>
-                  <button>Siguiente</button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Botón de descarga */}
-          <div className="download-section">
-            <Button 
-              onClick={exportToExcel}
-              className="download-button"
-              size="lg"
-            >
-              <Download size={20} />
-              Descargar Ventas en Excel
-            </Button>
+          <div className="reports-metric-value">
+            Gs. {metrics.totalSales.toLocaleString()}
           </div>
         </div>
-      )}
+
+        {/* Tarjeta 2: Cantidad de Ventas */}
+        <div className="reports-metric-card">
+          <div className="reports-metric-label">
+            Cantidad de Ventas
+          </div>
+          <div className="reports-metric-value">
+            {metrics.salesCount}
+          </div>
+        </div>
+
+        {/* Tarjeta 3: Valor Promedio */}
+        <div className="reports-metric-card">
+          <div className="reports-metric-label">
+            Valor Promedio de Pedido
+          </div>
+          <div className="reports-metric-value">
+            Gs. {metrics.averageOrderValue.toLocaleString()}
+          </div>
+        </div>
+
+        {/* Tarjeta 4: Facturas Pendientes */}
+        <div className="reports-metric-card">
+          <div className="reports-metric-label">
+            Facturas Pendientes de Cobro
+          </div>
+          <div className="reports-metric-value">
+            {metrics.pendingInvoices}
+          </div>
+        </div>
+
+        {/* Tarjeta 5: Monto Total a Cobrar */}
+        <div className="reports-metric-card">
+          <div className="reports-metric-label">
+            Monto Total a Cobrar
+          </div>
+          <div className="reports-metric-value">
+            Gs. {metrics.totalPending.toLocaleString()}
+          </div>
+        </div>
+      </div>
+
+      {/* Tablas detalladas */}
+      
+      {/* Tabla 1: Ventas por Cliente */}
+      <div className="reports-table-container">
+        <h3 className="reports-table-title">Ventas por Cliente</h3>
+        <table className="reports-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Total Compras</th>
+              <th>Cantidad Pedidos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {salesByClient.length === 0 ? (
+              <tr>
+                <td colSpan={3} style={{ textAlign: "center", padding: "2rem", color: "#999" }}>
+                  No hay datos disponibles
+                </td>
+              </tr>
+            ) : (
+              salesByClient.map((client, idx) => (
+                <tr key={idx}>
+                  <td>{client.client}</td>
+                  <td>Gs. {client.totalSpent.toLocaleString()}</td>
+                  <td>{client.ordersCount}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Tabla 2: Detalle de Productos Vendidos */}
+      <div className="reports-table-container">
+        <h3 className="reports-table-title">Detalle Productos Vendidos</h3>
+        <table className="reports-table">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Cantidad</th>
+              <th>Total Ingresos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {productSales.length === 0 ? (
+              <tr>
+                <td colSpan={3} style={{ textAlign: "center", padding: "2rem", color: "#999" }}>
+                  No hay productos vendidos
+                </td>
+              </tr>
+            ) : (
+              productSales.map((product, idx) => (
+                <tr key={idx}>
+                  <td>{product.productName}</td>
+                  <td>{product.quantitySold}</td>
+                  <td>Gs. {product.totalRevenue.toLocaleString()}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Tabla 3: Monto a Cobrar por Cliente */}
+      <div className="reports-table-container">
+        <h3 className="reports-table-title">Monto a Cobrar por Cliente</h3>
+        <table className="reports-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Monto Pendiente</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingByClient.length === 0 ? (
+              <tr>
+                <td colSpan={3} style={{ textAlign: "center", padding: "2rem", color: "#999" }}>
+                  No hay pagos pendientes
+                </td>
+              </tr>
+            ) : (
+              pendingByClient.map((payment, idx) => (
+                <tr key={idx}>
+                  <td>{payment.client}</td>
+                  <td>Gs. {payment.pendingAmount.toLocaleString()}</td>
+                  <td>Pendiente</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Botón de descarga */}
+      <div style={{ marginTop: "2rem", textAlign: "center" }}>
+        <button className="reports-download-btn" onClick={exportToExcel}>
+          📥 Descargar Ventas en Excel
+        </button>
+      </div>
 
       {activeTab === "expenses" && (
         <div className="report-content">
