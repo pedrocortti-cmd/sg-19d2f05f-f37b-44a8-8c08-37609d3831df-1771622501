@@ -354,6 +354,8 @@ export default function Home() {
             display: flex;
             justify-content: space-between;
             margin-bottom: 3px;
+            padding-top: 5px;
+            border-top: 1px dashed #000;
           }
           
           .item .cant {
