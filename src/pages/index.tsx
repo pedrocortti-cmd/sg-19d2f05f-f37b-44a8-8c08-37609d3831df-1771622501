@@ -1299,11 +1299,10 @@ export default function Home() {
         );
       case "reports":
         return (
-          <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>
-            <TrendingUp size={64} style={{ margin: "0 auto 1rem", opacity: 0.3 }} />
-            <h2>Módulo de Informes</h2>
-            <p>Próximamente disponible</p>
-          </div>
+          <Reports 
+            sales={sales}
+            products={products}
+          />
         );
       case "informes":
         return (
