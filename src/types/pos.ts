@@ -33,7 +33,15 @@ export interface CustomerInfo {
 
 export type OrderType = "delivery" | "pickup" | "local";
 
-export type PaymentMethod = "cash" | "qr" | "card" | "transfer";
+export type PaymentMethod = "cash" | "qr" | "card" | "transfer" | "other";
+
+export interface Payment {
+  id: number;
+  method: PaymentMethod;
+  amount: number;
+  reference?: string;
+  timestamp: Date;
+}
 
 export interface Sale {
   id: number;
@@ -44,13 +52,21 @@ export interface Sale {
   discount: number;
   total: number;
   orderType: OrderType;
-  paymentMethod: PaymentMethod;
+  payments: Payment[];
+  paidAmount: number;
+  remainingAmount: number;
   customer: CustomerInfo;
   note: string;
-  status: "pending" | "completed" | "cancelled";
+  status: "pending" | "partial" | "completed" | "cancelled";
   createdBy?: string;
   cancelledBy?: string;
   cancelReason?: string;
+  modificationHistory?: {
+    timestamp: Date;
+    itemsAdded: CartItem[];
+    previousTotal: number;
+    newTotal: number;
+  }[];
 }
 
 export type UserRole = "admin" | "cashier" | "kitchen";
