@@ -302,144 +302,146 @@ export function Reports({ sales, products }: ReportsProps) {
         <div className="report-content">
           {/* Tarjetas de métricas principales */}
           <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            display: "flex",
+            flexWrap: "wrap",
             gap: "1.5rem",
             marginBottom: "2rem"
           }}>
-            {/* Ventas Totales */}
+            {/* Tarjeta 1: Ventas Totales */}
             <div style={{
-              backgroundColor: "var(--card)",
+              flex: "1 1 calc(33.333% - 1rem)",
+              minWidth: "250px",
+              backgroundColor: "white",
               padding: "1.5rem",
               borderRadius: "12px",
-              border: "1px solid var(--border)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
             }}>
-              <div style={{ 
-                fontSize: "0.875rem", 
-                color: "var(--muted-foreground)",
-                marginBottom: "0.75rem",
-                fontWeight: "500",
+              <div style={{
+                fontSize: "0.75rem",
+                fontWeight: "600",
+                color: "#64748b",
                 textTransform: "uppercase",
-                letterSpacing: "0.5px"
+                letterSpacing: "0.05em",
+                marginBottom: "0.75rem"
               }}>
                 Ventas Totales
               </div>
-              <div style={{ 
-                fontSize: "2rem", 
+              <div style={{
+                fontSize: "2rem",
                 fontWeight: "700",
-                color: "var(--foreground)"
+                color: "#1e293b"
               }}>
                 Gs. {metrics.totalSales.toLocaleString()}
               </div>
             </div>
 
-            {/* Cantidad de Ventas */}
+            {/* Tarjeta 2: Cantidad de Ventas */}
             <div style={{
-              backgroundColor: "var(--card)",
+              flex: "1 1 calc(33.333% - 1rem)",
+              minWidth: "250px",
+              backgroundColor: "white",
               padding: "1.5rem",
               borderRadius: "12px",
-              border: "1px solid var(--border)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
             }}>
-              <div style={{ 
-                fontSize: "0.875rem", 
-                color: "var(--muted-foreground)",
-                marginBottom: "0.75rem",
-                fontWeight: "500",
+              <div style={{
+                fontSize: "0.75rem",
+                fontWeight: "600",
+                color: "#64748b",
                 textTransform: "uppercase",
-                letterSpacing: "0.5px"
+                letterSpacing: "0.05em",
+                marginBottom: "0.75rem"
               }}>
                 Cantidad de Ventas
               </div>
-              <div style={{ 
-                fontSize: "2rem", 
+              <div style={{
+                fontSize: "2rem",
                 fontWeight: "700",
-                color: "var(--foreground)"
+                color: "#1e293b"
               }}>
                 {metrics.salesCount}
               </div>
             </div>
 
-            {/* Valor Promedio de Pedido */}
+            {/* Tarjeta 3: Valor Promedio */}
             <div style={{
-              backgroundColor: "var(--card)",
+              flex: "1 1 calc(33.333% - 1rem)",
+              minWidth: "250px",
+              backgroundColor: "white",
               padding: "1.5rem",
               borderRadius: "12px",
-              border: "1px solid var(--border)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
             }}>
-              <div style={{ 
-                fontSize: "0.875rem", 
-                color: "var(--muted-foreground)",
-                marginBottom: "0.75rem",
-                fontWeight: "500",
+              <div style={{
+                fontSize: "0.75rem",
+                fontWeight: "600",
+                color: "#64748b",
                 textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis"
+                letterSpacing: "0.05em",
+                marginBottom: "0.75rem"
               }}>
                 Valor Promedio de Pedido
               </div>
-              <div style={{ 
-                fontSize: "2rem", 
+              <div style={{
+                fontSize: "2rem",
                 fontWeight: "700",
-                color: "var(--foreground)"
+                color: "#1e293b"
               }}>
                 Gs. {metrics.averageOrderValue.toLocaleString()}
               </div>
             </div>
 
-            {/* Facturas Pendientes */}
+            {/* Tarjeta 4: Facturas Pendientes */}
             <div style={{
-              backgroundColor: "var(--card)",
+              flex: "1 1 calc(50% - 0.75rem)",
+              minWidth: "250px",
+              backgroundColor: "white",
               padding: "1.5rem",
               borderRadius: "12px",
-              border: "1px solid var(--border)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
             }}>
-              <div style={{ 
-                fontSize: "0.875rem", 
-                color: "var(--muted-foreground)",
-                marginBottom: "0.75rem",
-                fontWeight: "500",
+              <div style={{
+                fontSize: "0.75rem",
+                fontWeight: "600",
+                color: "#64748b",
                 textTransform: "uppercase",
-                letterSpacing: "0.5px"
+                letterSpacing: "0.05em",
+                marginBottom: "0.75rem"
               }}>
                 Facturas Pendientes de Cobro
               </div>
-              <div style={{ 
-                fontSize: "2rem", 
+              <div style={{
+                fontSize: "2rem",
                 fontWeight: "700",
-                color: "#f59e0b"
+                color: "#1e293b"
               }}>
                 {metrics.pendingInvoices}
               </div>
             </div>
 
-            {/* Monto Total a Cobrar */}
+            {/* Tarjeta 5: Monto Total a Cobrar */}
             <div style={{
-              backgroundColor: "var(--card)",
+              flex: "1 1 calc(50% - 0.75rem)",
+              minWidth: "250px",
+              backgroundColor: "white",
               padding: "1.5rem",
               borderRadius: "12px",
-              border: "1px solid var(--border)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
             }}>
-              <div style={{ 
-                fontSize: "0.875rem", 
-                color: "var(--muted-foreground)",
-                marginBottom: "0.75rem",
-                fontWeight: "500",
+              <div style={{
+                fontSize: "0.75rem",
+                fontWeight: "600",
+                color: "#64748b",
                 textTransform: "uppercase",
-                letterSpacing: "0.5px"
+                letterSpacing: "0.05em",
+                marginBottom: "0.75rem"
               }}>
                 Monto Total a Cobrar
               </div>
-              <div style={{ 
-                fontSize: "2rem", 
+              <div style={{
+                fontSize: "2rem",
                 fontWeight: "700",
-                color: "#ef4444"
+                color: "#1e293b"
               }}>
                 Gs. {metrics.totalPending.toLocaleString()}
               </div>
