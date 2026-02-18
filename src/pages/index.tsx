@@ -12,6 +12,17 @@ const formatCurrency = (amount: number): string => {
   return amount.toLocaleString("es-PY");
 };
 
+// Helper function to format date without hydration issues
+const formatDateTime = (date: Date): string => {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
 export default function Home() {
   // Estado del sistema
   const [currentView, setCurrentView] = useState<"pos" | "sales" | "products" | "inventory" | "expenses" | "reports" | "settings" | "drivers">("pos");
@@ -469,7 +480,7 @@ export default function Home() {
         ` : ''}
         
         <div class="footer">
-          ${new Date().toLocaleString('es-PY')}
+          ${formatDateTime(new Date())}
         </div>
       </body>
       </html>
@@ -709,7 +720,7 @@ export default function Home() {
         ` : ''}
         
         <div class="footer">
-          📅 ${new Date().toLocaleString('es-PY')}
+          📅 ${formatDateTime(new Date())}
         </div>
       </body>
       </html>
@@ -1396,17 +1407,17 @@ export default function Home() {
             <div className="pos-total-section">
               <div className="pos-total-row">
                 <span className="pos-total-label">Subtotal:</span>
-                <span className="pos-total-value">Gs. ${formatCurrency(subtotal)}</span>
+                <span className="pos-total-value">Gs. {formatCurrency(subtotal)}</span>
               </div>
               {orderType === "delivery" && deliveryCost > 0 && (
                 <div className="pos-total-row">
                   <span className="pos-total-label">Delivery:</span>
-                  <span className="pos-total-value">Gs. ${formatCurrency(deliveryCost)}</span>
+                  <span className="pos-total-value">Gs. {formatCurrency(deliveryCost)}</span>
                 </div>
               )}
               <div className="pos-total-row pos-total-final">
                 <span className="pos-total-label">Total:</span>
-                <span className="pos-total-value">Gs. ${formatCurrency(total)}</span>
+                <span className="pos-total-value">Gs. {formatCurrency(total)}</span>
               </div>
             </div>
             
@@ -1576,13 +1587,7 @@ export default function Home() {
                   </div>
                 )}
                 <div className="pos-order-item-date">
-                  {new Date(order.date).toLocaleString("es-PY", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit"
-                  })}
+                  {formatDateTime(new Date(order.date))}
                 </div>
               </div>
             ))
@@ -1599,6 +1604,105 @@ export default function Home() {
           onCancel={() => setShowPaymentModal(false)}
         />
       )}
+    </>
+  );
+
+  return (
+    <>
+      <Head>
+        <title>De la Gran Burger - POS</title>
+      </Head>
+
+      <div className="pos-container">
+        {/* Sidebar */}
+        <div className="pos-sidebar">
+          <div className="pos-sidebar-header">
+            <h1 className="pos-sidebar-title">De la Gran Burger</h1>
+          </div>
+
+          <nav className="pos-sidebar-nav">
+            <button
+              className={`pos-sidebar-item ${currentView === "pos" ? "active" : ""}`}
+              onClick={() => setCurrentView("pos")}
+            >
+              <ShoppingCart size={20} />
+              <span>Punto de Venta</span>
+            </button>
+
+            <button
+              className={`pos-sidebar-item ${currentView === "sales" ? "active" : ""}`}
+              onClick={() => setCurrentView("sales")}
+            >
+              <FileText size={20} />
+              <span>Ventas</span>
+            </button>
+
+            <button
+              className={`pos-sidebar-item ${currentView === "products" ? "active" : ""}`}
+              onClick={() => setCurrentView("products")}
+            >
+              <Package size={20} />
+              <span>Productos y Servicios</span>
+            </button>
+
+            <button
+              className={`pos-sidebar-item ${currentView === "inventory" ? "active" : ""}`}
+              onClick={() => setCurrentView("inventory")}
+            >
+              <Warehouse size={20} />
+              <span>Inventario</span>
+            </button>
+
+            <button
+              className={`pos-sidebar-item ${currentView === "drivers" ? "active" : ""}`}
+              onClick={() => setCurrentView("drivers")}
+            >
+              <Bike size={20} />
+              <span>Repartidores</span>
+            </button>
+
+            <button
+              className={`pos-sidebar-item ${currentView === "expenses" ? "active" : ""}`}
+              onClick={() => setCurrentView("expenses")}
+            >
+              <TrendingUp size={20} />
+              <span>Gastos</span>
+            </button>
+
+            <button
+              className={`pos-sidebar-item ${currentView === "reports" ? "active" : ""}`}
+              onClick={() => setCurrentView("reports")}
+            >
+              <TrendingUp size={20} />
+              <span>Informes</span>
+            </button>
+
+            <button
+              className={`pos-sidebar-item ${currentView === "settings" ? "active" : ""}`}
+              onClick={() => setCurrentView("settings")}
+            >
+              <Settings size={20} />
+              <span>Ajustes</span>
+            </button>
+          </nav>
+
+          <div className="pos-sidebar-footer">
+            <button className="pos-sidebar-item">
+              <HelpCircle size={20} />
+              <span>Soporte</span>
+            </button>
+            <button className="pos-sidebar-item">
+              <LogOut size={20} />
+              <span>Cerrar sesión</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="pos-main">
+          {renderContent()}
+        </div>
+      </div>
     </>
   );
 }
