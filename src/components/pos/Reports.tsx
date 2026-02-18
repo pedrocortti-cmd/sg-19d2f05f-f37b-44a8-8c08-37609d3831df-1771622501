@@ -261,7 +261,7 @@ export function Reports({ sales, products }: ReportsProps) {
 
         <select
           value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
+          onChange={(e) => setDateFilter(e.target.value as DateFilter)}
           style={{
             padding: "0.5rem 1rem",
             borderRadius: "8px",
@@ -441,7 +441,7 @@ export function Reports({ sales, products }: ReportsProps) {
                 fontWeight: "700",
                 color: "#ef4444"
               }}>
-                Gs. {metrics.totalToCobrar.toLocaleString()}
+                Gs. {metrics.totalPending.toLocaleString()}
               </div>
             </div>
           </div>
