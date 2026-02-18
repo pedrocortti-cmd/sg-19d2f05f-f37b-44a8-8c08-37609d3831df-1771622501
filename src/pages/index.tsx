@@ -6,7 +6,6 @@ import { SalesHistory } from "@/components/pos/SalesHistory";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
 import { PaymentModal } from "@/components/pos/PaymentModal";
 import type { Product as ProductType, Category, Sale, CartItem as CartItemType, CustomerInfo, OrderType, Payment, DeliveryDriver } from "@/types/pos";
-import "@/styles/pos.css";
 
 // Helper function for consistent number formatting
 const formatCurrency = (amount: number): string => {
@@ -1408,17 +1407,17 @@ export default function Home() {
             <div className="pos-total-section">
               <div className="pos-total-row">
                 <span className="pos-total-label">Subtotal:</span>
-                <span className="pos-total-value">Gs. {formatCurrency(subtotal)}</span>
+                <span className="pos-total-value">Gs. ${formatCurrency(subtotal)}</span>
               </div>
               {orderType === "delivery" && deliveryCost > 0 && (
                 <div className="pos-total-row">
                   <span className="pos-total-label">Delivery:</span>
-                  <span className="pos-total-value">Gs. {formatCurrency(deliveryCost)}</span>
+                  <span className="pos-total-value">Gs. ${formatCurrency(deliveryCost)}</span>
                 </div>
               )}
               <div className="pos-total-row pos-total-final">
                 <span className="pos-total-label">Total:</span>
-                <span className="pos-total-value">Gs. {formatCurrency(total)}</span>
+                <span className="pos-total-value">Gs. ${formatCurrency(total)}</span>
               </div>
             </div>
             
