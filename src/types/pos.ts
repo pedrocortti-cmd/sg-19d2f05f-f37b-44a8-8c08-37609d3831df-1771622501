@@ -14,7 +14,7 @@ export interface Category {
   id: number;
   name: string;
   active: boolean;
-  order?: number;
+  order: number;
 }
 
 export interface CartItem {

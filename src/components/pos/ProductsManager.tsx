@@ -1,20 +1,6 @@
 import { useState } from "react";
 import { Package, Plus, Edit2, Trash2, Save, X, ArrowUp, ArrowDown } from "lucide-react";
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  category: string;
-  active: boolean;
-}
-
-interface Category {
-  id: number;
-  name: string;
-  active: boolean;
-  order: number;
-}
+import type { Product, Category } from "@/types/pos";
 
 interface Props {
   products: Product[];
