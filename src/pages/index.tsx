@@ -1306,13 +1306,6 @@ export default function Home() {
             products={products}
           />
         );
-      case "informes":
-        return (
-          <Reports 
-            sales={sales}
-            products={products}
-          />
-        );
       case "settings":
         return (
           <div className="settings-container">
