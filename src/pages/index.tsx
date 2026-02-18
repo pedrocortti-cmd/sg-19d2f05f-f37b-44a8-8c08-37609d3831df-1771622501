@@ -5,7 +5,7 @@ import { ProductsManager } from "@/components/pos/ProductsManager";
 import { SalesHistory } from "@/components/pos/SalesHistory";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
 import { PaymentModal } from "@/components/pos/PaymentModal";
-import type { Product as ProductType, Category, Sale, CartItem as CartItemType, CustomerInfo, OrderType, Payment, DeliveryDriver } from "@/types/pos";
+import type { Product as ProductType, Category, Sale, CartItem as CartItemType, CustomerInfo, OrderType, Payment, DeliveryDriver, SaleItem } from "@/types/pos";
 
 // Helper function for consistent number formatting
 const formatCurrency = (amount: number): string => {
@@ -58,19 +58,19 @@ export default function Home() {
   
   // Estado de gestión de productos y categorías
   const [products, setProducts] = useState<ProductType[]>([
-    { id: 1, name: "Carnívora", price: 22000, category: "Hamburguesas", active: true },
-    { id: 2, name: "Chesse", price: 12000, category: "Hamburguesas", active: true },
-    { id: 3, name: "Chilli", price: 17000, category: "Hamburguesas", active: true },
-    { id: 4, name: "Chilli Doble", price: 22000, category: "Hamburguesas", active: true },
-    { id: 5, name: "Chilli Triple", price: 27000, category: "Hamburguesas", active: true },
-    { id: 6, name: "Clasica", price: 15000, category: "Hamburguesas", active: true },
-    { id: 7, name: "Doble", price: 20000, category: "Hamburguesas", active: true },
-    { id: 8, name: "Doble Chesse", price: 18000, category: "Hamburguesas", active: true },
-    { id: 9, name: "Triple", price: 25000, category: "Hamburguesas", active: true },
-    { id: 10, name: "Papas Fritas", price: 8000, category: "Acompañamientos", active: true },
-    { id: 11, name: "Nuggets", price: 10000, category: "Acompañamientos", active: true },
-    { id: 12, name: "Coca Cola", price: 5000, category: "Bebidas", active: true },
-    { id: 13, name: "Agua", price: 3000, category: "Bebidas", active: true },
+    { id: 1, name: "Carnívora", price: 22000, categoryId: 1, category: "Hamburguesas", active: true },
+    { id: 2, name: "Chesse", price: 12000, categoryId: 1, category: "Hamburguesas", active: true },
+    { id: 3, name: "Chilli", price: 17000, categoryId: 1, category: "Hamburguesas", active: true },
+    { id: 4, name: "Chilli Doble", price: 22000, categoryId: 1, category: "Hamburguesas", active: true },
+    { id: 5, name: "Chilli Triple", price: 27000, categoryId: 1, category: "Hamburguesas", active: true },
+    { id: 6, name: "Clasica", price: 15000, categoryId: 1, category: "Hamburguesas", active: true },
+    { id: 7, name: "Doble", price: 20000, categoryId: 1, category: "Hamburguesas", active: true },
+    { id: 8, name: "Doble Chesse", price: 18000, categoryId: 1, category: "Hamburguesas", active: true },
+    { id: 9, name: "Triple", price: 25000, categoryId: 1, category: "Hamburguesas", active: true },
+    { id: 10, name: "Papas Fritas", price: 8000, categoryId: 2, category: "Acompañamientos", active: true },
+    { id: 11, name: "Nuggets", price: 10000, categoryId: 2, category: "Acompañamientos", active: true },
+    { id: 12, name: "Coca Cola", price: 5000, categoryId: 3, category: "Bebidas", active: true },
+    { id: 13, name: "Agua", price: 3000, categoryId: 3, category: "Bebidas", active: true },
   ]);
   
   const [categories, setCategories] = useState<Category[]>([
@@ -87,7 +87,7 @@ export default function Home() {
   
   const [sales, setSales] = useState<Sale[]>([]);
   
-  const categoryNames = ["Todos", ...categories.filter(c => c.active).sort((a, b) => a.order - b.order).map(c => c.name)];
+  const categoryNames = ["Todos", ...categories.filter(c => c.active).sort((a, b) => (a.order || 0) - (b.order || 0)).map(c => c.name)];
   
   // Pedidos pendientes (estado "pending")
   const pendingOrders = useMemo(() => {
@@ -110,9 +110,9 @@ export default function Home() {
     
     const searchLower = orderSearchTerm.toLowerCase();
     return currentTabOrders.filter(order => 
-      order.orderNumber.toLowerCase().includes(searchLower) ||
-      order.customer.name.toLowerCase().includes(searchLower) ||
-      order.customer.phone.toLowerCase().includes(searchLower)
+      order.saleNumber.toLowerCase().includes(searchLower) ||
+      (order.customer?.name || "").toLowerCase().includes(searchLower) ||
+      (order.customer?.phone || "").toLowerCase().includes(searchLower)
     );
   }, [currentTabOrders, orderSearchTerm]);
   
@@ -120,10 +120,10 @@ export default function Home() {
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === "Todos" || product.category === selectedCategory;
+      const matchesCategory = selectedCategory === "Todos" || product.categoryId === categories.find(c => c.name === selectedCategory)?.id;
       return matchesSearch && matchesCategory && product.active;
     });
-  }, [searchTerm, selectedCategory, products]);
+  }, [searchTerm, selectedCategory, products, categories]);
   
   // Funciones del carrito
   const addToCart = (product: ProductType) => {
@@ -196,6 +196,40 @@ export default function Home() {
     });
   };
 
+  // Helper to convert CartItems to SaleItems
+  const cartToSaleItems = (cartItems: CartItemType[]): SaleItem[] => {
+    return cartItems.map(item => ({
+      productId: item.product.id,
+      productName: item.product.name,
+      quantity: item.quantity,
+      price: item.product.price
+    }));
+  };
+
+  // Helper to convert SaleItems back to CartItems (needs products list)
+  const saleItemsToCartItems = (saleItems: SaleItem[]): CartItemType[] => {
+    return saleItems.map(item => {
+      const product = products.find(p => p.id === item.productId);
+      if (!product) {
+        // Fallback if product was deleted
+        return {
+          product: {
+            id: item.productId,
+            name: item.productName,
+            price: item.price,
+            categoryId: 0,
+            active: false
+          },
+          quantity: item.quantity
+        };
+      }
+      return {
+        product,
+        quantity: item.quantity
+      };
+    });
+  };
+
   // Función para imprimir pedido (window.print)
   const handlePrintOrder = () => {
     if (cart.length === 0) {
@@ -204,7 +238,7 @@ export default function Home() {
     }
 
     const orderNumber = currentOrderId ? 
-      sales.find(s => s.id === currentOrderId)?.orderNumber || `${Date.now().toString().slice(-6)}` :
+      sales.find(s => s.id === currentOrderId)?.saleNumber || `${Date.now().toString().slice(-6)}` :
       `${Date.now().toString().slice(-6)}`;
       
     const printWindow = window.open('', '', 'width=300,height=600');
@@ -504,7 +538,7 @@ export default function Home() {
     }
 
     const orderNumber = currentOrderId ? 
-      sales.find(s => s.id === currentOrderId)?.orderNumber || `${Date.now().toString().slice(-6)}` :
+      sales.find(s => s.id === currentOrderId)?.saleNumber || `${Date.now().toString().slice(-6)}` :
       `${Date.now().toString().slice(-6)}`;
       
     const printWindow = window.open('', '', 'width=300,height=600');
@@ -763,47 +797,46 @@ export default function Home() {
         
         const newSale: Sale = {
           id: sales.length + 1,
-          orderNumber,
+          saleNumber: orderNumber,
           date: saleDate,
-          items: [...cart],
+          items: cartToSaleItems(cart),
           subtotal,
           discount: 0,
           deliveryCost: orderType === "delivery" ? deliveryCost : 0,
           deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
           deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
           total,
-          orderType,
+          type: orderType,
+          paymentMethod: "pending",
           payments: [],
-          paidAmount: 0,
-          remainingAmount: total,
           customer: { ...customer },
-          note: note,
           status: "pending"
         };
         
         setSales([newSale, ...sales]);
-        alert(`¡Nuevo pedido creado!\nNº ${orderNumber}\n(El pedido original #${existingOrder.orderNumber} permanece completado)\n\nTotal: Gs. ${formatCurrency(total)}\nEstado: Pendiente de Pago`);
+        alert(`¡Nuevo pedido creado!\nNº ${orderNumber}\n(El pedido original #${existingOrder.saleNumber} permanece completado)\n\nTotal: Gs. ${formatCurrency(total)}\nEstado: Pendiente de Pago`);
         clearCart();
         return;
       }
       
       // Si el pedido está pendiente o parcial, actualizar el existente
+      const paidAmount = existingOrder.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+      
       const updatedSale: Sale = {
         ...existingOrder,
-        items: [...cart],
+        items: cartToSaleItems(cart),
         subtotal,
         deliveryCost: orderType === "delivery" ? deliveryCost : 0,
         deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
         deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
         total,
-        orderType,
+        type: orderType,
         customer: { ...customer },
-        note: note,
-        remainingAmount: total - existingOrder.paidAmount
+        status: paidAmount > 0 ? "partial" : "pending"
       };
       
       setSales(sales.map(s => s.id === currentOrderId ? updatedSale : s));
-      alert(`¡Pedido actualizado!\nNº ${existingOrder.orderNumber}\nTotal: Gs. ${formatCurrency(total)}\n\nEstado: ${updatedSale.status === "partial" ? "Pago Parcial" : "Pendiente de Pago"}`);
+      alert(`¡Pedido actualizado!\nNº ${existingOrder.saleNumber}\nTotal: Gs. ${formatCurrency(total)}\n\nEstado: ${updatedSale.status === "partial" ? "Pago Parcial" : "Pendiente de Pago"}`);
       clearCart();
       return;
     }
@@ -814,21 +847,19 @@ export default function Home() {
     
     const newSale: Sale = {
       id: sales.length + 1,
-      orderNumber,
+      saleNumber: orderNumber,
       date: saleDate,
-      items: [...cart],
+      items: cartToSaleItems(cart),
       subtotal,
       discount: 0,
       deliveryCost: orderType === "delivery" ? deliveryCost : 0,
       deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
       deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
       total,
-      orderType,
+      type: orderType,
+      paymentMethod: "pending",
       payments: [],
-      paidAmount: 0,
-      remainingAmount: total,
       customer: { ...customer },
-      note: note,
       status: "pending"
     };
     
@@ -841,16 +872,16 @@ export default function Home() {
   // Función para seleccionar pedido del panel lateral
   const handleSelectOrder = (sale: Sale) => {
     // Restaurar carrito
-    setCart(sale.items);
+    setCart(saleItemsToCartItems(sale.items));
     // Restaurar cliente
-    setCustomer(sale.customer);
+    setCustomer(sale.customer || { name: "", phone: "", address: "" });
     // Restaurar tipo de orden
-    setOrderType(sale.orderType);
+    setOrderType(sale.type);
     // Restaurar costo y repartidor de delivery
     setDeliveryCost(sale.deliveryCost || 0);
     setSelectedDriverId(sale.deliveryDriverId || null);
     // Restaurar nota
-    setNote(sale.note);
+    // setNote(sale.note || ""); // Note field removed from interface
     // Guardar ID del pedido actual
     setCurrentOrderId(sale.id);
     
@@ -888,53 +919,51 @@ export default function Home() {
         
         const newSale: Sale = {
           id: sales.length + 1,
-          orderNumber,
+          saleNumber: orderNumber,
           date: saleDate,
-          items: [...cart],
+          items: cartToSaleItems(cart),
           subtotal,
           discount: 0,
           deliveryCost: orderType === "delivery" ? deliveryCost : 0,
           deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
           deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
           total,
-          orderType,
+          type: orderType,
+          paymentMethod: payments[0]?.method || "other",
           payments: payments,
-          paidAmount: paidAmount,
-          remainingAmount: total - paidAmount,
           customer: { ...customer },
-          note: finalNote || note,
           status: paidAmount >= total ? "completed" : "partial"
         };
         
         setSales([newSale, ...sales]);
         await printSale(newSale);
         
-        alert(`¡Nuevo pedido creado y cobrado!\nNº ${orderNumber}\n(El pedido original #${existingOrder.orderNumber} permanece intacto)\n\nTotal: Gs. ${formatCurrency(total)}\nPagado: Gs. ${formatCurrency(paidAmount)}`);
+        alert(`¡Nuevo pedido creado y cobrado!\nNº ${orderNumber}\n(El pedido original #${existingOrder.saleNumber} permanece intacto)\n\nTotal: Gs. ${formatCurrency(total)}\nPagado: Gs. ${formatCurrency(paidAmount)}`);
         clearCart();
         return;
       }
       
       // Actualizar pedido pendiente/parcial
-      const totalPayments = existingOrder.paidAmount + paidAmount;
+      const existingPayments = existingOrder.payments || [];
+      const totalPayments = existingPayments.reduce((sum, p) => sum + p.amount, 0) + paidAmount;
+      
       const updatedSale: Sale = {
         ...existingOrder,
-        items: [...cart],
+        items: cartToSaleItems(cart),
         subtotal,
         deliveryCost: orderType === "delivery" ? deliveryCost : 0,
         deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
         deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
         total,
-        payments: [...existingOrder.payments, ...payments],
-        paidAmount: totalPayments,
-        remainingAmount: total - totalPayments,
-        note: finalNote || note,
+        payments: [...existingPayments, ...payments],
+        paymentMethod: payments[0]?.method || existingOrder.paymentMethod,
         status: totalPayments >= total ? "completed" : "partial"
       };
       
       setSales(sales.map(s => s.id === currentOrderId ? updatedSale : s));
       await printSale(updatedSale);
       
-      alert(`¡Pago registrado!\nPedido #${existingOrder.orderNumber}\nTotal: Gs. ${formatCurrency(total)}\nPagado: Gs. ${formatCurrency(totalPayments)}\n\n${updatedSale.status === "completed" ? "¡Pedido completado!" : `Restante: Gs. ${formatCurrency(updatedSale.remainingAmount)}`}`);
+      alert(`¡Pago registrado!\nPedido #${existingOrder.saleNumber}\nTotal: Gs. ${formatCurrency(total)}\nPagado: Gs. ${formatCurrency(totalPayments)}\n\n${updatedSale.status === "completed" ? "¡Pedido completado!" : `Restante: Gs. ${formatCurrency(total - totalPayments)}`}`);
     } else {
       // Nuevo pedido con pago inmediato
       const orderNumber = `${Date.now().toString().slice(-6)}`;
@@ -942,21 +971,19 @@ export default function Home() {
       
       const newSale: Sale = {
         id: sales.length + 1,
-        orderNumber,
+        saleNumber: orderNumber,
         date: saleDate,
-        items: [...cart],
+        items: cartToSaleItems(cart),
         subtotal,
         discount: 0,
         deliveryCost: orderType === "delivery" ? deliveryCost : 0,
         deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
         deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined,
         total,
-        orderType,
+        type: orderType,
+        paymentMethod: payments[0]?.method || "other",
         payments: payments,
-        paidAmount: paidAmount,
-        remainingAmount: total - paidAmount,
         customer: { ...customer },
-        note: finalNote || note,
         status: paidAmount >= total ? "completed" : "partial"
       };
       
@@ -980,9 +1007,9 @@ export default function Home() {
       const config = JSON.parse(printerConfig);
       
       const printData = {
-        orderNumber: sale.orderNumber,
+        orderNumber: sale.saleNumber,
         date: sale.date,
-        orderType: sale.orderType,
+        orderType: sale.type,
         items: sale.items,
         subtotal: sale.subtotal,
         discountAmount: sale.discount,
@@ -991,7 +1018,7 @@ export default function Home() {
         total: sale.total,
         payments: sale.payments,
         customer: sale.customer,
-        note: sale.note
+        // note: sale.note // Note removed from Sale interface
       };
       
       await fetch("http://localhost:3001/api/print/both", {
@@ -1241,7 +1268,7 @@ export default function Home() {
                 type="text"
                 className="pos-input"
                 placeholder="RUC"
-                value={customer.ruc}
+                value={customer.ruc || ""}
                 onChange={(e) => setCustomer({...customer, ruc: e.target.value})}
               />
             </div>
@@ -1251,7 +1278,7 @@ export default function Home() {
                 type="text"
                 className="pos-input"
                 placeholder="Razón social"
-                value={customer.businessName}
+                value={customer.businessName || ""}
                 onChange={(e) => setCustomer({...customer, businessName: e.target.value})}
               />
             </div>
@@ -1259,7 +1286,7 @@ export default function Home() {
               <input
                 type="checkbox"
                 id="exempt"
-                checked={customer.isExempt}
+                checked={customer.isExempt || false}
                 onChange={(e) => setCustomer({...customer, isExempt: e.target.checked})}
               />
               <label htmlFor="exempt" style={{ fontSize: "0.9rem", fontWeight: 600 }}>Exento</label>
@@ -1273,7 +1300,7 @@ export default function Home() {
             Detalle del Pedido ({cart.length} {cart.length === 1 ? "item" : "items"})
             {currentOrderId && (
               <span style={{ marginLeft: "0.5rem", color: "#f59e0b", fontSize: "0.8rem" }}>
-                (Editando Pedido #{sales.find(s => s.id === currentOrderId)?.orderNumber})
+                (Editando Pedido #{sales.find(s => s.id === currentOrderId)?.saleNumber})
               </span>
             )}
           </div>
@@ -1560,7 +1587,7 @@ export default function Home() {
               >
                 <div className="pos-order-item-header">
                   <div className="pos-order-item-number">
-                    Pedido #{order.orderNumber}
+                    Pedido #{order.saleNumber}
                     {order.status === "completed" && <span className="pos-order-status completed">✓ Pagado</span>}
                     {order.status === "partial" && <span className="pos-order-status partial">⚠ Parcial</span>}
                     {order.status === "pending" && <span className="pos-order-status pending">⏱ Pendiente</span>}
@@ -1569,14 +1596,14 @@ export default function Home() {
                   <div className="pos-order-item-total">Gs. {formatCurrency(order.total)}</div>
                 </div>
                 <div className="pos-order-item-customer">
-                  {order.customer.name || "CLIENTE GENERAL"}
+                  {order.customer?.name || "CLIENTE GENERAL"}
                 </div>
-                {order.orderType === "delivery" && order.deliveryDriverName && (
+                {order.type === "delivery" && order.deliveryDriverName && (
                   <div className="pos-order-item-delivery">
                     🚴 {order.deliveryDriverName}
                   </div>
                 )}
-                {order.status === "completed" && order.payments.length > 0 && (
+                {order.status === "completed" && order.payments && order.payments.length > 0 && (
                   <div className="pos-order-item-payment">
                     💳 {order.payments.map(p => p.method).join(", ")}
                   </div>
@@ -1700,7 +1727,9 @@ export default function Home() {
         </div>
 
         {/* Main Content */}
-        {renderContent()}
+        <div className="pos-main">
+          {renderContent()}
+        </div>
       </div>
     </>
   );

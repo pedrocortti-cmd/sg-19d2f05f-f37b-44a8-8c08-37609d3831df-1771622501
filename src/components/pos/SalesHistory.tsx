@@ -18,76 +18,22 @@ import {
 import { Eye, Calendar, Search } from "lucide-react";
 import type { Sale, SaleItem } from "@/types/pos";
 
-export function SalesHistory() {
-  const [sales, setSales] = useState<Sale[]>([]);
+interface SalesHistoryProps {
+  sales: Sale[];
+  onCancelSale?: (saleId: number, reason: string) => void;
+  onReopenSale?: (sale: Sale) => void;
+}
+
+export function SalesHistory({ sales, onCancelSale, onReopenSale }: SalesHistoryProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
 
-  // Load mock sales data
-  useEffect(() => {
-    const mockSales: Sale[] = [
-      {
-        id: 1,
-        saleNumber: "V-00001",
-        date: "2026-02-18T14:30:00",
-        customerName: "Juan Pérez",
-        customerPhone: "0981234567",
-        type: "delivery",
-        items: [
-          { productId: 1, productName: "Carnívora", quantity: 2, price: 22000 },
-          { productId: 12, productName: "Coca Cola", quantity: 2, price: 5000 },
-        ],
-        subtotal: 54000,
-        discount: 0,
-        total: 54000,
-        paymentMethod: "cash",
-        status: "completed",
-      },
-      {
-        id: 2,
-        saleNumber: "V-00002",
-        date: "2026-02-18T15:15:00",
-        customerName: "María González",
-        type: "pickup",
-        items: [
-          { productId: 6, productName: "Clasica", quantity: 1, price: 15000 },
-          { productId: 10, productName: "Papas Fritas", quantity: 1, price: 8000 },
-        ],
-        subtotal: 23000,
-        discount: 0,
-        total: 23000,
-        paymentMethod: "qr",
-        status: "completed",
-      },
-      {
-        id: 3,
-        saleNumber: "V-00003",
-        date: "2026-02-18T16:00:00",
-        customerName: "Carlos Ramírez",
-        customerPhone: "0991234567",
-        type: "delivery",
-        items: [
-          { productId: 9, productName: "Triple", quantity: 1, price: 25000 },
-          { productId: 11, productName: "Aros de Cebolla", quantity: 1, price: 9000 },
-          { productId: 13, productName: "Sprite", quantity: 1, price: 5000 },
-        ],
-        subtotal: 39000,
-        discount: 2000,
-        total: 37000,
-        paymentMethod: "card",
-        status: "completed",
-      },
-    ];
-
-    setSales(mockSales);
-  }, []);
-
   // Format date/time
-  const formatDateTime = (dateString: string): string => {
-    const date = new Date(dateString);
+  const formatDateTime = (dateString: string | Date): string => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();

@@ -27,9 +27,19 @@ import {
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import type { Product, Category } from "@/types/pos";
 
-export function ProductsManager() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+interface ProductsManagerProps {
+  products: Product[];
+  categories: Category[];
+  onProductsChange: (products: Product[]) => void;
+  onCategoriesChange: (categories: Category[]) => void;
+}
+
+export function ProductsManager({ 
+  products, 
+  categories, 
+  onProductsChange, 
+  onCategoriesChange 
+}: ProductsManagerProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -40,38 +50,6 @@ export function ProductsManager() {
     categoryId: 0,
     active: true,
   });
-
-  // Load initial data (mock data for now)
-  useEffect(() => {
-    // Mock categories
-    const mockCategories: Category[] = [
-      { id: 1, name: "Hamburguesas", active: true },
-      { id: 2, name: "Acompañamientos", active: true },
-      { id: 3, name: "Bebidas", active: true },
-      { id: 4, name: "Postres", active: true },
-    ];
-
-    // Mock products
-    const mockProducts: Product[] = [
-      { id: 1, name: "Carnívora", price: 22000, categoryId: 1, active: true },
-      { id: 2, name: "Chesse", price: 12000, categoryId: 1, active: true },
-      { id: 3, name: "Chilli", price: 17000, categoryId: 1, active: true },
-      { id: 4, name: "Chilli Doble", price: 22000, categoryId: 1, active: true },
-      { id: 5, name: "Chilli Triple", price: 27000, categoryId: 1, active: true },
-      { id: 6, name: "Clasica", price: 15000, categoryId: 1, active: true },
-      { id: 7, name: "Doble", price: 20000, categoryId: 1, active: true },
-      { id: 8, name: "Doble Chesse", price: 18000, categoryId: 1, active: true },
-      { id: 9, name: "Triple", price: 25000, categoryId: 1, active: true },
-      { id: 10, name: "Papas Fritas", price: 8000, categoryId: 2, active: true },
-      { id: 11, name: "Aros de Cebolla", price: 9000, categoryId: 2, active: true },
-      { id: 12, name: "Coca Cola", price: 5000, categoryId: 3, active: true },
-      { id: 13, name: "Sprite", price: 5000, categoryId: 3, active: true },
-      { id: 14, name: "Agua Mineral", price: 3000, categoryId: 3, active: true },
-    ];
-
-    setCategories(mockCategories);
-    setProducts(mockProducts);
-  }, []);
 
   // Filter products
   const filteredProducts = products.filter((product) => {
@@ -88,7 +66,7 @@ export function ProductsManager() {
   const handleSaveProduct = () => {
     if (isEditMode && currentProduct.id) {
       // Update existing product
-      setProducts(
+      onProductsChange(
         products.map((p) =>
           p.id === currentProduct.id ? (currentProduct as Product) : p
         )
@@ -99,7 +77,7 @@ export function ProductsManager() {
         ...currentProduct,
         id: Math.max(...products.map((p) => p.id), 0) + 1,
       } as Product;
-      setProducts([...products, newProduct]);
+      onProductsChange([...products, newProduct]);
     }
     handleCloseDialog();
   };
@@ -107,13 +85,13 @@ export function ProductsManager() {
   // Handle delete product
   const handleDeleteProduct = (id: number) => {
     if (confirm("¿Estás seguro de eliminar este producto?")) {
-      setProducts(products.filter((p) => p.id !== id));
+      onProductsChange(products.filter((p) => p.id !== id));
     }
   };
 
   // Handle toggle active status
   const handleToggleActive = (id: number) => {
-    setProducts(
+    onProductsChange(
       products.map((p) =>
         p.id === id ? { ...p, active: !p.active } : p
       )

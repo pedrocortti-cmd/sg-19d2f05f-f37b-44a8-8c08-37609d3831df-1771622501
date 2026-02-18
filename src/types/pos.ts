@@ -4,7 +4,9 @@ export interface Product {
   id: number;
   name: string;
   price: number;
-  category: string;
+  categoryId: number; // Changed to number ID
+  category?: string; // Optional name
+  image?: string;
   active: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -14,7 +16,7 @@ export interface Category {
   id: number;
   name: string;
   active: boolean;
-  order: number;
+  order?: number; // Optional
 }
 
 export interface DeliveryDriver {
@@ -30,16 +32,24 @@ export interface CartItem {
   itemNote?: string;
 }
 
+// Item saved in a sale (snapshot)
+export interface SaleItem {
+  productId: number;
+  productName: string;
+  quantity: number;
+  price: number;
+}
+
 export interface CustomerInfo {
   name: string;
   phone: string;
   address: string;
-  ruc: string;
-  businessName: string;
-  isExempt: boolean;
+  ruc?: string;
+  businessName?: string;
+  isExempt?: boolean;
 }
 
-export type OrderType = "delivery" | "pickup" | "local";
+export type OrderType = "delivery" | "pickup" | "dineIn" | "local";
 
 export type PaymentMethod = "cash" | "qr" | "card" | "transfer" | "other";
 
@@ -53,31 +63,38 @@ export interface Payment {
 
 export interface Sale {
   id: number;
-  orderNumber: string;
-  date: Date;
-  items: CartItem[];
+  saleNumber: string;
+  date: string | Date;
+  
+  // Flattened info for easier history display
+  customerName?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  
+  // Structured info
+  customer?: CustomerInfo;
+
+  type: OrderType;
+  
+  // Items snapshot
+  items: SaleItem[];
+
   subtotal: number;
   discount: number;
-  deliveryCost: number;
-  deliveryDriverId?: number;
-  deliveryDriverName?: string;
+  deliveryCost?: number;
   total: number;
-  orderType: OrderType;
-  payments: Payment[];
-  paidAmount: number;
-  remainingAmount: number;
-  customer: CustomerInfo;
-  note: string;
+  
+  paymentMethod: string; // Simplified for history
+  payments?: Payment[]; // Detailed for processing
+  
   status: "pending" | "partial" | "completed" | "cancelled" | "pending_payment";
+  
   createdBy?: string;
   cancelledBy?: string;
   cancelReason?: string;
-  modificationHistory?: {
-    timestamp: Date;
-    itemsAdded: CartItem[];
-    previousTotal: number;
-    newTotal: number;
-  }[];
+  
+  deliveryDriverId?: number;
+  deliveryDriverName?: string;
 }
 
 export type UserRole = "admin" | "cashier" | "kitchen";
