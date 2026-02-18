@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
 import Head from "next/head";
-import { ShoppingCart, Package, Warehouse, TrendingUp, FileText, Settings, HelpCircle, LogOut, Search, Trash2, X } from "lucide-react";
+import { ShoppingCart, Package, Warehouse, TrendingUp, FileText, Settings, HelpCircle, LogOut, Search, Trash2, X, ChevronDown, ChevronUp } from "lucide-react";
 import { ProductsManager } from "@/components/pos/ProductsManager";
 import { SalesHistory } from "@/components/pos/SalesHistory";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
-import type { Product as ProductType, Category, Sale, CartItem as CartItemType, CustomerInfo, OrderType } from "@/types/pos";
+import { PaymentModal } from "@/components/pos/PaymentModal";
+import type { Product as ProductType, Category, Sale, CartItem as CartItemType, CustomerInfo, OrderType, Payment } from "@/types/pos";
 
 // Helper function for consistent number formatting
 const formatCurrency = (amount: number): string => {
@@ -14,6 +15,8 @@ const formatCurrency = (amount: number): string => {
 export default function Home() {
   // Estado del sistema
   const [currentView, setCurrentView] = useState<"pos" | "sales" | "products" | "inventory" | "expenses" | "reports" | "settings">("pos");
+  const [isCustomerCollapsed, setIsCustomerCollapsed] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   
   // Estado del carrito
   const [cart, setCart] = useState<CartItemType[]>([]);
@@ -122,11 +125,42 @@ export default function Home() {
   const discountAmount = (subtotal * discount) / 100;
   const total = subtotal - discountAmount;
   
-  const handleConfirmSale = async () => {
+  // Función para reabrir venta
+  const handleReopenSale = (sale: Sale) => {
+    // Restaurar carrito
+    setCart(sale.items);
+    // Restaurar cliente
+    setCustomer(sale.customer);
+    // Restaurar tipo de orden
+    setOrderType(sale.orderType);
+    // Restaurar descuento (aproximado por porcentaje si es posible, o resetear)
+    // Aquí simplificamos reseteando descuento para evitar conflictos, o calculamos %
+    if (sale.subtotal > 0) {
+        setDiscount(Math.round((sale.discount / sale.subtotal) * 100));
+    } else {
+        setDiscount(0);
+    }
+    setNote(sale.note);
+    
+    // Cambiar a vista POS
+    setCurrentView("pos");
+    // Expandir cliente para ver datos restaurados
+    setIsCustomerCollapsed(false);
+    
+    alert(`Venta #${sale.orderNumber} reabierta. Puede modificar el pedido y generar una nueva venta.`);
+  };
+
+  const handleInitiatePayment = () => {
     if (cart.length === 0) return;
+    setShowPaymentModal(true);
+  };
+  
+  const handleConfirmPayment = async (payments: Payment[], finalNote: string) => {
+    setShowPaymentModal(false);
     
     const orderNumber = `${Date.now().toString().slice(-6)}`;
     const saleDate = new Date();
+    const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
     
     const newSale: Sale = {
       id: sales.length + 1,
@@ -137,10 +171,12 @@ export default function Home() {
       discount: discountAmount,
       total,
       orderType,
-      paymentMethod: "cash",
+      payments: payments, // Nuevo campo array
+      paidAmount: paidAmount,
+      remainingAmount: total - paidAmount,
       customer: { ...customer },
-      note,
-      status: "completed"
+      note: finalNote || note,
+      status: paidAmount >= total ? "completed" : "partial"
     };
     
     setSales([newSale, ...sales]);
@@ -170,7 +206,7 @@ export default function Home() {
         subtotal: sale.subtotal,
         discountAmount: sale.discount,
         total: sale.total,
-        paymentMethod: sale.paymentMethod,
+        payments: sale.payments, // Enviar array completo
         customer: sale.customer,
         note: sale.note
       };
@@ -216,6 +252,7 @@ export default function Home() {
           <SalesHistory
             sales={sales}
             onCancelSale={handleCancelSale}
+            onReopenSale={handleReopenSale}
           />
         );
       case "settings":
@@ -254,9 +291,10 @@ export default function Home() {
       {/* Panel de cliente y carrito */}
       <div className="pos-customer-panel">
         {/* Información del cliente */}
-        <div className="pos-customer-section">
-          <div className="pos-section-title">
+        <div className={`pos-customer-section ${isCustomerCollapsed ? "collapsed" : "expanded"}`}>
+          <div className="pos-section-title" onClick={() => setIsCustomerCollapsed(!isCustomerCollapsed)}>
             <span>Información del Cliente</span>
+            {isCustomerCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
           </div>
           <div className="pos-customer-form">
             <div className="pos-input-group">
@@ -422,8 +460,8 @@ export default function Home() {
                 <Trash2 size={18} />
                 Vaciar
               </button>
-              <button className="pos-btn pos-btn-confirm" onClick={handleConfirmSale} disabled={cart.length === 0}>
-                Confirmar Venta
+              <button className="pos-btn pos-btn-confirm" onClick={handleInitiatePayment} disabled={cart.length === 0}>
+                Confirmar / Cobrar
               </button>
             </div>
           </div>
@@ -466,6 +504,16 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      {/* Modal de Pagos */}
+      {showPaymentModal && (
+        <PaymentModal
+          total={total}
+          initialNote={note}
+          onConfirm={handleConfirmPayment}
+          onCancel={() => setShowPaymentModal(false)}
+        />
+      )}
     </>
   );
   

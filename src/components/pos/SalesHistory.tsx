@@ -1,347 +1,315 @@
 import { useState, useMemo } from "react";
-import { Calendar, Search, Eye, XCircle, FileText } from "lucide-react";
-import type { Sale } from "@/types/pos";
+import { Calendar, Search, Eye, XCircle, FileText, Printer, RefreshCw } from "lucide-react";
+import type { Sale, Payment } from "@/types/pos";
 
-interface SalesHistoryProps {
+// Helper function
+const formatCurrency = (amount: number) => amount.toLocaleString("es-PY");
+
+interface Props {
   sales: Sale[];
-  onCancelSale?: (saleId: number, reason: string) => void;
+  onCancelSale: (id: number, reason: string) => void;
+  onReopenSale?: (sale: Sale) => void;
 }
 
-export function SalesHistory({ sales, onCancelSale }: SalesHistoryProps) {
+export function SalesHistory({ sales, onCancelSale, onReopenSale }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
 
   const filteredSales = useMemo(() => {
     return sales.filter(sale => {
-      const matchesSearch = sale.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           sale.customer.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDate = !dateFilter || new Date(sale.date).toISOString().split("T")[0] === dateFilter;
-      return matchesSearch && matchesDate;
+      const saleDate = new Date(sale.date).toISOString().split("T")[0];
+      const matchesDate = !selectedDate || saleDate === selectedDate;
+      const matchesSearch = 
+        sale.orderNumber.includes(searchTerm) || 
+        sale.customer.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesDate && matchesSearch;
     });
-  }, [sales, searchTerm, dateFilter]);
+  }, [sales, searchTerm, selectedDate]);
 
-  const handleCancelSale = (saleId: number) => {
-    const reason = prompt("Motivo de anulación:");
-    if (reason && onCancelSale) {
-      onCancelSale(saleId, reason);
-      setSelectedSale(null);
+  const getStatusBadge = (status: Sale["status"]) => {
+    switch (status) {
+      case "completed": return <span style={{ padding: "4px 8px", borderRadius: "4px", background: "#dcfce7", color: "#166534", fontSize: "0.8rem", fontWeight: 700 }}>Completado</span>;
+      case "cancelled": return <span style={{ padding: "4px 8px", borderRadius: "4px", background: "#fee2e2", color: "#991b1b", fontSize: "0.8rem", fontWeight: 700 }}>Anulado</span>;
+      case "pending": return <span style={{ padding: "4px 8px", borderRadius: "4px", background: "#fef9c3", color: "#854d0e", fontSize: "0.8rem", fontWeight: 700 }}>Pendiente</span>;
+      case "partial": return <span style={{ padding: "4px 8px", borderRadius: "4px", background: "#e0f2fe", color: "#075985", fontSize: "0.8rem", fontWeight: 700 }}>Parcial</span>;
+      default: return status;
     }
   };
 
-  const totalSales = useMemo(() => {
-    return filteredSales
-      .filter(s => s.status === "completed")
-      .reduce((sum, sale) => sum + sale.total, 0);
-  }, [filteredSales]);
+  const getPaymentMethodsString = (payments: Payment[]) => {
+    if (!payments || payments.length === 0) return "-";
+    const methods = Array.from(new Set(payments.map(p => p.method)));
+    return methods.map(m => {
+       switch(m) {
+         case "cash": return "Efectivo";
+         case "card": return "Tarjeta";
+         case "qr": return "QR";
+         case "transfer": return "Transferencia";
+         case "other": return "Otro";
+         default: return m;
+       }
+    }).join(", ");
+  };
+
+  const handleReopen = (sale: Sale) => {
+    if (onReopenSale) {
+        if (confirm("¿Desea reabrir esta venta? Los productos se cargarán al carrito actual.")) {
+            onReopenSale(sale);
+        }
+    }
+  };
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "1400px", margin: "0 auto" }}>
-      <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "1.875rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.5rem" }}>
-          Historial de Ventas
-        </h1>
-        <p style={{ color: "#64748b" }}>Consulta y gestiona las ventas realizadas</p>
-      </div>
-
-      {/* Filtros */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr auto",
-        gap: "1rem",
-        marginBottom: "2rem",
-        background: "white",
-        padding: "1.5rem",
-        borderRadius: "12px",
-        border: "2px solid #e2e8f0"
-      }}>
-        <div style={{ position: "relative" }}>
-          <Search style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} size={20} />
-          <input
-            type="text"
-            placeholder="Buscar por N° pedido o cliente..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "0.75rem 1rem 0.75rem 3rem",
-              border: "1px solid #e2e8f0",
-              borderRadius: "8px",
-              fontSize: "0.95rem"
-            }}
-          />
-        </div>
-        <div style={{ position: "relative" }}>
-          <Calendar style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} size={20} />
-          <input
-            type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "0.75rem 1rem 0.75rem 3rem",
-              border: "1px solid #e2e8f0",
-              borderRadius: "8px",
-              fontSize: "0.95rem"
-            }}
-          />
-        </div>
-        <div style={{
-          padding: "0.75rem 1.5rem",
-          background: "#f1f5f9",
-          borderRadius: "8px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center"
-        }}>
-          <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>
-            Total Ventas
+    <div className="h-full flex flex-col bg-white">
+      {/* Header */}
+      <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <FileText /> Historial de Ventas
+        </h2>
+        <div className="flex gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Buscar por Nro o Cliente..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <div style={{ fontSize: "1.25rem", fontWeight: 800, color: "#10b981" }}>
-            Gs. {totalSales.toLocaleString("es-PY")}
+          <div className="relative">
+             <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+             <input
+              type="date"
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
           </div>
         </div>
       </div>
 
-      {/* Lista de ventas */}
-      <div style={{
-        background: "white",
-        border: "2px solid #e2e8f0",
-        borderRadius: "12px",
-        overflow: "hidden",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
-      }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      {/* Table */}
+      <div className="flex-1 overflow-auto p-6">
+        <table className="w-full text-left border-collapse">
           <thead>
-            <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-              <th style={{ padding: "1rem", textAlign: "left", fontWeight: 700, color: "#475569" }}>N° Pedido</th>
-              <th style={{ padding: "1rem", textAlign: "left", fontWeight: 700, color: "#475569" }}>Fecha</th>
-              <th style={{ padding: "1rem", textAlign: "left", fontWeight: 700, color: "#475569" }}>Cliente</th>
-              <th style={{ padding: "1rem", textAlign: "center", fontWeight: 700, color: "#475569" }}>Tipo</th>
-              <th style={{ padding: "1rem", textAlign: "right", fontWeight: 700, color: "#475569" }}>Total</th>
-              <th style={{ padding: "1rem", textAlign: "center", fontWeight: 700, color: "#475569" }}>Estado</th>
-              <th style={{ padding: "1rem", textAlign: "center", fontWeight: 700, color: "#475569" }}>Acciones</th>
+            <tr className="border-b border-gray-200">
+              <th className="py-3 px-4 font-semibold text-gray-600">Nro</th>
+              <th className="py-3 px-4 font-semibold text-gray-600">Hora</th>
+              <th className="py-3 px-4 font-semibold text-gray-600">Cliente</th>
+              <th className="py-3 px-4 font-semibold text-gray-600">Tipo</th>
+              <th className="py-3 px-4 font-semibold text-gray-600">Pago</th>
+              <th className="py-3 px-4 font-semibold text-gray-600 text-right">Total</th>
+              <th className="py-3 px-4 font-semibold text-gray-600 text-center">Estado</th>
+              <th className="py-3 px-4 font-semibold text-gray-600 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {filteredSales.length === 0 ? (
-              <tr>
-                <td colSpan={7} style={{ padding: "3rem", textAlign: "center", color: "#94a3b8" }}>
-                  No se encontraron ventas
+            {filteredSales.map(sale => (
+              <tr key={sale.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="py-3 px-4 text-gray-800 font-medium">#{sale.orderNumber}</td>
+                <td className="py-3 px-4 text-gray-600">
+                  {new Date(sale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </td>
-              </tr>
-            ) : (
-              filteredSales.map((sale) => (
-                <tr key={sale.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                  <td style={{ padding: "1rem", fontWeight: 600 }}>{sale.orderNumber}</td>
-                  <td style={{ padding: "1rem", color: "#64748b" }}>
-                    {new Date(sale.date).toLocaleString("es-PY")}
-                  </td>
-                  <td style={{ padding: "1rem" }}>{sale.customer.name || "Sin cliente"}</td>
-                  <td style={{ padding: "1rem", textAlign: "center" }}>
-                    <span style={{
-                      padding: "0.375rem 0.75rem",
-                      borderRadius: "6px",
-                      fontSize: "0.875rem",
-                      fontWeight: 600,
-                      background: sale.orderType === "delivery" ? "#dbeafe" : "#fef3c7",
-                      color: sale.orderType === "delivery" ? "#1e40af" : "#92400e"
-                    }}>
-                      {sale.orderType === "delivery" ? "Delivery" : "Retiro"}
-                    </span>
-                  </td>
-                  <td style={{ padding: "1rem", textAlign: "right", fontWeight: 700, color: "#10b981" }}>
-                    Gs. {sale.total.toLocaleString("es-PY")}
-                  </td>
-                  <td style={{ padding: "1rem", textAlign: "center" }}>
-                    <span style={{
-                      padding: "0.375rem 0.75rem",
-                      borderRadius: "6px",
-                      fontSize: "0.875rem",
-                      fontWeight: 600,
-                      background: sale.status === "completed" ? "#d1fae5" : "#fee2e2",
-                      color: sale.status === "completed" ? "#065f46" : "#991b1b"
-                    }}>
-                      {sale.status === "completed" ? "Completado" : "Anulado"}
-                    </span>
-                  </td>
-                  <td style={{ padding: "1rem", textAlign: "center" }}>
-                    <button
+                <td className="py-3 px-4 text-gray-800">
+                  {sale.customer.name || "Cliente Ocasional"}
+                </td>
+                <td className="py-3 px-4 text-gray-600 capitalize">
+                  {sale.orderType === "delivery" ? "Delivery" : sale.orderType === "pickup" ? "Retiro" : "Local"}
+                </td>
+                <td className="py-3 px-4 text-gray-600 text-sm">
+                  {getPaymentMethodsString(sale.payments)}
+                </td>
+                <td className="py-3 px-4 text-gray-800 font-bold text-right">
+                  Gs. {formatCurrency(sale.total)}
+                </td>
+                <td className="py-3 px-4 text-center">
+                  {getStatusBadge(sale.status)}
+                </td>
+                <td className="py-3 px-4 text-center">
+                  <div className="flex justify-center gap-2">
+                    <button 
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                      title="Ver Detalle"
                       onClick={() => setSelectedSale(sale)}
-                      style={{
-                        padding: "0.5rem",
-                        background: "none",
-                        border: "none",
-                        color: "#3b82f6",
-                        cursor: "pointer",
-                        marginRight: "0.5rem"
-                      }}
-                      title="Ver detalle"
                     >
                       <Eye size={18} />
                     </button>
-                    {sale.status === "completed" && onCancelSale && (
-                      <button
-                        onClick={() => handleCancelSale(sale.id)}
-                        style={{
-                          padding: "0.5rem",
-                          background: "none",
-                          border: "none",
-                          color: "#ef4444",
-                          cursor: "pointer"
-                        }}
-                        title="Anular venta"
-                      >
-                        <XCircle size={18} />
-                      </button>
+                    {sale.status !== "cancelled" && (
+                       <>
+                         <button 
+                            className="p-1.5 text-orange-600 hover:bg-orange-50 rounded"
+                            title="Modificar / Reabrir"
+                            onClick={() => handleReopen(sale)}
+                          >
+                            <RefreshCw size={18} />
+                          </button>
+                          <button 
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                            title="Anular Venta"
+                            onClick={() => {
+                              setSelectedSale(sale);
+                              // Simple trigger to show modal in details
+                            }}
+                          >
+                            <XCircle size={18} />
+                          </button>
+                       </>
                     )}
-                  </td>
-                </tr>
-              ))
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {filteredSales.length === 0 && (
+              <tr>
+                <td colSpan={8} className="py-8 text-center text-gray-400">
+                  No se encontraron ventas para esta fecha
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {/* Modal detalle de venta */}
+      {/* Detail Modal */}
       {selectedSale && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000
-        }} onClick={() => setSelectedSale(null)}>
-          <div style={{
-            background: "white",
-            borderRadius: "16px",
-            padding: "2rem",
-            maxWidth: "600px",
-            width: "90%",
-            maxHeight: "80vh",
-            overflow: "auto",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.3)"
-          }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "1.5rem" }}>
-              <div>
-                <h2 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.5rem" }}>
-                  Pedido #{selectedSale.orderNumber}
-                </h2>
-                <p style={{ color: "#64748b" }}>
-                  {new Date(selectedSale.date).toLocaleString("es-PY")}
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedSale(null)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#94a3b8",
-                  cursor: "pointer",
-                  padding: "0.5rem"
-                }}
-              >
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-gray-800">Detalle de Venta #{selectedSale.orderNumber}</h3>
+              <button onClick={() => setSelectedSale(null)} className="text-gray-400 hover:text-gray-600">
                 <XCircle size={24} />
               </button>
             </div>
-
-            {/* Cliente */}
-            {selectedSale.customer.name && (
-              <div style={{
-                background: "#f8fafc",
-                padding: "1rem",
-                borderRadius: "8px",
-                marginBottom: "1.5rem"
-              }}>
-                <h3 style={{ fontSize: "0.875rem", fontWeight: 700, color: "#475569", marginBottom: "0.75rem" }}>
-                  INFORMACIÓN DEL CLIENTE
-                </h3>
-                <div style={{ display: "grid", gap: "0.5rem", fontSize: "0.95rem" }}>
-                  <div><strong>Nombre:</strong> {selectedSale.customer.name}</div>
-                  {selectedSale.customer.phone && <div><strong>Teléfono:</strong> {selectedSale.customer.phone}</div>}
-                  {selectedSale.customer.address && <div><strong>Dirección:</strong> {selectedSale.customer.address}</div>}
-                  {selectedSale.customer.ruc && <div><strong>RUC:</strong> {selectedSale.customer.ruc}</div>}
+            
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">Cliente</h4>
+                  <p className="font-medium text-gray-800">{selectedSale.customer.name || "Cliente Ocasional"}</p>
+                  <p className="text-gray-600">{selectedSale.customer.phone}</p>
+                  <p className="text-gray-600">{selectedSale.customer.address}</p>
+                  {selectedSale.customer.ruc && <p className="text-gray-600">RUC: {selectedSale.customer.ruc}</p>}
                 </div>
-              </div>
-            )}
-
-            {/* Items */}
-            <div style={{ marginBottom: "1.5rem" }}>
-              <h3 style={{ fontSize: "0.875rem", fontWeight: 700, color: "#475569", marginBottom: "0.75rem" }}>
-                PRODUCTOS
-              </h3>
-              {selectedSale.items.map((item, idx) => (
-                <div key={idx} style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "0.75rem 0",
-                  borderBottom: "1px solid #e2e8f0"
-                }}>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{item.product.name}</div>
-                    <div style={{ fontSize: "0.875rem", color: "#64748b" }}>
-                      Cantidad: {item.quantity} × Gs. {item.product.price.toLocaleString("es-PY")}
-                    </div>
-                  </div>
-                  <div style={{ fontWeight: 700 }}>
-                    Gs. {(item.product.price * item.quantity).toLocaleString("es-PY")}
+                <div className="text-right">
+                  <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">Detalles</h4>
+                  <p className="text-gray-600">{new Date(selectedSale.date).toLocaleString()}</p>
+                  <p className="text-gray-600 capitalize">Tipo: {selectedSale.orderType}</p>
+                  <div className="mt-2">
+                     {getStatusBadge(selectedSale.status)}
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Totales */}
-            <div style={{
-              background: "#f8fafc",
-              padding: "1rem",
-              borderRadius: "8px",
-              marginBottom: "1rem"
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                <span>Subtotal:</span>
-                <span style={{ fontWeight: 600 }}>Gs. {selectedSale.subtotal.toLocaleString("es-PY")}</span>
               </div>
-              {selectedSale.discount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                  <span>Descuento:</span>
-                  <span style={{ fontWeight: 600, color: "#ef4444" }}>- Gs. {selectedSale.discount.toLocaleString("es-PY")}</span>
+
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-left text-sm text-gray-500 border-b border-gray-200">
+                      <th className="pb-2">Producto</th>
+                      <th className="pb-2 text-center">Cant</th>
+                      <th className="pb-2 text-right">Precio</th>
+                      <th className="pb-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedSale.items.map((item, idx) => (
+                      <tr key={idx} className="border-b border-gray-100 last:border-0">
+                        <td className="py-2 text-gray-800">{item.product.name}</td>
+                        <td className="py-2 text-center text-gray-600">{item.quantity}</td>
+                        <td className="py-2 text-right text-gray-600">{formatCurrency(item.product.price)}</td>
+                        <td className="py-2 text-right text-gray-800 font-medium">
+                          {formatCurrency(item.product.price * item.quantity)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="border-t border-gray-200">
+                    <tr>
+                      <td colSpan={3} className="pt-3 text-right font-semibold text-gray-600">Subtotal:</td>
+                      <td className="pt-3 text-right font-bold text-gray-800">Gs. {formatCurrency(selectedSale.subtotal)}</td>
+                    </tr>
+                    {selectedSale.discount > 0 && (
+                      <tr>
+                        <td colSpan={3} className="pt-1 text-right text-gray-600">Descuento:</td>
+                        <td className="pt-1 text-right text-red-600">- Gs. {formatCurrency(selectedSale.discount)}</td>
+                      </tr>
+                    )}
+                    <tr>
+                      <td colSpan={3} className="pt-1 text-right font-bold text-gray-800 text-lg">Total:</td>
+                      <td className="pt-1 text-right font-bold text-green-600 text-lg">Gs. {formatCurrency(selectedSale.total)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+               <div className="mb-6">
+                 <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">Pagos</h4>
+                 <div className="bg-gray-50 rounded-lg p-3">
+                   {selectedSale.payments && selectedSale.payments.length > 0 ? (
+                     selectedSale.payments.map((p, i) => (
+                       <div key={i} className="flex justify-between text-sm mb-1 last:mb-0">
+                         <span>
+                           {p.method === 'cash' ? 'Efectivo' : p.method === 'card' ? 'Tarjeta' : p.method === 'qr' ? 'QR' : 'Transferencia'}
+                           {p.reference && <span className="text-gray-400 ml-2">({p.reference})</span>}
+                         </span>
+                         <span className="font-medium">Gs. {formatCurrency(p.amount)}</span>
+                       </div>
+                     ))
+                   ) : (
+                     <div className="text-gray-400 text-sm">Sin registro de pagos</div>
+                   )}
+                   <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between font-bold">
+                     <span>Pagado:</span>
+                     <span className="text-green-600">Gs. {formatCurrency(selectedSale.paidAmount || 0)}</span>
+                   </div>
+                 </div>
+               </div>
+
+              {selectedSale.status !== "cancelled" && (
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="text-sm font-semibold text-gray-500 uppercase mb-3">Anular Venta</h4>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
+                      placeholder="Motivo de anulación..."
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                    />
+                    <button 
+                      className="bg-red-50 text-red-600 px-4 py-2 rounded font-medium hover:bg-red-100 disabled:opacity-50"
+                      onClick={() => {
+                        onCancelSale(selectedSale.id, cancelReason || "Sin motivo especificado");
+                        setSelectedSale(null);
+                        setCancelReason("");
+                      }}
+                      disabled={!cancelReason}
+                    >
+                      Confirmar Anulación
+                    </button>
+                  </div>
                 </div>
               )}
-              <div style={{
-                display: "flex",
-                justifyContent: "space-between",
-                paddingTop: "0.75rem",
-                borderTop: "2px solid #e2e8f0",
-                fontSize: "1.25rem",
-                fontWeight: 800
-              }}>
-                <span>Total:</span>
-                <span style={{ color: "#10b981" }}>Gs. {selectedSale.total.toLocaleString("es-PY")}</span>
-              </div>
             </div>
-
-            {/* Nota */}
-            {selectedSale.note && (
-              <div style={{
-                background: "#fef3c7",
-                padding: "1rem",
-                borderRadius: "8px",
-                marginBottom: "1rem"
-              }}>
-                <strong>Nota:</strong> {selectedSale.note}
-              </div>
-            )}
-
-            {/* Info adicional */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", fontSize: "0.875rem" }}>
-              <div>
-                <strong>Tipo:</strong> {selectedSale.orderType === "delivery" ? "Delivery" : "Para Retirar"}
-              </div>
-              <div>
-                <strong>Pago:</strong> {selectedSale.paymentMethod}
-              </div>
+            
+            <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+              <button 
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-white flex items-center gap-2"
+                onClick={() => {
+                   // Lógica para reimprimir (simulada o llamando a prop)
+                   alert("Enviando a imprimir copia...");
+                }}
+              >
+                <Printer size={18} /> Reimprimir Ticket
+              </button>
+              <button 
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                onClick={() => setSelectedSale(null)}
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
