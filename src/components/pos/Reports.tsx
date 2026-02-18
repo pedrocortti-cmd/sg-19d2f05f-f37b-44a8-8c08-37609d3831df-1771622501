@@ -273,53 +273,44 @@ export function Reports({ sales, products }: ReportsProps) {
 
       {/* Tarjetas de métricas principales */}
       <div className="reports-metrics-grid">
-        {/* Tarjeta 1: Ventas Totales */}
         <div className="reports-metric-card">
-          <div className="reports-metric-label">
-            Ventas Totales
-          </div>
-          <div className="reports-metric-value">
-            Gs. {metrics.totalSales.toLocaleString()}
+          <div className="reports-metric-content">
+            <h3 className="reports-metric-label">Ventas Totales</h3>
+            <p className="reports-metric-value">
+              Gs. {metrics.totalSales.toLocaleString()}
+            </p>
           </div>
         </div>
 
-        {/* Tarjeta 2: Cantidad de Ventas */}
         <div className="reports-metric-card">
-          <div className="reports-metric-label">
-            Cantidad de Ventas
-          </div>
-          <div className="reports-metric-value">
-            {metrics.salesCount}
+          <div className="reports-metric-content">
+            <h3 className="reports-metric-label">Cantidad de Ventas</h3>
+            <p className="reports-metric-value">{metrics.salesCount}</p>
           </div>
         </div>
 
-        {/* Tarjeta 3: Valor Promedio */}
         <div className="reports-metric-card">
-          <div className="reports-metric-label">
-            Valor Promedio de Pedido
-          </div>
-          <div className="reports-metric-value">
-            Gs. {metrics.averageOrderValue.toLocaleString()}
+          <div className="reports-metric-content">
+            <h3 className="reports-metric-label">Valor Promedio de Pedido</h3>
+            <p className="reports-metric-value">
+              Gs. {metrics.averageOrderValue.toLocaleString()}
+            </p>
           </div>
         </div>
 
-        {/* Tarjeta 4: Facturas Pendientes */}
         <div className="reports-metric-card">
-          <div className="reports-metric-label">
-            Facturas Pendientes de Cobro
-          </div>
-          <div className="reports-metric-value">
-            {metrics.pendingInvoices}
+          <div className="reports-metric-content">
+            <h3 className="reports-metric-label">Facturas Pendientes de Cobro</h3>
+            <p className="reports-metric-value">{metrics.pendingInvoices}</p>
           </div>
         </div>
 
-        {/* Tarjeta 5: Monto Total a Cobrar */}
         <div className="reports-metric-card">
-          <div className="reports-metric-label">
-            Monto Total a Cobrar
-          </div>
-          <div className="reports-metric-value">
-            Gs. {metrics.totalPending.toLocaleString()}
+          <div className="reports-metric-content">
+            <h3 className="reports-metric-label">Monto Total a Cobrar</h3>
+            <p className="reports-metric-value">
+              Gs. {metrics.totalPending.toLocaleString()}
+            </p>
           </div>
         </div>
       </div>
