@@ -6,6 +6,7 @@ import { SalesHistory } from "@/components/pos/SalesHistory";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
 import { PaymentModal } from "@/components/pos/PaymentModal";
 import type { Product as ProductType, Category, Sale, CartItem as CartItemType, CustomerInfo, OrderType, Payment, DeliveryDriver } from "@/types/pos";
+import "@/styles/pos.css";
 
 // Helper function for consistent number formatting
 const formatCurrency = (amount: number): string => {
