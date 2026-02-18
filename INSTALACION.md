@@ -1,318 +1,388 @@
-# Manual de Instalación - De la Gran Burger POS
+# Guía de Instalación - De la Gran Burger POS
 
-Este documento contiene las instrucciones paso a paso para instalar y configurar el sistema POS.
+Sistema de Punto de Venta con impresión térmica para hamburguesería.
 
-## Requisitos Previos
+## Requisitos del Sistema
 
-### Software Requerido
-- **Node.js** v18 o superior ([descargar](https://nodejs.org/))
-- **PostgreSQL** v14 o superior ([descargar](https://www.postgresql.org/download/))
-- **Git** ([descargar](https://git-scm.com/))
+### Software Necesario
+- **Windows 10/11** (recomendado)
+- **Node.js 18+** - [Descargar aquí](https://nodejs.org/)
+- **PostgreSQL 14+** o **MySQL 8+** - [PostgreSQL](https://www.postgresql.org/download/) | [MySQL](https://dev.mysql.com/downloads/)
+- **Git** (opcional) - [Descargar aquí](https://git-scm.com/)
 
-### Hardware Requerido
-- PC con Windows 10/11
-- Impresoras térmicas USB (80mm) - 2 unidades:
-  - Una para cocina (comandas)
-  - Una para cliente (tickets)
-- Conexión a internet (solo para instalación inicial)
+### Hardware
+- **PC/Laptop** con Windows
+- **Impresora térmica USB 80mm** (recomendado: Epson TM-T20, Star TSP143, Bixolon SRP-330)
+- **Conexión a Internet** (solo para instalación inicial)
 
-## Paso 1: Clonar el Proyecto
+---
 
-```bash
-git clone [URL_DEL_REPOSITORIO]
-cd delagranburguer-pos
-```
+## Paso 1: Instalar Dependencias del Sistema
+
+### 1.1 Instalar Node.js
+1. Descargar el instalador de Node.js desde [nodejs.org](https://nodejs.org/)
+2. Ejecutar el instalador con opciones por defecto
+3. Verificar instalación abriendo **CMD** y ejecutando:
+   ```bash
+   node --version
+   npm --version
+   ```
+   Deberías ver las versiones instaladas (ej: v18.17.0 y 9.6.7)
+
+### 1.2 Instalar PostgreSQL (o MySQL)
+
+**Para PostgreSQL:**
+1. Descargar desde [postgresql.org](https://www.postgresql.org/download/windows/)
+2. Ejecutar instalador con opciones por defecto
+3. **IMPORTANTE:** Anota la contraseña del usuario `postgres`
+4. Instalar pgAdmin4 (incluido en el instalador)
+
+**Para MySQL:**
+1. Descargar MySQL Installer desde [dev.mysql.com](https://dev.mysql.com/downloads/installer/)
+2. Seleccionar "Server only" o "Developer Default"
+3. **IMPORTANTE:** Anota la contraseña del usuario `root`
+
+---
 
 ## Paso 2: Configurar la Base de Datos
 
 ### 2.1 Crear Base de Datos
 
-Abre pgAdmin o psql y ejecuta:
+**PostgreSQL (usando pgAdmin4):**
+1. Abrir pgAdmin4
+2. Conectar al servidor local (localhost)
+3. Click derecho en "Databases" → "Create" → "Database"
+4. Nombre: `delagranburguer_pos`
+5. Click "Save"
 
-```sql
-CREATE DATABASE delagranburguer_pos;
-```
+**MySQL (usando MySQL Workbench):**
+1. Abrir MySQL Workbench
+2. Conectar a la instancia local
+3. Ejecutar: `CREATE DATABASE delagranburguer_pos;`
 
-### 2.2 Crear Usuario
+### 2.2 Importar Schema
 
-```sql
-CREATE USER pos_user WITH PASSWORD 'tu_password_seguro';
-GRANT ALL PRIVILEGES ON DATABASE delagranburguer_pos TO pos_user;
-```
+1. Abrir el archivo `database/schema.sql` (incluido en el proyecto)
+2. **PostgreSQL:** 
+   - En pgAdmin4, click derecho en la base de datos → "Query Tool"
+   - Pegar el contenido del archivo `schema.sql`
+   - Ejecutar (botón ▶️ o F5)
+3. **MySQL:**
+   - En MySQL Workbench, abrir una nueva query
+   - Pegar el contenido del archivo `schema.sql`
+   - Ejecutar (botón ⚡ o Ctrl+Shift+Enter)
 
-### 2.3 Importar Schema
+---
 
+## Paso 3: Instalar la Aplicación Web (Frontend + Backend)
+
+### 3.1 Descargar el Proyecto
 ```bash
-psql -U pos_user -d delagranburguer_pos -f database/schema.sql
+# Si tienes Git instalado:
+git clone <URL_DEL_REPOSITORIO>
+cd delagranburguer-pos
+
+# O descargar el ZIP y extraer en C:\delagranburguer-pos
 ```
 
-## Paso 3: Configurar Variables de Entorno
-
-Crea un archivo `.env.local` en la raíz del proyecto:
-
-```env
-# Base de Datos
-DATABASE_URL=postgresql://pos_user:tu_password_seguro@localhost:5432/delagranburguer_pos
-
-# Configuración de la Aplicación
-NEXT_PUBLIC_APP_NAME=De la Gran Burger
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
-
-# Print Server
-NEXT_PUBLIC_PRINT_SERVER_URL=http://localhost:3001
-```
-
-## Paso 4: Instalar Dependencias
-
-### 4.1 Aplicación Principal
-
+### 3.2 Instalar Dependencias
 ```bash
+# Abrir CMD en la carpeta del proyecto
+cd C:\delagranburguer-pos
 npm install
 ```
+*Esto puede tomar 2-5 minutos*
 
-### 4.2 Print Server
+### 3.3 Configurar Variables de Entorno
 
+1. Copiar el archivo `.env.example` a `.env.local`:
+   ```bash
+   copy .env.example .env.local
+   ```
+
+2. Editar `.env.local` con tu editor de texto favorito (Notepad++, VSCode, etc.):
+
+   **Para PostgreSQL:**
+   ```env
+   DATABASE_URL=postgresql://postgres:TU_PASSWORD@localhost:5432/delagranburguer_pos
+   ```
+
+   **Para MySQL:**
+   ```env
+   DATABASE_URL=mysql://root:TU_PASSWORD@localhost:3306/delagranburguer_pos
+   ```
+
+   Reemplaza `TU_PASSWORD` con la contraseña que anotaste en el Paso 1.2
+
+### 3.4 Iniciar la Aplicación Web
+```bash
+npm run dev
+```
+
+La aplicación estará disponible en: **http://localhost:3000**
+
+**Usuario inicial:**
+- Usuario: `admin`
+- Contraseña: `admin123`
+
+⚠️ **IMPORTANTE:** Cambia la contraseña del admin desde el panel de Ajustes después del primer login.
+
+---
+
+## Paso 4: Instalar el Print Server (Servidor de Impresión)
+
+El Print Server es un servicio local que permite imprimir en las impresoras térmicas USB.
+
+### 4.1 Conectar la Impresora Térmica
+1. Conectar la impresora térmica USB al PC
+2. Instalar los drivers del fabricante (si es necesario)
+3. Verificar que Windows detecte la impresora:
+   - Ir a **Configuración** → **Dispositivos** → **Impresoras y escáneres**
+   - Debe aparecer tu impresora (ej: "Epson TM-T20II")
+
+### 4.2 Instalar Dependencias del Print Server
 ```bash
 cd print-server
 npm install
-cd ..
 ```
 
-## Paso 5: Configurar Impresoras USB
+### 4.3 Instalar el Print Server como Servicio de Windows
 
-### 5.1 Conectar Impresoras
+#### Opción A: Usar PM2 (Recomendado)
+```bash
+# Instalar PM2 globalmente
+npm install -g pm2
+npm install -g pm2-windows-startup
 
-1. Conecta ambas impresoras térmicas USB a la PC
-2. Espera a que Windows instale los drivers automáticamente
-3. Verifica en "Dispositivos e impresoras" que las impresoras aparezcan
+# Configurar PM2 para iniciar con Windows
+pm2-startup install
 
-### 5.2 Instalar Driver USB (si es necesario)
+# Iniciar el Print Server
+pm2 start server.js --name "print-server"
 
-Si las impresoras no se detectan automáticamente:
+# Guardar configuración
+pm2 save
+```
 
-1. Descarga el driver del fabricante de tu impresora térmica
-2. Instala el driver siguiendo las instrucciones del fabricante
-3. Reinicia la PC
-
-## Paso 6: Iniciar el Sistema
-
-### 6.1 Iniciar Print Server
-
-Abre una terminal y ejecuta:
-
+#### Opción B: Ejecutar Manualmente
 ```bash
 cd print-server
 npm start
 ```
+*Nota: Con esta opción deberás abrir esta ventana cada vez que enciendas el PC*
 
-Deberías ver algo como:
-
-```
-🖨️  Print Server corriendo en http://localhost:3001
-════════════════════════════════════════════════
-🔍 Impresoras detectadas: 2
-   1. USB Printer 1 (VID: 1234, PID: 5678)
-   2. USB Printer 2 (VID: 1234, PID: 5679)
-```
-
-⚠️ **Importante**: Mantén esta terminal abierta mientras uses el sistema.
-
-### 6.2 Iniciar Aplicación Web
-
-Abre otra terminal y ejecuta:
-
+### 4.4 Verificar que el Print Server está Corriendo
 ```bash
-npm run dev
+pm2 status
 ```
-
 Deberías ver:
-
 ```
-ready - started server on 0.0.0.0:3000, url: http://localhost:3000
+┌─────┬─────────────────┬─────────┬────────┐
+│ id  │ name            │ status  │ cpu    │
+├─────┼─────────────────┼─────────┼────────┤
+│ 0   │ print-server    │ online  │ 0%     │
+└─────┴─────────────────┴─────────┴────────┘
 ```
-
-## Paso 7: Configurar Impresoras en el Sistema
-
-1. Abre el navegador en `http://localhost:3000`
-2. Ve a **Ajustes** en el menú lateral
-3. Deberías ver las impresoras detectadas
-4. Selecciona:
-   - **Impresora de Cocina**: La impresora que estará en la cocina
-   - **Impresora de Cliente**: La impresora que estará en caja
-5. Configura el número de **Copias de Comanda** (normalmente 1 o 2)
-6. Haz clic en **"Probar"** para cada impresora y verifica que impriman correctamente
-7. Haz clic en **"Guardar Configuración"**
-
-## Paso 8: Crear Usuario Admin Inicial
-
-Por defecto, el sistema se puede usar sin login. Para agregar seguridad:
-
-1. Edita el archivo `database/schema.sql` y busca la sección de usuarios
-2. Crea tu usuario admin con:
-
-```sql
-INSERT INTO users (username, password_hash, role, full_name, active)
-VALUES (
-  'admin',
-  -- Genera el hash de tu password con bcrypt
-  '$2b$10$tu_hash_aqui',
-  'admin',
-  'Administrador',
-  true
-);
-```
-
-## Paso 9: Verificar Funcionalidad
-
-### 9.1 Test de Impresión
-
-1. Ve a **Punto de Venta**
-2. Agrega algunos productos al carrito
-3. Llena información del cliente (opcional)
-4. Haz clic en **"Confirmar Venta"**
-5. Verifica que se impriman:
-   - ✅ Comanda en la impresora de cocina (sin precios)
-   - ✅ Ticket en la impresora de cliente (con precios)
-
-### 9.2 Test de Productos
-
-1. Ve a **Productos y Servicios**
-2. Crea un nuevo producto
-3. Edita un producto existente
-4. Desactiva/activa productos
-5. Verifica que los cambios se reflejen en el POS
-
-### 9.3 Test de Ventas
-
-1. Ve a **Ventas**
-2. Verifica que aparezcan las ventas realizadas
-3. Usa los filtros por fecha
-4. Abre el detalle de una venta
-5. (Opcional) Prueba anular una venta
-
-## Configuración para Producción
-
-### Opción 1: Instalación Local Permanente
-
-Para usar el sistema de forma permanente en la PC del local:
-
-1. Crea scripts de inicio automático:
-
-**Crear `start-print-server.bat`:**
-```batch
-@echo off
-cd print-server
-start /min cmd /k npm start
-```
-
-**Crear `start-pos-app.bat`:**
-```batch
-@echo off
-start /min cmd /k npm run dev
-```
-
-2. Coloca estos scripts en la carpeta de inicio de Windows:
-   - Presiona `Win + R`
-   - Escribe `shell:startup`
-   - Copia los archivos `.bat` ahí
-
-3. Las aplicaciones se iniciarán automáticamente al encender la PC
-
-### Opción 2: Usar PM2 (Recomendado para Estabilidad)
-
-```bash
-# Instalar PM2 globalmente
-npm install -g pm2
-
-# Iniciar servicios
-pm2 start npm --name "pos-app" -- run dev
-pm2 start npm --name "print-server" --cwd print-server -- start
-
-# Guardar configuración
-pm2 save
-
-# Configurar inicio automático
-pm2 startup
-```
-
-## Solución de Problemas
-
-### Problema: Impresoras no se detectan
-
-**Solución:**
-1. Verifica que las impresoras estén conectadas y encendidas
-2. Reinicia el Print Server
-3. Verifica los drivers en "Dispositivos e impresoras"
-4. Prueba con otro puerto USB
-
-### Problema: Error al imprimir
-
-**Solución:**
-1. Verifica que el Print Server esté corriendo (`http://localhost:3001`)
-2. Revisa la terminal del Print Server para ver errores
-3. Verifica que las impresoras tengan papel
-4. Prueba imprimir desde "Ajustes" > "Probar"
-
-### Problema: Base de datos no conecta
-
-**Solución:**
-1. Verifica que PostgreSQL esté corriendo
-2. Revisa las credenciales en `.env.local`
-3. Verifica que el firewall permita conexiones al puerto 5432
-
-### Problema: La app no inicia
-
-**Solución:**
-1. Verifica que Node.js esté instalado: `node --version`
-2. Elimina `node_modules` y reinstala: `rm -rf node_modules && npm install`
-3. Verifica que el puerto 3000 no esté ocupado
-
-## Mantenimiento
-
-### Backup de Base de Datos
-
-Ejecuta regularmente:
-
-```bash
-pg_dump -U pos_user delagranburguer_pos > backup_$(date +%Y%m%d).sql
-```
-
-### Actualización del Sistema
-
-```bash
-git pull origin main
-npm install
-cd print-server && npm install && cd ..
-npm run dev
-```
-
-## Soporte
-
-Para problemas o dudas:
-
-- Email: soporte@delagranburguer.com
-- WhatsApp: [NÚMERO]
-- Horario: Lunes a Viernes 9:00 - 18:00
-
-## Información Adicional
-
-### Atajos de Teclado (Futuros)
-
-- `F1` - Enfoque en buscador de productos
-- `F2` - Limpiar carrito
-- `F12` - Confirmar venta
-- `Esc` - Cancelar acción actual
-
-### Mejores Prácticas
-
-1. **Cierre de caja diario**: Exporta el reporte de ventas al final del día
-2. **Backup**: Realiza backup de la base de datos semanalmente
-3. **Actualizaciones**: Actualiza el sistema mensualmente
-4. **Mantenimiento de impresoras**: Limpia los cabezales cada semana
-5. **Stock de papel**: Mantén rollos de papel térmico de repuesto
 
 ---
 
-**Sistema POS - De la Gran Burger**  
-Versión 1.0.0  
-© 2026 De la Gran Burger
+## Paso 5: Configurar Impresoras en la Aplicación
+
+1. Abrir el navegador en **http://localhost:3000**
+2. Iniciar sesión con `admin` / `admin123`
+3. Ir a **Ajustes** → **Impresoras**
+4. Click en **"Actualizar Lista"** para detectar impresoras
+5. Seleccionar:
+   - **Impresora de Cocina** (para comandas)
+   - **Impresora de Cliente** (para tickets de venta)
+6. Configurar:
+   - Tamaño de papel: **80mm** (recomendado)
+   - Copias de comanda: **1** (o 2 si necesitas duplicados)
+7. Click en **"Imprimir Prueba"** en cada impresora para verificar
+8. Click en **"Guardar Configuración"**
+
+---
+
+## Paso 6: Configuración Inicial del Sistema
+
+### 6.1 Crear Categorías
+1. Ir a **Productos y Servicios** → **Categorías**
+2. Agregar categorías (ejemplos):
+   - Hamburguesas
+   - Acompañamientos
+   - Bebidas
+   - Postres
+
+### 6.2 Agregar Productos
+1. Ir a **Productos y Servicios** → **Productos**
+2. Click en **"Nuevo Producto"**
+3. Completar:
+   - Nombre (ej: "Chilli Triple")
+   - Precio (ej: 27000)
+   - Categoría (ej: "Hamburguesas")
+   - Estado: Activo
+4. Guardar y repetir para todos tus productos
+
+### 6.3 Crear Usuarios Adicionales (Opcional)
+1. Ir a **Ajustes** → **Usuarios**
+2. Agregar usuarios con roles:
+   - **Admin**: Acceso total
+   - **Caja**: Solo POS y ventas
+   - **Cocina**: Solo visualizar pedidos
+
+---
+
+## Paso 7: Uso del Sistema
+
+### 7.1 Realizar una Venta
+1. Ir a **Punto de Venta**
+2. Opcional: Llenar **Información del Cliente**
+3. Click en productos para agregarlos al carrito
+4. Ajustar cantidades con botones **-** / **+**
+5. Agregar descuento si aplica
+6. Seleccionar tipo de pedido: **Delivery** o **Para Retirar**
+7. Click en **botón Total** (verde) para confirmar
+
+### 7.2 Procesar Pago
+1. Se abre el modal de pago
+2. Seleccionar método(s): Efectivo, Tarjeta, QR, Transferencia
+3. Ingresar monto(s)
+4. Agregar nota de pago (opcional)
+5. Click en **"Confirmar Pago"**
+
+### 7.3 Impresión Automática
+Al confirmar el pago, se imprimirán automáticamente:
+- ✅ **Comanda para cocina** (en impresora de cocina)
+- ✅ **Ticket para cliente** (en impresora de cliente)
+
+### 7.4 Ver Historial de Ventas
+1. Ir a **Ventas**
+2. Filtrar por fecha
+3. Ver detalles, reimprimir, anular (si tienes permiso)
+
+---
+
+## Solución de Problemas
+
+### Problema: "No se pudo conectar con el servidor de impresión"
+**Solución:**
+1. Verificar que el Print Server esté corriendo:
+   ```bash
+   pm2 status
+   ```
+2. Si está "stopped", reiniciar:
+   ```bash
+   pm2 restart print-server
+   ```
+3. Verificar que esté escuchando en puerto 3001:
+   ```bash
+   netstat -an | findstr :3001
+   ```
+
+### Problema: "No se encontraron impresoras conectadas"
+**Solución:**
+1. Verificar que la impresora esté conectada y encendida
+2. Verificar en Windows que aparece en "Impresoras y escáneres"
+3. Reinstalar drivers del fabricante
+4. Reiniciar el Print Server:
+   ```bash
+   pm2 restart print-server
+   ```
+
+### Problema: La impresión sale cortada o con caracteres raros
+**Solución:**
+1. Verificar que el tamaño de papel esté configurado en 80mm
+2. Verificar que la impresora soporte comandos ESC/POS
+3. Actualizar firmware de la impresora (ver manual del fabricante)
+
+### Problema: "Error de conexión a la base de datos"
+**Solución:**
+1. Verificar que PostgreSQL/MySQL esté corriendo:
+   - **PostgreSQL:** Buscar "Services" en Windows → PostgreSQL Database Server debe estar "Running"
+   - **MySQL:** Buscar "Services" → MySQL debe estar "Running"
+2. Verificar credenciales en `.env.local`
+3. Verificar que la base de datos `delagranburguer_pos` exista
+
+### Problema: La aplicación web no carga
+**Solución:**
+1. Verificar que el servidor esté corriendo:
+   ```bash
+   pm2 status
+   ```
+2. Ver logs para detectar errores:
+   ```bash
+   pm2 logs nextjs
+   ```
+3. Reiniciar la aplicación:
+   ```bash
+   pm2 restart nextjs
+   ```
+
+---
+
+## Configuración para Producción (Deploy)
+
+### Opción 1: Servidor Local (PC dedicado en el local)
+1. Seguir pasos 1-7 en el PC del local
+2. Configurar PM2 para iniciar ambos servicios con Windows:
+   ```bash
+   pm2 start ecosystem.config.js
+   pm2 save
+   pm2-startup install
+   ```
+3. Configurar IP fija en el router para el PC
+4. Otros dispositivos (tablets, etc.) acceden vía IP local: `http://192.168.X.X:3000`
+
+### Opción 2: Servidor Cloud + Print Server Local
+1. Desplegar la aplicación web en **Vercel** o **Render**
+2. Configurar base de datos en la nube (ej: Supabase, Railway)
+3. Mantener el Print Server corriendo localmente en el PC del local
+4. Configurar la URL del Print Server en la aplicación web
+
+---
+
+## Mantenimiento
+
+### Backup de Base de Datos (Recomendado: Diario/Semanal)
+
+**PostgreSQL:**
+```bash
+pg_dump -U postgres delagranburguer_pos > backup_$(date +%Y%m%d).sql
+```
+
+**MySQL:**
+```bash
+mysqldump -u root -p delagranburguer_pos > backup_$(date +%Y%m%d).sql
+```
+
+### Actualizar la Aplicación
+```bash
+cd C:\delagranburguer-pos
+git pull  # Si usas Git
+npm install  # Si hay nuevas dependencias
+pm2 restart all
+```
+
+---
+
+## Soporte
+
+Para asistencia técnica o dudas:
+- Email: soporte@delagranburguer.com
+- Teléfono: +595 XXX XXXXXX
+- WhatsApp: +595 XXX XXXXXX
+
+---
+
+## Licencia y Créditos
+
+Sistema desarrollado para **De la Gran Burger**  
+© 2026 Todos los derechos reservados
+
+**Tecnologías utilizadas:**
+- Next.js 15 (React 18)
+- TypeScript
+- Tailwind CSS
+- PostgreSQL/MySQL
+- Node.js
+- ESC/POS (protocolo de impresión térmica)
