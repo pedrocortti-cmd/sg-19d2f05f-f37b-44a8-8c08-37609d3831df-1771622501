@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import Head from "next/head";
-import { ShoppingCart, Package, Warehouse, TrendingUp, FileText, Settings, HelpCircle, LogOut, Search, Trash2, X, ChevronDown, ChevronUp, Printer, Edit2, Check } from "lucide-react";
+import { ShoppingCart, Package, Warehouse, TrendingUp, FileText, Settings, HelpCircle, LogOut, Search, Trash2, X, ChevronDown, ChevronUp, Printer, Edit2, Check, Clock, DollarSign } from "lucide-react";
 import { ProductsManager } from "@/components/pos/ProductsManager";
 import { SalesHistory } from "@/components/pos/SalesHistory";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
@@ -17,13 +17,16 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<"pos" | "sales" | "products" | "inventory" | "expenses" | "reports" | "settings">("pos");
   const [isCustomerCollapsed, setIsCustomerCollapsed] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showOrdersPanel, setShowOrdersPanel] = useState(false);
+  const [ordersPanelTab, setOrdersPanelTab] = useState<"pending" | "history">("pending");
   
-  // Estado del carrito
+  // Estado del carrito y pedido actual
   const [cart, setCart] = useState<CartItemType[]>([]);
   const [orderType, setOrderType] = useState<OrderType>("delivery");
   const [note, setNote] = useState<string>("");
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [tempItemNote, setTempItemNote] = useState<string>("");
+  const [currentOrderId, setCurrentOrderId] = useState<number | null>(null);
   
   // Estado del cliente
   const [customer, setCustomer] = useState<CustomerInfo>({
@@ -38,6 +41,7 @@ export default function Home() {
   // Estado de productos
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
+  const [orderSearchTerm, setOrderSearchTerm] = useState<string>("");
   
   // Estado de gestión de productos y categorías
   const [products, setProducts] = useState<ProductType[]>([
@@ -65,6 +69,33 @@ export default function Home() {
   const [sales, setSales] = useState<Sale[]>([]);
   
   const categoryNames = ["Todos", ...categories.filter(c => c.active).sort((a, b) => a.order - b.order).map(c => c.name)];
+  
+  // Pedidos pendientes (estado "pending")
+  const pendingOrders = useMemo(() => {
+    return sales.filter(sale => sale.status === "pending" || sale.status === "partial");
+  }, [sales]);
+  
+  // Todos los pedidos para historial
+  const allOrders = useMemo(() => {
+    return sales;
+  }, [sales]);
+  
+  // Filtrar pedidos según la pestaña activa
+  const currentTabOrders = useMemo(() => {
+    return ordersPanelTab === "pending" ? pendingOrders : allOrders;
+  }, [ordersPanelTab, pendingOrders, allOrders]);
+  
+  // Filtrar pedidos por búsqueda
+  const filteredOrders = useMemo(() => {
+    if (!orderSearchTerm) return currentTabOrders;
+    
+    const searchLower = orderSearchTerm.toLowerCase();
+    return currentTabOrders.filter(order => 
+      order.orderNumber.toLowerCase().includes(searchLower) ||
+      order.customer.name.toLowerCase().includes(searchLower) ||
+      order.customer.phone.toLowerCase().includes(searchLower)
+    );
+  }, [currentTabOrders, orderSearchTerm]);
   
   // Productos filtrados
   const filteredProducts = useMemo(() => {
@@ -133,6 +164,7 @@ export default function Home() {
     setNote("");
     setEditingItemId(null);
     setTempItemNote("");
+    setCurrentOrderId(null);
     setCustomer({
       name: "",
       phone: "",
@@ -150,7 +182,10 @@ export default function Home() {
       return;
     }
 
-    const orderNumber = `${Date.now().toString().slice(-6)}`;
+    const orderNumber = currentOrderId ? 
+      sales.find(s => s.id === currentOrderId)?.orderNumber || `${Date.now().toString().slice(-6)}` :
+      `${Date.now().toString().slice(-6)}`;
+      
     const printWindow = window.open('', '', 'width=300,height=600');
     
     if (!printWindow) {
@@ -384,36 +419,15 @@ export default function Home() {
   const subtotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   const total = subtotal;
   
-  // Función para reabrir venta
-  const handleReopenSale = (sale: Sale) => {
-    // Restaurar carrito
-    setCart(sale.items);
-    // Restaurar cliente
-    setCustomer(sale.customer);
-    // Restaurar tipo de orden
-    setOrderType(sale.orderType);
-    // Restaurar nota
-    setNote(sale.note);
-    
-    // Cambiar a vista POS
-    setCurrentView("pos");
-    // Expandir cliente para ver datos restaurados
-    setIsCustomerCollapsed(false);
-    
-    alert(`Venta #${sale.orderNumber} reabierta. Puede modificar el pedido y generar una nueva venta.`);
-  };
-
-  const handleInitiatePayment = () => {
-    if (cart.length === 0) return;
-    setShowPaymentModal(true);
-  };
-  
-  const handleConfirmPayment = async (payments: Payment[], finalNote: string) => {
-    setShowPaymentModal(false);
+  // Función para confirmar pedido (sin cobrar)
+  const handleConfirmOrder = () => {
+    if (cart.length === 0) {
+      alert("No hay productos en el carrito");
+      return;
+    }
     
     const orderNumber = `${Date.now().toString().slice(-6)}`;
     const saleDate = new Date();
-    const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
     
     const newSale: Sale = {
       id: sales.length + 1,
@@ -424,20 +438,104 @@ export default function Home() {
       discount: 0,
       total,
       orderType,
-      payments: payments,
-      paidAmount: paidAmount,
-      remainingAmount: total - paidAmount,
+      payments: [],
+      paidAmount: 0,
+      remainingAmount: total,
       customer: { ...customer },
-      note: finalNote || note,
-      status: paidAmount >= total ? "completed" : "partial"
+      note: note,
+      status: "pending"
     };
     
     setSales([newSale, ...sales]);
     
-    // Enviar a imprimir
-    await printSale(newSale);
+    alert(`¡Pedido confirmado!\nNº ${orderNumber}\nTotal: Gs. ${formatCurrency(total)}\n\nEstado: Pendiente de Pago`);
+    clearCart();
+  };
+  
+  // Función para seleccionar pedido del panel lateral
+  const handleSelectOrder = (sale: Sale) => {
+    // Restaurar carrito
+    setCart(sale.items);
+    // Restaurar cliente
+    setCustomer(sale.customer);
+    // Restaurar tipo de orden
+    setOrderType(sale.orderType);
+    // Restaurar nota
+    setNote(sale.note);
+    // Guardar ID del pedido actual
+    setCurrentOrderId(sale.id);
     
-    alert(`¡Venta confirmada!\nPedido #${orderNumber}\nTotal: Gs. ${formatCurrency(total)}`);
+    // Cambiar a vista POS
+    setCurrentView("pos");
+    // Expandir cliente para ver datos restaurados
+    setIsCustomerCollapsed(false);
+    // Cerrar panel de pedidos
+    setShowOrdersPanel(false);
+  };
+  
+  // Función para iniciar pago
+  const handleInitiatePayment = () => {
+    if (cart.length === 0 && !currentOrderId) {
+      alert("No hay productos en el carrito");
+      return;
+    }
+    setShowPaymentModal(true);
+  };
+  
+  const handleConfirmPayment = async (payments: Payment[], finalNote: string) => {
+    setShowPaymentModal(false);
+    
+    const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+    
+    if (currentOrderId) {
+      // Actualizando pedido existente
+      const existingOrder = sales.find(s => s.id === currentOrderId);
+      if (!existingOrder) return;
+      
+      const updatedSale: Sale = {
+        ...existingOrder,
+        items: [...cart],
+        subtotal,
+        total,
+        payments: payments,
+        paidAmount: paidAmount,
+        remainingAmount: total - paidAmount,
+        note: finalNote || note,
+        status: paidAmount >= total ? "completed" : "partial"
+      };
+      
+      setSales(sales.map(s => s.id === currentOrderId ? updatedSale : s));
+      await printSale(updatedSale);
+      
+      alert(`¡Pago registrado!\nPedido #${existingOrder.orderNumber}\nTotal: Gs. ${formatCurrency(total)}\nPagado: Gs. ${formatCurrency(paidAmount)}`);
+    } else {
+      // Nuevo pedido con pago inmediato
+      const orderNumber = `${Date.now().toString().slice(-6)}`;
+      const saleDate = new Date();
+      
+      const newSale: Sale = {
+        id: sales.length + 1,
+        orderNumber,
+        date: saleDate,
+        items: [...cart],
+        subtotal,
+        discount: 0,
+        total,
+        orderType,
+        payments: payments,
+        paidAmount: paidAmount,
+        remainingAmount: total - paidAmount,
+        customer: { ...customer },
+        note: finalNote || note,
+        status: paidAmount >= total ? "completed" : "partial"
+      };
+      
+      setSales([newSale, ...sales]);
+      await printSale(newSale);
+      
+      alert(`¡Venta confirmada y cobrada!\nPedido #${orderNumber}\nTotal: Gs. ${formatCurrency(total)}`);
+    }
+    
     clearCart();
   };
   
@@ -459,12 +557,11 @@ export default function Home() {
         subtotal: sale.subtotal,
         discountAmount: sale.discount,
         total: sale.total,
-        payments: sale.payments, // Enviar array completo
+        payments: sale.payments,
         customer: sale.customer,
         note: sale.note
       };
       
-      // Imprimir ambos tickets
       await fetch("http://localhost:3001/api/print/both", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -486,6 +583,10 @@ export default function Home() {
         ? { ...sale, status: "cancelled" as const, cancelReason: reason }
         : sale
     ));
+  };
+  
+  const handleReopenSale = (sale: Sale) => {
+    handleSelectOrder(sale);
   };
   
   // Render del contenido según la vista actual
@@ -616,6 +717,11 @@ export default function Home() {
         <div className="pos-cart-section">
           <div className="pos-cart-header">
             Detalle del Pedido ({cart.length} {cart.length === 1 ? "item" : "items"})
+            {currentOrderId && (
+              <span style={{ marginLeft: "0.5rem", color: "#f59e0b", fontSize: "0.8rem" }}>
+                (Editando Pedido #{sales.find(s => s.id === currentOrderId)?.orderNumber})
+              </span>
+            )}
           </div>
           
           <div className="pos-cart-items">
@@ -729,8 +835,13 @@ export default function Home() {
                 <Printer size={18} />
                 Imprimir
               </button>
-              <button className="pos-btn pos-btn-confirm" onClick={handleInitiatePayment} disabled={cart.length === 0}>
-                Confirmar / Cobrar
+              <button className="pos-btn pos-btn-confirm" onClick={handleConfirmOrder} disabled={cart.length === 0}>
+                <Clock size={18} />
+                Confirmar Pedido
+              </button>
+              <button className="pos-btn pos-btn-pay" onClick={handleInitiatePayment} disabled={cart.length === 0 && !currentOrderId}>
+                <DollarSign size={18} />
+                Cobrar
               </button>
             </div>
           </div>
@@ -771,6 +882,114 @@ export default function Home() {
               <div className="pos-product-price">Gs. {formatCurrency(product.price)}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Botón toggle para panel de pedidos */}
+      <button 
+        className={`pos-orders-toggle ${showOrdersPanel ? "open" : ""}`}
+        onClick={() => setShowOrdersPanel(!showOrdersPanel)}
+      >
+        {ordersPanelTab === "pending" 
+          ? `Pedidos Pendientes (${pendingOrders.length})`
+          : `Historial (${allOrders.length})`
+        }
+      </button>
+
+      {/* Panel lateral de pedidos */}
+      <div className={`pos-orders-panel ${showOrdersPanel ? "open" : ""}`}>
+        <div className="pos-orders-header">
+          <div className="pos-orders-header-top">
+            <div className="pos-orders-title">
+              <Clock size={24} />
+              {ordersPanelTab === "pending" ? "Pedidos Pendientes" : "Historial de Pedidos"}
+            </div>
+            <button className="pos-orders-close" onClick={() => setShowOrdersPanel(false)}>
+              <X size={24} />
+            </button>
+          </div>
+          
+          {/* Pestañas */}
+          <div className="pos-orders-tabs">
+            <button 
+              className={`pos-orders-tab ${ordersPanelTab === "pending" ? "active" : ""}`}
+              onClick={() => setOrdersPanelTab("pending")}
+            >
+              Pendientes ({pendingOrders.length})
+            </button>
+            <button 
+              className={`pos-orders-tab ${ordersPanelTab === "history" ? "active" : ""}`}
+              onClick={() => setOrdersPanelTab("history")}
+            >
+              Historial ({allOrders.length})
+            </button>
+          </div>
+          
+          <div className="pos-orders-search">
+            <Search className="pos-orders-search-icon" />
+            <input
+              type="text"
+              className="pos-orders-search-input"
+              placeholder="Buscar..."
+              value={orderSearchTerm}
+              onChange={(e) => setOrderSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+        
+        <div className="pos-orders-list">
+          {filteredOrders.length === 0 ? (
+            <div className="pos-orders-empty">
+              <Clock className="pos-orders-empty-icon" />
+              <div>
+                {ordersPanelTab === "pending" 
+                  ? "No hay pedidos pendientes" 
+                  : "No hay pedidos en el historial"
+                }
+              </div>
+            </div>
+          ) : (
+            filteredOrders.map(order => (
+              <div 
+                key={order.id} 
+                className={`pos-order-item ${currentOrderId === order.id ? "selected" : ""} ${order.status === "cancelled" ? "cancelled" : ""}`}
+                onClick={() => handleSelectOrder(order)}
+              >
+                <div className="pos-order-item-header">
+                  <div className="pos-order-item-number">
+                    Pedido #{order.orderNumber}
+                    {order.status === "completed" && <span className="pos-order-status completed">✓ Pagado</span>}
+                    {order.status === "partial" && <span className="pos-order-status partial">⚠ Parcial</span>}
+                    {order.status === "pending" && <span className="pos-order-status pending">⏱ Pendiente</span>}
+                    {order.status === "cancelled" && <span className="pos-order-status cancelled">✗ Anulado</span>}
+                  </div>
+                  <div className="pos-order-item-total">Gs. {formatCurrency(order.total)}</div>
+                </div>
+                <div className="pos-order-item-customer">
+                  {order.customer.name || "CLIENTE GENERAL"}
+                </div>
+                {order.status === "completed" && order.payments.length > 0 && (
+                  <div className="pos-order-item-payment">
+                    💳 {order.payments.map(p => p.method).join(", ")}
+                  </div>
+                )}
+                {order.status === "cancelled" && order.cancelReason && (
+                  <div className="pos-order-item-cancel-reason">
+                    Motivo: {order.cancelReason}
+                  </div>
+                )}
+                <div className="pos-order-item-date">
+                  {new Date(order.date).toLocaleString("es-PY", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  })}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

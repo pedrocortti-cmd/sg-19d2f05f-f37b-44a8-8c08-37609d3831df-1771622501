@@ -58,7 +58,7 @@ export interface Sale {
   remainingAmount: number;
   customer: CustomerInfo;
   note: string;
-  status: "pending" | "partial" | "completed" | "cancelled";
+  status: "pending" | "partial" | "completed" | "cancelled" | "pending_payment";
   createdBy?: string;
   cancelledBy?: string;
   cancelReason?: string;
