@@ -1,11 +1,23 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Head from "next/head";
 import { ShoppingCart, Package, Warehouse, TrendingUp, FileText, Settings, HelpCircle, LogOut, Search, Trash2, X, ChevronDown, ChevronUp, Printer, Edit2, Check, Clock, DollarSign, Bike } from "lucide-react";
 import { ProductsManager } from "@/components/pos/ProductsManager";
 import { SalesHistory } from "@/components/pos/SalesHistory";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
 import { PaymentModal } from "@/components/pos/PaymentModal";
-import type { Product as ProductType, Category, Sale, CartItem as CartItemType, CustomerInfo, OrderType, Payment, DeliveryDriver, SaleItem } from "@/types/pos";
+import { PrintFormatSettings } from "@/components/pos/PrintFormatSettings";
+import type {
+  Product as ProductType,
+  Category,
+  Sale,
+  CartItem as CartItemType,
+  CustomerInfo,
+  OrderType,
+  Payment,
+  DeliveryDriver,
+  SaleItem,
+  PrintFormatConfig
+} from "@/types/pos";
 
 // Helper function for consistent number formatting
 const formatCurrency = (amount: number): string => {
@@ -25,11 +37,12 @@ const formatDateTime = (date: Date): string => {
 
 export default function Home() {
   // Estado del sistema
-  const [currentView, setCurrentView] = useState<"pos" | "sales" | "products" | "inventory" | "expenses" | "reports" | "settings" | "drivers">("pos");
+  const [currentView, setCurrentView] = useState<string>("pos");
   const [isCustomerCollapsed, setIsCustomerCollapsed] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showOrdersPanel, setShowOrdersPanel] = useState(false);
   const [ordersPanelTab, setOrdersPanelTab] = useState<"pending" | "history">("pending");
+  const [settingsTab, setSettingsTab] = useState<"printers" | "format">("printers");
   
   // Estado del carrito y pedido actual
   const [cart, setCart] = useState<CartItemType[]>([]);
@@ -53,9 +66,9 @@ export default function Home() {
   });
   
   // Estado de productos
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
-  const [orderSearchTerm, setOrderSearchTerm] = useState<string>("");
+  const [orderSearchTerm, setOrderSearchTerm] = useState("");
   
   // Estado de gestión de productos y categorías
   const [products, setProducts] = useState<ProductType[]>([
@@ -315,6 +328,7 @@ export default function Home() {
           
           .row {
             margin-bottom: 5px;
+            font-size: 11px;
           }
           
           .items-header {
@@ -1050,7 +1064,53 @@ export default function Home() {
     handleSelectOrder(sale);
   };
   
-  // Render del contenido según la vista actual
+  // Configuración de formato de impresión
+  const [printFormatConfig, setPrintFormatConfig] = useState<PrintFormatConfig>({
+    comandaTitleSize: 2,
+    comandaProductSize: 1,
+    comandaShowPrices: false,
+    comandaCopies: 2,
+    comandaCustomFields: [],
+    ticketHeaderSize: 2,
+    ticketProductSize: 1,
+    ticketTotalSize: 2,
+    ticketThankYouMessage: "¡Gracias por su compra!",
+    ticketShowLogo: true,
+    businessInfo: {
+      name: "De la Gran Burger",
+      address: "Av. Principal 123",
+      phone: "(021) 123-4567",
+      ruc: "80012345-6",
+      additionalInfo: "Delivery: (0981) 234-567"
+    }
+  });
+
+  // Efectos
+  useEffect(() => {
+    // Cargar configuración guardada
+    const savedConfig = localStorage.getItem("printFormatConfig");
+    if (savedConfig) {
+      try {
+        setPrintFormatConfig(JSON.parse(savedConfig));
+      } catch (e) {
+        console.error("Error loading print config", e);
+      }
+    }
+  }, []);
+
+  // Efectos
+  useEffect(() => {
+    // En producción, esto se cargaría desde localStorage o BD
+    localStorage.setItem("printFormatConfig", JSON.stringify(printFormatConfig));
+  }, [printFormatConfig]);
+
+  const handleSavePrintFormat = (config: PrintFormatConfig) => {
+    setPrintFormatConfig(config);
+    localStorage.setItem("printFormatConfig", JSON.stringify(config));
+    alert("Configuración de impresión guardada correctamente");
+  };
+
+  // Función para renderizar el contenido según la vista actual
   const renderContent = () => {
     switch (currentView) {
       case "products":
@@ -1071,7 +1131,33 @@ export default function Home() {
           />
         );
       case "settings":
-        return <PrinterSettings />;
+        return (
+          <div className="settings-container">
+            <div className="settings-tabs">
+              <button
+                className={`settings-tab ${settingsTab === "printers" ? "active" : ""}`}
+                onClick={() => setSettingsTab("printers")}
+              >
+                Impresoras
+              </button>
+              <button
+                className={`settings-tab ${settingsTab === "format" ? "active" : ""}`}
+                onClick={() => setSettingsTab("format")}
+              >
+                Formato de Impresión
+              </button>
+            </div>
+            
+            {settingsTab === "printers" ? (
+              <PrinterSettings />
+            ) : (
+              <PrintFormatSettings 
+                config={printFormatConfig}
+                onSave={handleSavePrintFormat}
+              />
+            )}
+          </div>
+        );
       case "drivers":
         return (
           <div style={{ padding: "2rem" }}>
@@ -1216,6 +1302,34 @@ export default function Home() {
             <TrendingUp size={64} style={{ margin: "0 auto 1rem", opacity: 0.3 }} />
             <h2>Módulo de Informes</h2>
             <p>Próximamente disponible</p>
+          </div>
+        );
+      case "settings":
+        return (
+          <div className="settings-container">
+            <div className="settings-tabs">
+              <button
+                className={`settings-tab ${settingsTab === "printers" ? "active" : ""}`}
+                onClick={() => setSettingsTab("printers")}
+              >
+                Impresoras
+              </button>
+              <button
+                className={`settings-tab ${settingsTab === "format" ? "active" : ""}`}
+                onClick={() => setSettingsTab("format")}
+              >
+                Formato de Impresión
+              </button>
+            </div>
+            
+            {settingsTab === "printers" ? (
+              <PrinterSettings />
+            ) : (
+              <PrintFormatSettings 
+                config={printFormatConfig}
+                onSave={handleSavePrintFormat}
+              />
+            )}
           </div>
         );
       default:
@@ -1708,11 +1822,11 @@ export default function Home() {
               <span>Informes</span>
             </button>
 
-            <button
-              className={`pos-nav-item ${currentView === "settings" ? "active" : ""}`}
+            <button 
+              className={`nav-item ${currentView === "settings" ? "active" : ""}`}
               onClick={() => setCurrentView("settings")}
             >
-              <Settings className="pos-nav-icon" />
+              <Settings size={20} />
               <span>Ajustes</span>
             </button>
           </nav>

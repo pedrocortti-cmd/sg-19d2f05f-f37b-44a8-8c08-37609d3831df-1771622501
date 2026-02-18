@@ -31,6 +31,11 @@ export function SalesHistory({ sales, onCancelSale, onReopenSale }: SalesHistory
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
 
+  // Debug: Log sales to console
+  useEffect(() => {
+    console.log("SalesHistory received sales:", sales);
+  }, [sales]);
+
   // Format date/time
   const formatDateTime = (dateString: string | Date): string => {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
@@ -64,6 +69,8 @@ export function SalesHistory({ sales, onCancelSale, onReopenSale }: SalesHistory
       qr: "QR",
       card: "Tarjeta",
       transfer: "Transferencia",
+      pending: "Pendiente",
+      other: "Otro",
     };
     return labels[method] || method;
   };
@@ -72,8 +79,7 @@ export function SalesHistory({ sales, onCancelSale, onReopenSale }: SalesHistory
   const filteredSales = sales.filter((sale) => {
     const matchesSearch =
       sale.saleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sale.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      "";
+      (sale.customer?.name || "").toLowerCase().includes(searchTerm.toLowerCase());
 
     const saleDate = new Date(sale.date);
     const matchesStartDate = !startDate || saleDate >= new Date(startDate);
@@ -154,7 +160,9 @@ export function SalesHistory({ sales, onCancelSale, onReopenSale }: SalesHistory
             {filteredSales.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8">
-                  No se encontraron ventas
+                  {sales.length === 0 
+                    ? "No hay ventas registradas aún" 
+                    : "No se encontraron ventas con los filtros aplicados"}
                 </TableCell>
               </TableRow>
             ) : (
@@ -164,7 +172,7 @@ export function SalesHistory({ sales, onCancelSale, onReopenSale }: SalesHistory
                     {sale.saleNumber}
                   </TableCell>
                   <TableCell>{formatDateTime(sale.date)}</TableCell>
-                  <TableCell>{sale.customerName || "-"}</TableCell>
+                  <TableCell>{sale.customer?.name || "Cliente General"}</TableCell>
                   <TableCell>{getSaleTypeLabel(sale.type)}</TableCell>
                   <TableCell className="font-semibold">
                     {formatCurrency(sale.total)}
@@ -214,28 +222,28 @@ export function SalesHistory({ sales, onCancelSale, onReopenSale }: SalesHistory
                 </div>
               </div>
 
-              {selectedSale.customerName && (
+              {selectedSale.customer?.name && (
                 <div className="customer-info">
                   <h4>Información del Cliente</h4>
                   <div className="detail-row">
                     <span className="detail-label">Cliente:</span>
                     <span className="detail-value">
-                      {selectedSale.customerName}
+                      {selectedSale.customer.name}
                     </span>
                   </div>
-                  {selectedSale.customerPhone && (
+                  {selectedSale.customer.phone && (
                     <div className="detail-row">
                       <span className="detail-label">Teléfono:</span>
                       <span className="detail-value">
-                        {selectedSale.customerPhone}
+                        {selectedSale.customer.phone}
                       </span>
                     </div>
                   )}
-                  {selectedSale.customerAddress && (
+                  {selectedSale.customer.address && (
                     <div className="detail-row">
                       <span className="detail-label">Dirección:</span>
                       <span className="detail-value">
-                        {selectedSale.customerAddress}
+                        {selectedSale.customer.address}
                       </span>
                     </div>
                   )}

@@ -4,8 +4,8 @@ export interface Product {
   id: number;
   name: string;
   price: number;
-  categoryId: number; // Changed to number ID
-  category?: string; // Optional name
+  categoryId: number;
+  category?: string;
   image?: string;
   active: boolean;
   createdAt?: Date;
@@ -16,7 +16,7 @@ export interface Category {
   id: number;
   name: string;
   active: boolean;
-  order?: number; // Optional
+  order?: number;
 }
 
 export interface DeliveryDriver {
@@ -32,7 +32,6 @@ export interface CartItem {
   itemNote?: string;
 }
 
-// Item saved in a sale (snapshot)
 export interface SaleItem {
   productId: number;
   productName: string;
@@ -66,17 +65,14 @@ export interface Sale {
   saleNumber: string;
   date: string | Date;
   
-  // Flattened info for easier history display
   customerName?: string;
   customerPhone?: string;
   customerAddress?: string;
   
-  // Structured info
   customer?: CustomerInfo;
 
   type: OrderType;
   
-  // Items snapshot
   items: SaleItem[];
 
   subtotal: number;
@@ -84,8 +80,8 @@ export interface Sale {
   deliveryCost?: number;
   total: number;
   
-  paymentMethod: string; // Simplified for history
-  payments?: Payment[]; // Detailed for processing
+  paymentMethod: string;
+  payments?: Payment[];
   
   status: "pending" | "partial" | "completed" | "cancelled" | "pending_payment";
   
@@ -112,4 +108,26 @@ export interface PrinterConfig {
   clientPrinter: string;
   paperSize: "80mm" | "58mm";
   copies: number;
+}
+
+export interface PrintFormatConfig {
+  comandaTitleSize: number;
+  comandaProductSize: number;
+  comandaShowPrices: boolean;
+  comandaCopies: number;
+  comandaCustomFields: string[];
+  ticketHeaderSize: number;
+  ticketProductSize: number;
+  ticketTotalSize: number;
+  ticketThankYouMessage: string;
+  ticketShowLogo: boolean;
+  businessInfo: BusinessInfo;
+}
+
+export interface BusinessInfo {
+  name: string;
+  address: string;
+  phone: string;
+  ruc: string;
+  additionalInfo: string;
 }

@@ -1288,6 +1288,44 @@
   transform: none;
 }
 
+/* Settings Tabs */
+.settings-container {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 1rem;
+}
+
+.settings-tab {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.settings-tab:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.settings-tab.active {
+  background: #2563eb;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+}
+
 /* Responsive */
 @media (max-width: 1400px) {
   .pos-layout {
@@ -1298,5 +1336,12 @@
 @media (max-width: 1200px) {
   .pos-products-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .pos-layout {
+    grid-template-columns: 80px 1fr;
   }
 }
