@@ -6,6 +6,7 @@ import { SalesHistory } from "@/components/pos/SalesHistory";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
 import { PaymentModal } from "@/components/pos/PaymentModal";
 import { PrintFormatSettings } from "@/components/pos/PrintFormatSettings";
+import { Reports } from "@/components/pos/Reports";
 import type {
   Product as ProductType,
   Category,
@@ -1304,6 +1305,13 @@ export default function Home() {
             <p>Próximamente disponible</p>
           </div>
         );
+      case "informes":
+        return (
+          <Reports 
+            sales={sales}
+            products={products}
+          />
+        );
       case "settings":
         return (
           <div className="settings-container">
@@ -1814,7 +1822,7 @@ export default function Home() {
               <span>Gastos</span>
             </button>
 
-            <button
+            <button 
               className={`pos-nav-item ${currentView === "reports" ? "active" : ""}`}
               onClick={() => setCurrentView("reports")}
             >
@@ -1823,7 +1831,7 @@ export default function Home() {
             </button>
 
             <button 
-              className={`nav-item ${currentView === "settings" ? "active" : ""}`}
+              className={`pos-nav-item ${currentView === "settings" ? "active" : ""}`}
               onClick={() => setCurrentView("settings")}
             >
               <Settings size={20} />
