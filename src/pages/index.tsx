@@ -1125,22 +1125,26 @@ export default function Home() {
             </div>
             
             <div className="pos-action-buttons">
-              <button className="pos-btn pos-btn-clear" onClick={clearCart} disabled={cart.length === 0}>
-                <Trash2 size={18} />
-                Vaciar
-              </button>
-              <button className="pos-btn pos-btn-print" onClick={handlePrintOrder} disabled={cart.length === 0}>
-                <Printer size={18} />
-                Imprimir
-              </button>
-              <button className="pos-btn pos-btn-confirm" onClick={handleConfirmOrder} disabled={cart.length === 0}>
-                <Clock size={18} />
-                Confirmar Pedido
-              </button>
-              <button className="pos-btn pos-btn-pay" onClick={handleInitiatePayment} disabled={cart.length === 0 && !currentOrderId}>
-                <DollarSign size={18} />
-                Cobrar
-              </button>
+              <div className="pos-action-buttons-row">
+                <button className="pos-btn pos-btn-clear" onClick={clearCart} disabled={cart.length === 0}>
+                  <Trash2 size={18} />
+                  Vaciar
+                </button>
+                <button className="pos-btn pos-btn-print" onClick={handlePrintOrder} disabled={cart.length === 0}>
+                  <Printer size={18} />
+                  Imprimir
+                </button>
+                <button className="pos-btn pos-btn-confirm" onClick={handleConfirmOrder} disabled={cart.length === 0}>
+                  <Clock size={18} />
+                  Confirmar Pedido
+                </button>
+              </div>
+              <div className="pos-action-buttons-row">
+                <button className="pos-btn pos-btn-pay" onClick={handleInitiatePayment} disabled={cart.length === 0 && !currentOrderId}>
+                  <DollarSign size={18} />
+                  Cobrar
+                </button>
+              </div>
             </div>
           </div>
         </div>

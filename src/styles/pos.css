@@ -493,7 +493,32 @@
 
 .pos-action-buttons {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
+}
+
+.pos-action-buttons-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pos-action-buttons-row:first-child {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pos-action-buttons-row:first-child .pos-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.pos-action-buttons-row:last-child .pos-btn {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 .pos-btn {
