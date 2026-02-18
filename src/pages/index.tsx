@@ -426,6 +426,62 @@ export default function Home() {
       return;
     }
     
+    // Si estamos editando un pedido existente
+    if (currentOrderId) {
+      const existingOrder = sales.find(s => s.id === currentOrderId);
+      
+      if (!existingOrder) {
+        alert("Error: Pedido no encontrado");
+        return;
+      }
+      
+      // Si el pedido ya está completado, crear uno nuevo
+      if (existingOrder.status === "completed") {
+        const orderNumber = `${Date.now().toString().slice(-6)}`;
+        const saleDate = new Date();
+        
+        const newSale: Sale = {
+          id: sales.length + 1,
+          orderNumber,
+          date: saleDate,
+          items: [...cart],
+          subtotal,
+          discount: 0,
+          total,
+          orderType,
+          payments: [],
+          paidAmount: 0,
+          remainingAmount: total,
+          customer: { ...customer },
+          note: note,
+          status: "pending"
+        };
+        
+        setSales([newSale, ...sales]);
+        alert(`¡Nuevo pedido creado!\nNº ${orderNumber}\n(El pedido original #${existingOrder.orderNumber} permanece completado)\n\nTotal: Gs. ${formatCurrency(total)}\nEstado: Pendiente de Pago`);
+        clearCart();
+        return;
+      }
+      
+      // Si el pedido está pendiente o parcial, actualizar el existente
+      const updatedSale: Sale = {
+        ...existingOrder,
+        items: [...cart],
+        subtotal,
+        total,
+        orderType,
+        customer: { ...customer },
+        note: note,
+        remainingAmount: total - existingOrder.paidAmount
+      };
+      
+      setSales(sales.map(s => s.id === currentOrderId ? updatedSale : s));
+      alert(`¡Pedido actualizado!\nNº ${existingOrder.orderNumber}\nTotal: Gs. ${formatCurrency(total)}\n\nEstado: ${updatedSale.status === "partial" ? "Pago Parcial" : "Pendiente de Pago"}`);
+      clearCart();
+      return;
+    }
+    
+    // Crear nuevo pedido
     const orderNumber = `${Date.now().toString().slice(-6)}`;
     const saleDate = new Date();
     
@@ -492,22 +548,54 @@ export default function Home() {
       const existingOrder = sales.find(s => s.id === currentOrderId);
       if (!existingOrder) return;
       
+      // Si ya está completado, crear nuevo pedido
+      if (existingOrder.status === "completed") {
+        const orderNumber = `${Date.now().toString().slice(-6)}`;
+        const saleDate = new Date();
+        
+        const newSale: Sale = {
+          id: sales.length + 1,
+          orderNumber,
+          date: saleDate,
+          items: [...cart],
+          subtotal,
+          discount: 0,
+          total,
+          orderType,
+          payments: payments,
+          paidAmount: paidAmount,
+          remainingAmount: total - paidAmount,
+          customer: { ...customer },
+          note: finalNote || note,
+          status: paidAmount >= total ? "completed" : "partial"
+        };
+        
+        setSales([newSale, ...sales]);
+        await printSale(newSale);
+        
+        alert(`¡Nuevo pedido creado y cobrado!\nNº ${orderNumber}\n(El pedido original #${existingOrder.orderNumber} permanece intacto)\n\nTotal: Gs. ${formatCurrency(total)}\nPagado: Gs. ${formatCurrency(paidAmount)}`);
+        clearCart();
+        return;
+      }
+      
+      // Actualizar pedido pendiente/parcial
+      const totalPayments = existingOrder.paidAmount + paidAmount;
       const updatedSale: Sale = {
         ...existingOrder,
         items: [...cart],
         subtotal,
         total,
-        payments: payments,
-        paidAmount: paidAmount,
-        remainingAmount: total - paidAmount,
+        payments: [...existingOrder.payments, ...payments],
+        paidAmount: totalPayments,
+        remainingAmount: total - totalPayments,
         note: finalNote || note,
-        status: paidAmount >= total ? "completed" : "partial"
+        status: totalPayments >= total ? "completed" : "partial"
       };
       
       setSales(sales.map(s => s.id === currentOrderId ? updatedSale : s));
       await printSale(updatedSale);
       
-      alert(`¡Pago registrado!\nPedido #${existingOrder.orderNumber}\nTotal: Gs. ${formatCurrency(total)}\nPagado: Gs. ${formatCurrency(paidAmount)}`);
+      alert(`¡Pago registrado!\nPedido #${existingOrder.orderNumber}\nTotal: Gs. ${formatCurrency(total)}\nPagado: Gs. ${formatCurrency(totalPayments)}\n\n${updatedSale.status === "completed" ? "¡Pedido completado!" : `Restante: Gs. ${formatCurrency(updatedSale.remainingAmount)}`}`);
     } else {
       // Nuevo pedido con pago inmediato
       const orderNumber = `${Date.now().toString().slice(-6)}`;
