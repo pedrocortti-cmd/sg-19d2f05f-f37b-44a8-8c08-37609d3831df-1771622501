@@ -1613,95 +1613,94 @@ export default function Home() {
         <title>De la Gran Burger - POS</title>
       </Head>
 
-      <div className="pos-container">
+      <div className="pos-layout">
         {/* Sidebar */}
         <div className="pos-sidebar">
           <div className="pos-sidebar-header">
+            <div className="pos-sidebar-logo">DG</div>
             <h1 className="pos-sidebar-title">De la Gran Burger</h1>
           </div>
 
           <nav className="pos-sidebar-nav">
             <button
-              className={`pos-sidebar-item ${currentView === "pos" ? "active" : ""}`}
+              className={`pos-nav-item ${currentView === "pos" ? "active" : ""}`}
               onClick={() => setCurrentView("pos")}
             >
-              <ShoppingCart size={20} />
+              <ShoppingCart className="pos-nav-icon" />
               <span>Punto de Venta</span>
             </button>
 
             <button
-              className={`pos-sidebar-item ${currentView === "sales" ? "active" : ""}`}
+              className={`pos-nav-item ${currentView === "sales" ? "active" : ""}`}
               onClick={() => setCurrentView("sales")}
             >
-              <FileText size={20} />
+              <FileText className="pos-nav-icon" />
               <span>Ventas</span>
             </button>
 
             <button
-              className={`pos-sidebar-item ${currentView === "products" ? "active" : ""}`}
+              className={`pos-nav-item ${currentView === "products" ? "active" : ""}`}
               onClick={() => setCurrentView("products")}
             >
-              <Package size={20} />
+              <Package className="pos-nav-icon" />
               <span>Productos y Servicios</span>
             </button>
 
             <button
-              className={`pos-sidebar-item ${currentView === "inventory" ? "active" : ""}`}
+              className={`pos-nav-item ${currentView === "inventory" ? "active" : ""}`}
               onClick={() => setCurrentView("inventory")}
             >
-              <Warehouse size={20} />
+              <Warehouse className="pos-nav-icon" />
               <span>Inventario</span>
             </button>
 
             <button
-              className={`pos-sidebar-item ${currentView === "drivers" ? "active" : ""}`}
+              className={`pos-nav-item ${currentView === "drivers" ? "active" : ""}`}
               onClick={() => setCurrentView("drivers")}
             >
-              <Bike size={20} />
+              <Bike className="pos-nav-icon" />
               <span>Repartidores</span>
             </button>
 
             <button
-              className={`pos-sidebar-item ${currentView === "expenses" ? "active" : ""}`}
+              className={`pos-nav-item ${currentView === "expenses" ? "active" : ""}`}
               onClick={() => setCurrentView("expenses")}
             >
-              <TrendingUp size={20} />
+              <TrendingUp className="pos-nav-icon" />
               <span>Gastos</span>
             </button>
 
             <button
-              className={`pos-sidebar-item ${currentView === "reports" ? "active" : ""}`}
+              className={`pos-nav-item ${currentView === "reports" ? "active" : ""}`}
               onClick={() => setCurrentView("reports")}
             >
-              <TrendingUp size={20} />
+              <TrendingUp className="pos-nav-icon" />
               <span>Informes</span>
             </button>
 
             <button
-              className={`pos-sidebar-item ${currentView === "settings" ? "active" : ""}`}
+              className={`pos-nav-item ${currentView === "settings" ? "active" : ""}`}
               onClick={() => setCurrentView("settings")}
             >
-              <Settings size={20} />
+              <Settings className="pos-nav-icon" />
               <span>Ajustes</span>
             </button>
           </nav>
 
           <div className="pos-sidebar-footer">
-            <button className="pos-sidebar-item">
-              <HelpCircle size={20} />
+            <button className="pos-nav-item">
+              <HelpCircle className="pos-nav-icon" />
               <span>Soporte</span>
             </button>
-            <button className="pos-sidebar-item">
-              <LogOut size={20} />
+            <button className="pos-nav-item">
+              <LogOut className="pos-nav-icon" />
               <span>Cerrar sesión</span>
             </button>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="pos-main">
-          {renderContent()}
-        </div>
+        {renderContent()}
       </div>
     </>
   );
