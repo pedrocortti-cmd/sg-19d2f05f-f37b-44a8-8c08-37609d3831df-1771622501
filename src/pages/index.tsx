@@ -1293,13 +1293,20 @@ export default function Home() {
         );
       case "expenses":
         return (
-          <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>
-            <FileText size={64} style={{ margin: "0 auto 1rem", opacity: 0.3 }} />
-            <h2>Módulo de Gastos</h2>
+          <div style={{ padding: "2rem", textAlign: "center" }}>
+            <TrendingUp size={48} style={{ color: "#94a3b8", margin: "2rem auto" }} />
+            <h2 style={{ color: "#64748b", marginBottom: "0.5rem" }}>Módulo de Gastos</h2>
             <p>Próximamente disponible</p>
           </div>
         );
       case "reports":
+        return (
+          <Reports 
+            sales={sales}
+            products={products}
+          />
+        );
+      case "informes":
         return (
           <Reports 
             sales={sales}

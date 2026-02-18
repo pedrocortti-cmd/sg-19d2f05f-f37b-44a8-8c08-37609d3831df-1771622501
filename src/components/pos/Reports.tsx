@@ -236,45 +236,48 @@ export function Reports({ sales, products }: ReportsProps) {
   };
 
   return (
-    <div className="reports-container">
-      {/* Header */}
-      <div className="reports-header">
-        <h2>Informes</h2>
-        
-        {/* Filtros de fecha */}
-        <div className="date-filters">
-          <select 
-            value={dateFilter} 
-            onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-            className="date-filter-select"
-          >
-            <option value="today">Hoy</option>
-            <option value="yesterday">Ayer</option>
-            <option value="last7days">Últimos 7 días</option>
-            <option value="last30days">Últimos 30 días</option>
-            <option value="thisMonth">Este mes</option>
-            <option value="lastMonth">Mes anterior</option>
-            <option value="custom">Personalizado</option>
-          </select>
-          
-          {dateFilter === "custom" && (
-            <div className="custom-date-inputs">
-              <input 
-                type="date" 
-                value={customDateFrom}
-                onChange={(e) => setCustomDateFrom(e.target.value)}
-                className="date-input"
-              />
-              <span>a</span>
-              <input 
-                type="date" 
-                value={customDateTo}
-                onChange={(e) => setCustomDateTo(e.target.value)}
-                className="date-input"
-              />
-            </div>
-          )}
-        </div>
+    <div style={{ 
+      padding: "2rem",
+      maxWidth: "100%",
+      overflowX: "hidden"
+    }}>
+      {/* Header con título y filtros */}
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center",
+        marginBottom: "2rem",
+        flexWrap: "wrap",
+        gap: "1rem"
+      }}>
+        <h2 style={{ 
+          fontSize: "1.5rem", 
+          fontWeight: "600",
+          margin: 0,
+          color: "var(--foreground)"
+        }}>
+          Informes
+        </h2>
+
+        <select
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          style={{
+            padding: "0.5rem 1rem",
+            borderRadius: "8px",
+            border: "1px solid var(--border)",
+            backgroundColor: "var(--background)",
+            color: "var(--foreground)",
+            fontSize: "0.875rem",
+            cursor: "pointer"
+          }}
+        >
+          <option value="today">Hoy</option>
+          <option value="yesterday">Ayer</option>
+          <option value="week">Últimos 7 días</option>
+          <option value="month">Últimos 30 días</option>
+          <option value="all">Todo el período</option>
+        </select>
       </div>
 
       {/* Tabs */}
@@ -297,30 +300,149 @@ export function Reports({ sales, products }: ReportsProps) {
 
       {activeTab === "sales" && (
         <div className="report-content">
-          {/* Métricas principales */}
-          <div className="metrics-grid">
-            <div className="metric-card">
-              <div className="metric-label">VENTAS TOTALES</div>
-              <div className="metric-value">Gs. {metrics.totalSales.toLocaleString()}</div>
+          {/* Tarjetas de métricas principales */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: "1.5rem",
+            marginBottom: "2rem"
+          }}>
+            {/* Ventas Totales */}
+            <div style={{
+              backgroundColor: "var(--card)",
+              padding: "1.5rem",
+              borderRadius: "12px",
+              border: "1px solid var(--border)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+            }}>
+              <div style={{ 
+                fontSize: "0.875rem", 
+                color: "var(--muted-foreground)",
+                marginBottom: "0.75rem",
+                fontWeight: "500",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
+              }}>
+                Ventas Totales
+              </div>
+              <div style={{ 
+                fontSize: "2rem", 
+                fontWeight: "700",
+                color: "var(--foreground)"
+              }}>
+                Gs. {metrics.totalSales.toLocaleString()}
+              </div>
             </div>
-            <div className="metric-card">
-              <div className="metric-label">CANTIDAD DE VENTAS</div>
-              <div className="metric-value">{metrics.salesCount}</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-label">VALOR PROMEDIO DE PEDIDO</div>
-              <div className="metric-value">Gs. {Math.round(metrics.averageOrderValue).toLocaleString()}</div>
-            </div>
-          </div>
 
-          <div className="metrics-grid-2">
-            <div className="metric-card">
-              <div className="metric-label">FACTURAS PENDIENTES DE COBRO</div>
-              <div className="metric-value">{metrics.pendingInvoices}</div>
+            {/* Cantidad de Ventas */}
+            <div style={{
+              backgroundColor: "var(--card)",
+              padding: "1.5rem",
+              borderRadius: "12px",
+              border: "1px solid var(--border)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+            }}>
+              <div style={{ 
+                fontSize: "0.875rem", 
+                color: "var(--muted-foreground)",
+                marginBottom: "0.75rem",
+                fontWeight: "500",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
+              }}>
+                Cantidad de Ventas
+              </div>
+              <div style={{ 
+                fontSize: "2rem", 
+                fontWeight: "700",
+                color: "var(--foreground)"
+              }}>
+                {metrics.salesCount}
+              </div>
             </div>
-            <div className="metric-card">
-              <div className="metric-label">MONTO TOTAL A COBRAR</div>
-              <div className="metric-value">Gs. {metrics.totalPending.toLocaleString()}</div>
+
+            {/* Valor Promedio de Pedido */}
+            <div style={{
+              backgroundColor: "var(--card)",
+              padding: "1.5rem",
+              borderRadius: "12px",
+              border: "1px solid var(--border)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+            }}>
+              <div style={{ 
+                fontSize: "0.875rem", 
+                color: "var(--muted-foreground)",
+                marginBottom: "0.75rem",
+                fontWeight: "500",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis"
+              }}>
+                Valor Promedio de Pedido
+              </div>
+              <div style={{ 
+                fontSize: "2rem", 
+                fontWeight: "700",
+                color: "var(--foreground)"
+              }}>
+                Gs. {metrics.averageOrderValue.toLocaleString()}
+              </div>
+            </div>
+
+            {/* Facturas Pendientes */}
+            <div style={{
+              backgroundColor: "var(--card)",
+              padding: "1.5rem",
+              borderRadius: "12px",
+              border: "1px solid var(--border)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+            }}>
+              <div style={{ 
+                fontSize: "0.875rem", 
+                color: "var(--muted-foreground)",
+                marginBottom: "0.75rem",
+                fontWeight: "500",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
+              }}>
+                Facturas Pendientes de Cobro
+              </div>
+              <div style={{ 
+                fontSize: "2rem", 
+                fontWeight: "700",
+                color: "#f59e0b"
+              }}>
+                {metrics.pendingInvoices}
+              </div>
+            </div>
+
+            {/* Monto Total a Cobrar */}
+            <div style={{
+              backgroundColor: "var(--card)",
+              padding: "1.5rem",
+              borderRadius: "12px",
+              border: "1px solid var(--border)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+            }}>
+              <div style={{ 
+                fontSize: "0.875rem", 
+                color: "var(--muted-foreground)",
+                marginBottom: "0.75rem",
+                fontWeight: "500",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px"
+              }}>
+                Monto Total a Cobrar
+              </div>
+              <div style={{ 
+                fontSize: "2rem", 
+                fontWeight: "700",
+                color: "#ef4444"
+              }}>
+                Gs. {metrics.totalToCobrar.toLocaleString()}
+              </div>
             </div>
           </div>
 
