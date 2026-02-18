@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import Head from "next/head";
-import { ShoppingCart, Package, Warehouse, TrendingUp, FileText, Settings, HelpCircle, LogOut, Search, Trash2, X, ChevronDown, ChevronUp } from "lucide-react";
+import { ShoppingCart, Package, Warehouse, TrendingUp, FileText, Settings, HelpCircle, LogOut, Search, Trash2, X, ChevronDown, ChevronUp, Printer } from "lucide-react";
 import { ProductsManager } from "@/components/pos/ProductsManager";
 import { SalesHistory } from "@/components/pos/SalesHistory";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
@@ -118,6 +118,233 @@ export default function Home() {
       businessName: "",
       isExempt: false
     });
+  };
+
+  // Función para imprimir pedido (window.print)
+  const handlePrintOrder = () => {
+    if (cart.length === 0) {
+      alert("No hay productos en el carrito para imprimir");
+      return;
+    }
+
+    const orderNumber = `${Date.now().toString().slice(-6)}`;
+    const printWindow = window.open('', '', 'width=300,height=600');
+    
+    if (!printWindow) {
+      alert("Por favor permite las ventanas emergentes para imprimir");
+      return;
+    }
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Pedido #${orderNumber}</title>
+        <style>
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+          
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          body {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            padding: 10mm;
+            width: 80mm;
+          }
+          
+          .header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px dashed #000;
+          }
+          
+          .title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+          }
+          
+          .subtitle {
+            font-size: 11px;
+            margin-bottom: 3px;
+          }
+          
+          .section {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #000;
+          }
+          
+          .label {
+            font-weight: bold;
+            display: inline-block;
+            width: 120px;
+          }
+          
+          .value {
+            display: inline;
+          }
+          
+          .row {
+            margin-bottom: 5px;
+          }
+          
+          .items-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #000;
+          }
+          
+          .items-header .cant {
+            width: 40px;
+            text-align: center;
+          }
+          
+          .items-header .desc {
+            flex: 1;
+          }
+          
+          .item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+          }
+          
+          .item .cant {
+            width: 40px;
+            text-align: center;
+            font-weight: bold;
+          }
+          
+          .item .desc {
+            flex: 1;
+          }
+          
+          .separator {
+            border-top: 2px dashed #000;
+            margin: 15px 0;
+          }
+          
+          .note-section {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border: 1px solid #000;
+          }
+          
+          .note-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+          }
+          
+          .footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 10px;
+          }
+          
+          @media print {
+            body {
+              padding: 5mm;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">== DE LA GRAN BURGER ==</div>
+          <div class="subtitle">Pedido de Venta - N° Premier Sistema</div>
+        </div>
+        
+        <div class="section">
+          <div class="row">
+            <span class="label">Nombre:</span>
+            <span class="value">${customer.name || 'Cliente General'}</span>
+          </div>
+          ${customer.phone ? `
+          <div class="row">
+            <span class="label">Teléfono:</span>
+            <span class="value">${customer.phone}</span>
+          </div>
+          ` : ''}
+          ${customer.address ? `
+          <div class="row">
+            <span class="label">Dirección:</span>
+            <span class="value">${customer.address}</span>
+          </div>
+          ` : ''}
+          ${customer.ruc ? `
+          <div class="row">
+            <span class="label">RUC:</span>
+            <span class="value">${customer.ruc}</span>
+          </div>
+          ` : ''}
+          ${customer.businessName ? `
+          <div class="row">
+            <span class="label">Razón Social:</span>
+            <span class="value">${customer.businessName}</span>
+          </div>
+          ` : ''}
+          <div class="row">
+            <span class="label">Tipo:</span>
+            <span class="value">${orderType === 'delivery' ? 'Delivery' : 'Para Retirar'}</span>
+          </div>
+          <div class="row">
+            <span class="label">Nº Pedido:</span>
+            <span class="value">${orderNumber}</span>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="items-header">
+            <div class="cant">CANT</div>
+            <div class="desc">DESCRIPCION</div>
+          </div>
+          ${cart.map(item => `
+            <div class="item">
+              <div class="cant">${item.quantity}</div>
+              <div class="desc">${item.product.name}</div>
+            </div>
+          `).join('')}
+        </div>
+        
+        <div class="separator"></div>
+        
+        ${note ? `
+        <div class="note-section">
+          <div class="note-title">NOTA:</div>
+          <div>${note}</div>
+        </div>
+        ` : ''}
+        
+        <div class="footer">
+          ${new Date().toLocaleString('es-PY')}
+        </div>
+      </body>
+      </html>
+    `;
+    
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
   };
   
   // Cálculos
@@ -459,6 +686,10 @@ export default function Home() {
               <button className="pos-btn pos-btn-clear" onClick={clearCart} disabled={cart.length === 0}>
                 <Trash2 size={18} />
                 Vaciar
+              </button>
+              <button className="pos-btn pos-btn-print" onClick={handlePrintOrder} disabled={cart.length === 0}>
+                <Printer size={18} />
+                Imprimir
               </button>
               <button className="pos-btn pos-btn-confirm" onClick={handleInitiatePayment} disabled={cart.length === 0}>
                 Confirmar / Cobrar

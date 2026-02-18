@@ -425,6 +425,16 @@
   background: #fecaca;
 }
 
+.pos-btn-print {
+  background: #dbeafe;
+  color: #2563eb;
+  flex: 1;
+}
+
+.pos-btn-print:hover {
+  background: #bfdbfe;
+}
+
 .pos-btn-confirm {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
