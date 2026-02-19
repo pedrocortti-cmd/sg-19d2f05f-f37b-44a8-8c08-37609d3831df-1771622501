@@ -9,6 +9,15 @@
   position: relative;
 }
 
+/* Layout de 2 columnas para vistas que no son POS */
+.pos-layout-two-column {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
 /* Sidebar navegación */
 .pos-sidebar {
   background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);

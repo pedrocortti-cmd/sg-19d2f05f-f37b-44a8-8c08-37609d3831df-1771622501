@@ -50,6 +50,17 @@ export function Reports({ sales, products }: ReportsProps) {
   const [customDateFrom, setCustomDateFrom] = useState<string>("");
   const [customDateTo, setCustomDateTo] = useState<string>("");
 
+  // Estados para paginación
+  const [customerPage, setCustomerPage] = useState(1);
+  const [productPage, setProductPage] = useState(1);
+  const [pendingPage, setPendingPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Estados para ordenamiento
+  const [customerSort, setCustomerSort] = useState<"asc" | "desc">("desc");
+  const [productSort, setProductSort] = useState<"asc" | "desc">("desc");
+  const [pendingSort, setPendingSort] = useState<"asc" | "desc">("desc");
+
   // Filtrar ventas según el rango de fechas seleccionado
   const filteredSales = useMemo(() => {
     const now = new Date();
@@ -241,6 +252,129 @@ export function Reports({ sales, products }: ReportsProps) {
       case "all": return "Todo el período";
       default: return "";
     }
+  };
+
+  // Funciones de ordenamiento
+  const sortedCustomers = useMemo(() => {
+    const sorted = [...salesByClient].sort((a, b) => 
+      customerSort === "desc" ? b.totalSpent - a.totalSpent : a.totalSpent - b.totalSpent
+    );
+    return sorted;
+  }, [customerSort, salesByClient]);
+
+  const sortedProducts = useMemo(() => {
+    const sorted = [...productSales].sort((a, b) => 
+      productSort === "desc" ? b.quantitySold - a.quantitySold : a.quantitySold - b.quantitySold
+    );
+    return sorted;
+  }, [productSort, productSales]);
+
+  const sortedPending = useMemo(() => {
+    const sorted = [...pendingByClient].sort((a, b) => 
+      pendingSort === "desc" ? b.pendingAmount - a.pendingAmount : a.pendingAmount - b.pendingAmount
+    );
+    return sorted;
+  }, [pendingSort, pendingByClient]);
+
+  // Funciones de paginación
+  const paginateData = (data: any[], page: number) => {
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return data.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = (dataLength: number) => {
+    return Math.ceil(dataLength / itemsPerPage);
+  };
+
+  const renderPagination = (
+    currentPage: number,
+    totalPages: number,
+    setPage: (page: number) => void
+  ) => {
+    const pages = [];
+    
+    // Botón Anterior
+    pages.push(
+      <button
+        key="prev"
+        onClick={() => setPage(Math.max(1, currentPage - 1))}
+        disabled={currentPage === 1}
+        style={{
+          padding: "0.5rem 1rem",
+          border: "1px solid #e2e8f0",
+          borderRadius: "6px",
+          background: currentPage === 1 ? "#f1f5f9" : "white",
+          color: currentPage === 1 ? "#94a3b8" : "#475569",
+          cursor: currentPage === 1 ? "not-allowed" : "pointer",
+          fontWeight: 500,
+          fontSize: "0.875rem",
+        }}
+      >
+        Anterior
+      </button>
+    );
+
+    // Números de página
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - 1 && i <= currentPage + 1)
+      ) {
+        pages.push(
+          <button
+            key={i}
+            onClick={() => setPage(i)}
+            style={{
+              padding: "0.5rem 0.875rem",
+              border: "1px solid #e2e8f0",
+              borderRadius: "6px",
+              background: currentPage === i ? "#3b82f6" : "white",
+              color: currentPage === i ? "white" : "#475569",
+              cursor: "pointer",
+              fontWeight: currentPage === i ? 700 : 500,
+              fontSize: "0.875rem",
+            }}
+          >
+            {i}
+          </button>
+        );
+      } else if (i === currentPage - 2 || i === currentPage + 2) {
+        pages.push(
+          <span key={i} style={{ padding: "0.5rem", color: "#94a3b8" }}>
+            ...
+          </span>
+        );
+      }
+    }
+
+    // Botón Siguiente
+    pages.push(
+      <button
+        key="next"
+        onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+        disabled={currentPage === totalPages}
+        style={{
+          padding: "0.5rem 1rem",
+          border: "1px solid #e2e8f0",
+          borderRadius: "6px",
+          background: currentPage === totalPages ? "#f1f5f9" : "white",
+          color: currentPage === totalPages ? "#94a3b8" : "#475569",
+          cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+          fontWeight: 500,
+          fontSize: "0.875rem",
+        }}
+      >
+        Siguiente
+      </button>
+    );
+
+    return (
+      <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", marginTop: "1rem" }}>
+        {pages}
+      </div>
+    );
   };
 
   return (
@@ -470,106 +604,317 @@ export function Reports({ sales, products }: ReportsProps) {
         </div>
       </div>
 
-      {/* Tablas detalladas */}
-      
-      {/* Tabla 1: Ventas por Cliente */}
-      <div className="reports-table-container">
-        <h3 className="reports-table-title">Ventas por Cliente</h3>
-        <table className="reports-table">
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Total Compras</th>
-              <th>Cantidad Pedidos</th>
-            </tr>
-          </thead>
-          <tbody>
-            {salesByClient.length === 0 ? (
-              <tr>
-                <td colSpan={3} style={{ textAlign: "center", padding: "2rem", color: "#999" }}>
-                  No hay datos disponibles
-                </td>
-              </tr>
-            ) : (
-              salesByClient.map((client, idx) => (
-                <tr key={idx}>
-                  <td>{client.client}</td>
-                  <td>Gs. {client.totalSpent.toLocaleString()}</td>
-                  <td>{client.ordersCount}</td>
+      {/* DETALLE DE VENTAS - 3 TABLAS */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gap: "1.5rem",
+        marginTop: "2rem",
+      }}>
+        {/* VENTAS POR CLIENTE */}
+        <div style={{
+          background: "white",
+          borderRadius: "12px",
+          padding: "1.5rem",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        }}>
+          <h3 style={{
+            fontSize: "0.875rem",
+            fontWeight: 700,
+            color: "#64748b",
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+            marginBottom: "1rem",
+          }}>
+            Ventas por Cliente
+          </h3>
+          
+          <div style={{ overflow: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+                  <th style={{
+                    textAlign: "left",
+                    padding: "0.75rem 0.5rem",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    color: "#475569",
+                  }}>
+                    Cliente
+                    <button
+                      onClick={() => setCustomerSort(customerSort === "desc" ? "asc" : "desc")}
+                      style={{
+                        marginLeft: "0.5rem",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#94a3b8",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      {customerSort === "desc" ? "↓" : "↑"}
+                    </button>
+                  </th>
+                  <th style={{
+                    textAlign: "right",
+                    padding: "0.75rem 0.5rem",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    color: "#475569",
+                  }}>
+                    Total Gastado
+                    <button
+                      onClick={() => setCustomerSort(customerSort === "desc" ? "asc" : "desc")}
+                      style={{
+                        marginLeft: "0.5rem",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#94a3b8",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      {customerSort === "desc" ? "↓" : "↑"}
+                    </button>
+                  </th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {paginateData(sortedCustomers, customerPage).map((item, index) => (
+                  <tr key={index} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{
+                      padding: "0.75rem 0.5rem",
+                      fontSize: "0.875rem",
+                      color: "#1e293b",
+                    }}>
+                      {item.client}
+                    </td>
+                    <td style={{
+                      padding: "0.75rem 0.5rem",
+                      fontSize: "0.875rem",
+                      color: "#1e293b",
+                      textAlign: "right",
+                      fontWeight: 600,
+                    }}>
+                      Gs. {item.totalSpent.toLocaleString('es-PY')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {renderPagination(customerPage, getTotalPages(sortedCustomers.length), setCustomerPage)}
+        </div>
+
+        {/* DETALLE PRODUCTOS VENDIDOS */}
+        <div style={{
+          background: "white",
+          borderRadius: "12px",
+          padding: "1.5rem",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        }}>
+          <h3 style={{
+            fontSize: "0.875rem",
+            fontWeight: 700,
+            color: "#64748b",
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+            marginBottom: "1rem",
+          }}>
+            Detalle Productos Vendidos
+          </h3>
+          
+          <div style={{ overflow: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+                  <th style={{
+                    textAlign: "left",
+                    padding: "0.75rem 0.5rem",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    color: "#475569",
+                  }}>
+                    Producto
+                    <button
+                      onClick={() => setProductSort(productSort === "desc" ? "asc" : "desc")}
+                      style={{
+                        marginLeft: "0.5rem",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#94a3b8",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      {productSort === "desc" ? "↓" : "↑"}
+                    </button>
+                  </th>
+                  <th style={{
+                    textAlign: "right",
+                    padding: "0.75rem 0.5rem",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    color: "#475569",
+                  }}>
+                    Cantidad Vendida
+                    <button
+                      onClick={() => setProductSort(productSort === "desc" ? "asc" : "desc")}
+                      style={{
+                        marginLeft: "0.5rem",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#94a3b8",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      {productSort === "desc" ? "↓" : "↑"}
+                    </button>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginateData(sortedProducts, productPage).map((item, index) => (
+                  <tr key={index} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{
+                      padding: "0.75rem 0.5rem",
+                      fontSize: "0.875rem",
+                      color: "#1e293b",
+                    }}>
+                      {item.productName}
+                    </td>
+                    <td style={{
+                      padding: "0.75rem 0.5rem",
+                      fontSize: "0.875rem",
+                      color: "#1e293b",
+                      textAlign: "right",
+                      fontWeight: 600,
+                    }}>
+                      {item.quantitySold}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {renderPagination(productPage, getTotalPages(sortedProducts.length), setProductPage)}
+        </div>
+
+        {/* MONTO A COBRAR POR CLIENTE */}
+        <div style={{
+          background: "white",
+          borderRadius: "12px",
+          padding: "1.5rem",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        }}>
+          <h3 style={{
+            fontSize: "0.875rem",
+            fontWeight: 700,
+            color: "#64748b",
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+            marginBottom: "1rem",
+          }}>
+            Monto a Cobrar por Cliente
+          </h3>
+          
+          <div style={{ overflow: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+                  <th style={{
+                    textAlign: "left",
+                    padding: "0.75rem 0.5rem",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    color: "#475569",
+                  }}>
+                    Cliente
+                    <button
+                      onClick={() => setPendingSort(pendingSort === "desc" ? "asc" : "desc")}
+                      style={{
+                        marginLeft: "0.5rem",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#94a3b8",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      {pendingSort === "desc" ? "↓" : "↑"}
+                    </button>
+                  </th>
+                  <th style={{
+                    textAlign: "right",
+                    padding: "0.75rem 0.5rem",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    color: "#475569",
+                  }}>
+                    Monto Adeudado
+                    <button
+                      onClick={() => setPendingSort(pendingSort === "desc" ? "asc" : "desc")}
+                      style={{
+                        marginLeft: "0.5rem",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#94a3b8",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      {pendingSort === "desc" ? "↓" : "↑"}
+                    </button>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginateData(sortedPending, pendingPage).map((item, index) => (
+                  <tr key={index} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{
+                      padding: "0.75rem 0.5rem",
+                      fontSize: "0.875rem",
+                      color: "#1e293b",
+                    }}>
+                      {item.client}
+                    </td>
+                    <td style={{
+                      padding: "0.75rem 0.5rem",
+                      fontSize: "0.875rem",
+                      color: "#1e293b",
+                      textAlign: "right",
+                      fontWeight: 600,
+                    }}>
+                      Gs. {item.pendingAmount.toLocaleString('es-PY')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {renderPagination(pendingPage, getTotalPages(sortedPending.length), setPendingPage)}
+        </div>
       </div>
 
-      {/* Tabla 2: Detalle de Productos Vendidos */}
-      <div className="reports-table-container">
-        <h3 className="reports-table-title">Detalle Productos Vendidos</h3>
-        <table className="reports-table">
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th>Cantidad</th>
-              <th>Total Ingresos</th>
-            </tr>
-          </thead>
-          <tbody>
-            {productSales.length === 0 ? (
-              <tr>
-                <td colSpan={3} style={{ textAlign: "center", padding: "2rem", color: "#999" }}>
-                  No hay productos vendidos
-                </td>
-              </tr>
-            ) : (
-              productSales.map((product, idx) => (
-                <tr key={idx}>
-                  <td>{product.productName}</td>
-                  <td>{product.quantitySold}</td>
-                  <td>Gs. {product.totalRevenue.toLocaleString()}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Tabla 3: Monto a Cobrar por Cliente */}
-      <div className="reports-table-container">
-        <h3 className="reports-table-title">Monto a Cobrar por Cliente</h3>
-        <table className="reports-table">
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Monto Pendiente</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pendingByClient.length === 0 ? (
-              <tr>
-                <td colSpan={3} style={{ textAlign: "center", padding: "2rem", color: "#999" }}>
-                  No hay pagos pendientes
-                </td>
-              </tr>
-            ) : (
-              pendingByClient.map((payment, idx) => (
-                <tr key={idx}>
-                  <td>{payment.client}</td>
-                  <td>Gs. {payment.pendingAmount.toLocaleString()}</td>
-                  <td>Pendiente</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Botón de descarga */}
+      {/* BOTÓN EXPORTAR */}
       <div style={{ marginTop: "2rem", textAlign: "center" }}>
-        <button className="reports-download-btn" onClick={exportToExcel}>
-          📥 Descargar Ventas en Excel
-        </button>
+        <Button
+          variant="outline"
+          size="lg"
+          style={{
+            padding: "1rem 3rem",
+            fontSize: "1rem",
+            fontWeight: 600,
+            borderColor: "#3b82f6",
+            color: "#3b82f6",
+          }}
+        >
+          Descargar Ventas en Excel
+        </Button>
       </div>
 
       {activeTab === "expenses" && (

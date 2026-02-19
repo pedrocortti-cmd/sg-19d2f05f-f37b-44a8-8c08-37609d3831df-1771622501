@@ -1766,7 +1766,7 @@ export default function Home() {
         <title>De la Gran Burger - POS</title>
       </Head>
 
-      <div className="pos-layout">
+      <div className={currentView === "pos" ? "pos-layout" : "pos-layout-two-column"}>
         {/* Sidebar */}
         <div className="pos-sidebar">
           <div className="pos-sidebar-header">
