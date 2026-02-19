@@ -8,10 +8,12 @@ import { PaymentModal } from "@/components/pos/PaymentModal";
 import { PrintFormatSettings } from "@/components/pos/PrintFormatSettings";
 import { Reports } from "@/components/pos/Reports";
 import { Inventory } from "@/components/pos/Inventory";
-import "@/styles/globals.css";
-import "@/styles/pos.css";
-import "@/styles/reports.css";
-import "@/styles/inventory.css";
+
+// CSS Imports moved to _app.tsx
+// import "@/styles/globals.css";
+// import "@/styles/pos.css";
+// import "@/styles/reports.css";
+// import "@/styles/inventory.css";
 
 // Importar tipos y datos mock
 import { 
@@ -301,31 +303,19 @@ export default function POS() {
               <div className="products-grid">
                 {filteredProducts.map(product => (
                   <div 
-                    key={product.id} 
-                    className={`product-card ${(product.stock || 0) <= 0 ? 'out-of-stock' : ''}`}
+                    key={product.id}
+                    className="product-card"
                     onClick={() => addToCart(product)}
                   >
-                    <div className="product-image">
-                      {product.image ? (
-                        <img src={product.image} alt={product.name} />
-                      ) : (
-                        <div className="placeholder-image">
-                          <Package size={32} />
-                        </div>
-                      )}
-                      {(product.stock || 0) <= 0 && (
-                        <div className="stock-overlay">AGOTADO</div>
-                      )}
-                    </div>
-                    <div className="product-info">
-                      <h3>{product.name}</h3>
-                      <div className="product-meta">
-                        <span className="price">Gs. {product.price.toLocaleString()}</span>
-                        <span className={`stock-badge ${(product.stock || 0) < 10 ? 'low' : ''}`}>
-                          Stop: {product.stock || 0}
-                        </span>
-                      </div>
-                    </div>
+                    {product.image && (
+                      <img 
+                        src={product.image} 
+                        alt={product.name}
+                        className="product-image"
+                      />
+                    )}
+                    <div className="product-name">{product.name}</div>
+                    <span className="price">Gs. {product.price.toLocaleString("es-PY")}</span>
                   </div>
                 ))}
               </div>
@@ -394,28 +384,28 @@ export default function POS() {
                 ) : (
                   cart.map(item => (
                     <div key={item.product.id} className="cart-item">
-                      <div className="item-info">
-                        <h4>{item.product.name}</h4>
-                        <span className="item-price">Gs. {item.product.price.toLocaleString()}</span>
+                      <div className="cart-item-details">
+                        <div className="cart-item-name">{item.product.name}</div>
+                        <span className="item-price">Gs. {item.product.price.toLocaleString("es-PY")}</span>
                       </div>
-                      <div className="item-controls">
-                        <button onClick={() => updateQuantity(item.product.id, -1)}>
+                      <div className="cart-item-controls">
+                        <button
+                          className="quantity-btn"
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                        >
                           <Minus size={16} />
                         </button>
-                        <span>{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.product.id, 1)}>
+                        <span className="quantity">{item.quantity}</span>
+                        <button
+                          className="quantity-btn"
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                        >
                           <Plus size={16} />
                         </button>
                       </div>
-                      <div className="item-total">
-                        Gs. {(item.product.price * item.quantity).toLocaleString()}
-                        <button 
-                          className="delete-item"
-                          onClick={() => removeFromCart(item.product.id)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      <span className="item-total">
+                        Gs. {(item.product.price * item.quantity).toLocaleString("es-PY")}
+                      </span>
                     </div>
                   ))
                 )}
@@ -425,21 +415,18 @@ export default function POS() {
               <div className="cart-footer">
                 <div className="cart-summary">
                   <div className="summary-row">
-                    <span>Subtotal</span>
-                    <span>Gs. {cartSubtotal.toLocaleString()}</span>
+                    <span>Subtotal:</span>
+                    <span>Gs. {cartSubtotal.toLocaleString("es-PY")}</span>
                   </div>
-                  <div className="summary-row discount">
-                    <span>Descuento</span>
-                    <input 
-                      type="number" 
-                      value={cartDiscount}
-                      onChange={(e) => setCartDiscount(Number(e.target.value))}
-                      placeholder="0"
-                    />
-                  </div>
+                  {cartDiscount > 0 && (
+                    <div className="summary-row discount">
+                      <span>Descuento:</span>
+                      <span>-Gs. {cartDiscount.toLocaleString("es-PY")}</span>
+                    </div>
+                  )}
                   <div className="summary-row total">
-                    <span>Total a Pagar</span>
-                    <span>Gs. {cartTotal.toLocaleString()}</span>
+                    <span>Total:</span>
+                    <span>Gs. {cartTotal.toLocaleString("es-PY")}</span>
                   </div>
                 </div>
 

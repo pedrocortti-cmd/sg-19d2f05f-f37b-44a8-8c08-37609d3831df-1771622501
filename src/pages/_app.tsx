@@ -1,7 +1,14 @@
 import "@/styles/globals.css";
 import "@/styles/pos.css";
+import "@/styles/reports.css";
+import "@/styles/inventory.css";
 import type { AppProps } from "next/app";
+import { ThemeProvider } from "@/contexts/ThemeProvider";
 
 export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />;
+  return (
+    <ThemeProvider>
+      <Component {...pageProps} />
+    </ThemeProvider>
+  );
 }

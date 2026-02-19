@@ -49,6 +49,14 @@ export function Inventory({ products, onUpdateProduct }: InventoryProps) {
     return products.reduce((total, p) => total + (p.stock || 0), 0);
   }, [products]);
 
+  // Helper para estado de stock visual
+  const getStockStatus = (product: Product) => {
+    const stock = product.stock || 0;
+    if (stock === 0) return { label: "Agotado", className: "out", icon: "🔴" };
+    if (stock < 10) return { label: "Stock Bajo", className: "low", icon: "⚠️" };
+    return { label: "Disponible", className: "good", icon: "✓" };
+  };
+
   // Función para ajustar stock
   const handleAdjustStock = () => {
     if (!selectedProduct || !adjustmentQuantity || !adjustmentReason.trim()) {
@@ -149,13 +157,17 @@ export function Inventory({ products, onUpdateProduct }: InventoryProps) {
                       {product.name}
                     </div>
                   </td>
-                  <td>{product.category}</td>
-                  <td className="text-right">Gs. {product.price.toLocaleString()}</td>
                   <td className="text-center">
-                    <span className={`inventory-stock-badge ${stockStatus}`}>
-                      {stock} unidades
+                    <span className={`inventory-stock ${getStockStatus(product).className}`}>
+                      {product.stock || 0}
                     </span>
                   </td>
+                  <td className="text-center">
+                    <span className={`inventory-status ${getStockStatus(product).className}`}>
+                      {getStockStatus(product).icon} {getStockStatus(product).label}
+                    </span>
+                  </td>
+                  <td className="text-right">Gs. {product.price.toLocaleString("es-PY")}</td>
                   <td className="text-center">
                     {stockStatus === "out" && (
                       <span className="inventory-status-badge out">
@@ -290,46 +302,19 @@ export function Inventory({ products, onUpdateProduct }: InventoryProps) {
 
       {/* Métricas */}
       <div className="inventory-metrics">
-        <div className="inventory-metric-card">
-          <div className="inventory-metric-icon blue">
-            <Package size={24} />
-          </div>
+        <div className="inventory-metric">
+          <div className="inventory-metric-icon">📦</div>
           <div className="inventory-metric-content">
-            <span className="inventory-metric-label">Total Productos</span>
-            <span className="inventory-metric-value">{products.length}</span>
+            <span className="inventory-metric-value">{totalUnits.toLocaleString("es-PY")}</span>
+            <span className="inventory-metric-label">Unidades Totales</span>
           </div>
         </div>
-
-        <div className="inventory-metric-card">
-          <div className="inventory-metric-icon green">
-            <Package size={24} />
-          </div>
+        
+        <div className="inventory-metric">
+          <div className="inventory-metric-icon">💰</div>
           <div className="inventory-metric-content">
-            <span className="inventory-metric-label">Unidades en Stock</span>
-            <span className="inventory-metric-value">{totalUnits.toLocaleString()}</span>
-          </div>
-        </div>
-
-        <div className="inventory-metric-card">
-          <div className="inventory-metric-icon purple">
-            <Package size={24} />
-          </div>
-          <div className="inventory-metric-content">
-            <span className="inventory-metric-label">Valor Inventario</span>
             <span className="inventory-metric-value">
-              Gs. {totalInventoryValue.toLocaleString()}
-            </span>
-          </div>
-        </div>
-
-        <div className="inventory-metric-card">
-          <div className="inventory-metric-icon orange">
-            <AlertTriangle size={24} />
-          </div>
-          <div className="inventory-metric-content">
-            <span className="inventory-metric-label">Alertas</span>
-            <span className="inventory-metric-value">
-              {outOfStockProducts.length + lowStockProducts.length}
+              Gs. {totalInventoryValue.toLocaleString("es-PY")}
             </span>
           </div>
         </div>
