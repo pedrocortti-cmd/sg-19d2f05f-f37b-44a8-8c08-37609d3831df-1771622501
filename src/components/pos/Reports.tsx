@@ -251,7 +251,13 @@ export function Reports({ sales, products }: ReportsProps) {
   };
 
   return (
-    <div style={{ padding: '2rem', backgroundColor: '#F9FAFB', minHeight: '100vh' }}>
+    <div style={{ 
+      padding: '1rem 1rem 2rem 1rem',
+      backgroundColor: '#F9FAFB',
+      minHeight: '100vh',
+      maxWidth: '1600px',
+      margin: '0 auto'
+    }}>
       {/* Identificador de versión para confirmar que el código nuevo se está cargando */}
       <div style={{
         position: 'fixed',
@@ -328,7 +334,7 @@ export function Reports({ sales, products }: ReportsProps) {
       <table style={{
         width: '100%',
         borderCollapse: 'separate',
-        borderSpacing: '1.5rem',
+        borderSpacing: '2rem',
         marginBottom: '2rem',
         tableLayout: 'fixed'  // CRÍTICO: Fuerza ancho fijo de columnas
       }}>
