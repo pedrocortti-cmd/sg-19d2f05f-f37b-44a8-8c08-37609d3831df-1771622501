@@ -1408,6 +1408,13 @@
   gap: 1.5rem !important;
   margin-bottom: 2rem !important;
   width: 100% !important;
+  grid-auto-flow: row !important;
+}
+
+/* Force grid layout with data attribute for maximum specificity */
+div[class*="reports-metrics"] {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
 }
 
 /* Individual Metric Card */
