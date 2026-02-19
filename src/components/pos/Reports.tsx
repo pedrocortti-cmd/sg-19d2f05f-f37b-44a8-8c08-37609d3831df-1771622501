@@ -84,7 +84,6 @@ export function Reports({ sales, products }: ReportsProps) {
           if (!customDateFrom || !customDateTo) return true;
           const from = new Date(customDateFrom);
           const to = new Date(customDateTo);
-          // Ajustar fin del día para 'to'
           const toEndOfDay = new Date(to);
           toEndOfDay.setHours(23, 59, 59, 999);
           return saleDate >= from && saleDate <= toEndOfDay;
@@ -178,12 +177,10 @@ export function Reports({ sales, products }: ReportsProps) {
   const exportToExcel = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
     
-    // Encabezados
     csvContent += "REPORTE DE VENTAS - DE LA GRAN BURGER\n";
     csvContent += `Período: ${getDateFilterLabel()}\n`;
     csvContent += `Fecha de generación: ${new Date().toLocaleString()}\n\n`;
     
-    // Métricas principales
     csvContent += "RESUMEN GENERAL\n";
     csvContent += "Métrica,Valor\n";
     csvContent += `Ventas Totales,Gs. ${metrics.totalSales.toLocaleString()}\n`;
@@ -192,7 +189,6 @@ export function Reports({ sales, products }: ReportsProps) {
     csvContent += `Facturas Pendientes,${metrics.pendingInvoices}\n`;
     csvContent += `Monto Total a Cobrar,Gs. ${metrics.totalPending.toLocaleString()}\n\n`;
     
-    // Detalle de ventas
     csvContent += "DETALLE DE VENTAS\n";
     csvContent += "N° Venta,Fecha,Hora,Cliente,Teléfono,Tipo,Total,Estado,Método Pago\n";
     filteredSales.forEach(sale => {
@@ -210,7 +206,6 @@ export function Reports({ sales, products }: ReportsProps) {
     
     csvContent += "\n";
     
-    // Productos vendidos
     csvContent += "PRODUCTOS VENDIDOS\n";
     csvContent += "Producto,Cantidad Vendida,Ingresos Totales\n";
     productSales.forEach(product => {
@@ -219,14 +214,12 @@ export function Reports({ sales, products }: ReportsProps) {
     
     csvContent += "\n";
     
-    // Ventas por cliente
     csvContent += "VENTAS POR CLIENTE\n";
     csvContent += "Cliente,Total Gastado,Cantidad de Pedidos\n";
     salesByClient.forEach(client => {
       csvContent += `"${client.client}",Gs. ${client.totalSpent.toLocaleString()},${client.ordersCount}\n`;
     });
 
-    // Crear y descargar el archivo
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -252,13 +245,12 @@ export function Reports({ sales, products }: ReportsProps) {
 
   return (
     <div style={{ 
-      padding: '1rem 1rem 2rem 1rem',
-      backgroundColor: '#F9FAFB',
-      minHeight: '100vh',
       width: '100%',
-      margin: '0 auto'
+      minHeight: '100vh',
+      backgroundColor: '#F9FAFB',
+      padding: '1.5rem'
     }}>
-      {/* Identificador de versión para confirmar que el código nuevo se está cargando */}
+      {/* Identificador de versión */}
       <div style={{
         position: 'fixed',
         top: '10px',
@@ -272,7 +264,7 @@ export function Reports({ sales, products }: ReportsProps) {
         zIndex: 9999,
         boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
       }}>
-        ✅ VERSIÓN ACTUALIZADA - {new Date().toLocaleTimeString()}
+        ✅ GRID REDESIGN - {new Date().toLocaleTimeString()}
       </div>
 
       {/* Encabezado con selector de fecha */}
@@ -330,170 +322,153 @@ export function Reports({ sales, products }: ReportsProps) {
         </button>
       </div>
 
-      {/* Tarjetas de métricas principales - TABLE LAYOUT */}
-      <table style={{
-        width: '100%',
-        borderCollapse: 'separate',
-        borderSpacing: '2rem',
-        marginBottom: '2rem',
-        tableLayout: 'fixed'  // CRÍTICO: Fuerza ancho fijo de columnas
+      {/* GRID DE MÉTRICAS PRINCIPALES - SIMPLE Y DIRECTO */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '1.5rem',
+        marginBottom: '1.5rem',
+        width: '100%'
       }}>
-        <tbody>
-          {/* Fila 1: 3 tarjetas */}
-          <tr>
-            <td style={{
-              backgroundColor: 'white',
-              borderRadius: '0.75rem',
-              padding: '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              width: '33.33%',
-              verticalAlign: 'top',
-              display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
-            }}>
-              <div style={{
-                fontSize: '0.75rem',
-                fontWeight: '600',
-                color: '#6B7280',
-                marginBottom: '0.75rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                VENTAS TOTALES
-              </div>
-              <div style={{
-                fontSize: '2.25rem',
-                fontWeight: '700',
-                color: '#111827'
-              }}>
-                Gs. {metrics.totalSales.toLocaleString('es-PY')}
-              </div>
-            </td>
+        {/* Tarjeta 1: Ventas Totales */}
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '0.75rem',
+          padding: '2rem',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+        }}>
+          <div style={{
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            color: '#6B7280',
+            marginBottom: '0.75rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            VENTAS TOTALES
+          </div>
+          <div style={{
+            fontSize: '2.25rem',
+            fontWeight: '700',
+            color: '#111827'
+          }}>
+            Gs. {metrics.totalSales.toLocaleString('es-PY')}
+          </div>
+        </div>
 
-            <td style={{
-              backgroundColor: 'white',
-              borderRadius: '0.75rem',
-              padding: '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              width: '33.33%',
-              verticalAlign: 'top',
-              display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
-            }}>
-              <div style={{
-                fontSize: '0.75rem',
-                fontWeight: '600',
-                color: '#6B7280',
-                marginBottom: '0.75rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                CANTIDAD DE VENTAS
-              </div>
-              <div style={{
-                fontSize: '2.25rem',
-                fontWeight: '700',
-                color: '#111827'
-              }}>
-                {metrics.salesCount}
-              </div>
-            </td>
+        {/* Tarjeta 2: Cantidad de Ventas */}
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '0.75rem',
+          padding: '2rem',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+        }}>
+          <div style={{
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            color: '#6B7280',
+            marginBottom: '0.75rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            CANTIDAD DE VENTAS
+          </div>
+          <div style={{
+            fontSize: '2.25rem',
+            fontWeight: '700',
+            color: '#111827'
+          }}>
+            {metrics.salesCount}
+          </div>
+        </div>
 
-            <td style={{
-              backgroundColor: 'white',
-              borderRadius: '0.75rem',
-              padding: '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              width: '33.33%',
-              verticalAlign: 'top',
-              display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
-            }}>
-              <div style={{
-                fontSize: '0.75rem',
-                fontWeight: '600',
-                color: '#6B7280',
-                marginBottom: '0.75rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                VALOR PROMEDIO DE PEDIDO
-              </div>
-              <div style={{
-                fontSize: '2.25rem',
-                fontWeight: '700',
-                color: '#111827'
-              }}>
-                Gs. {metrics.averageOrderValue.toLocaleString('es-PY')}
-              </div>
-            </td>
-          </tr>
+        {/* Tarjeta 3: Valor Promedio de Pedido */}
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '0.75rem',
+          padding: '2rem',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+        }}>
+          <div style={{
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            color: '#6B7280',
+            marginBottom: '0.75rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            VALOR PROMEDIO DE PEDIDO
+          </div>
+          <div style={{
+            fontSize: '2.25rem',
+            fontWeight: '700',
+            color: '#111827'
+          }}>
+            Gs. {metrics.averageOrderValue.toLocaleString('es-PY')}
+          </div>
+        </div>
+      </div>
 
-          {/* Fila 2: 2 tarjetas */}
-          <tr>
-            <td style={{
-              backgroundColor: 'white',
-              borderRadius: '0.75rem',
-              padding: '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              width: '50%',
-              verticalAlign: 'top',
-              display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
-            }}>
-              <div style={{
-                fontSize: '0.75rem',
-                fontWeight: '600',
-                color: '#6B7280',
-                marginBottom: '0.75rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                FACTURAS PENDIENTES DE COBRO
-              </div>
-              <div style={{
-                fontSize: '2.25rem',
-                fontWeight: '700',
-                color: '#111827'
-              }}>
-                {metrics.pendingInvoices}
-              </div>
-            </td>
+      {/* SEGUNDA FILA DE MÉTRICAS - 2 COLUMNAS */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: '1.5rem',
+        marginBottom: '2rem',
+        width: '100%'
+      }}>
+        {/* Tarjeta 4: Facturas Pendientes */}
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '0.75rem',
+          padding: '2rem',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+        }}>
+          <div style={{
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            color: '#6B7280',
+            marginBottom: '0.75rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            FACTURAS PENDIENTES DE COBRO
+          </div>
+          <div style={{
+            fontSize: '2.25rem',
+            fontWeight: '700',
+            color: '#111827'
+          }}>
+            {metrics.pendingInvoices}
+          </div>
+        </div>
 
-            <td style={{
-              backgroundColor: 'white',
-              borderRadius: '0.75rem',
-              padding: '2rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              width: '50%',
-              verticalAlign: 'top',
-              display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
-            }}>
-              <div style={{
-                fontSize: '0.75rem',
-                fontWeight: '600',
-                color: '#6B7280',
-                marginBottom: '0.75rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                MONTO TOTAL A COBRAR
-              </div>
-              <div style={{
-                fontSize: '2.25rem',
-                fontWeight: '700',
-                color: '#111827'
-              }}>
-                Gs. {metrics.totalPending.toLocaleString('es-PY')}
-              </div>
-            </td>
-
-            <td style={{
-              backgroundColor: 'transparent',
-              border: 'none',
-              display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
-            }}>
-              {/* Celda vacía para mantener el layout */}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        {/* Tarjeta 5: Monto Total a Cobrar */}
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '0.75rem',
+          padding: '2rem',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+        }}>
+          <div style={{
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            color: '#6B7280',
+            marginBottom: '0.75rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            MONTO TOTAL A COBRAR
+          </div>
+          <div style={{
+            fontSize: '2.25rem',
+            fontWeight: '700',
+            color: '#111827'
+          }}>
+            Gs. {metrics.totalPending.toLocaleString('es-PY')}
+          </div>
+        </div>
+      </div>
 
       {/* Tablas detalladas */}
       
