@@ -85,6 +85,8 @@ export interface Sale {
   paymentMethod: string;
   payments?: Payment[];
   
+  note?: string;
+
   status: "pending" | "partial" | "completed" | "cancelled" | "pending_payment";
   
   createdBy?: string;
