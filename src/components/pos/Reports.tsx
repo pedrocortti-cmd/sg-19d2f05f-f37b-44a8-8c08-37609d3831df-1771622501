@@ -214,8 +214,13 @@ export function Reports({ sales, products }: ReportsProps) {
       "Total del Producto",
     ]);
 
+    // ORDENAR LAS VENTAS DE MÁS ANTIGUA A MÁS RECIENTE (ASCENDENTE)
+    const sortedSales = [...filteredSales].sort((a, b) => {
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+
     // Procesar cada venta
-    filteredSales.forEach((sale) => {
+    sortedSales.forEach((sale) => {
       const saleDate = new Date(sale.date);
       const formattedDate = `${saleDate.getDate()}/${
         saleDate.getMonth() + 1
@@ -227,10 +232,25 @@ export function Reports({ sales, products }: ReportsProps) {
       const total = sale.total;
       const deliveryPerson = sale.deliveryDriverName || "";
       
-      // Calcular monto del delivery AQUÍ - una vez por venta
+      // DEBUG: Mostrar los items de la venta en consola
+      console.log('=== VENTA ID:', sale.id, '===');
+      console.log('Items:', sale.items);
+      
+      // Calcular monto del delivery - BUSCAR EN TODOS LOS ITEMS
       const deliveryAmount = sale.items
-        .filter(item => item.productName.toLowerCase().includes("delivery"))
-        .reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        .filter(item => {
+          const hasDelivery = item.productName.toLowerCase().includes("delivery");
+          console.log(`  Producto: "${item.productName}" - ¿Es delivery?: ${hasDelivery}`);
+          return hasDelivery;
+        })
+        .reduce((sum, item) => {
+          const itemTotal = item.price * item.quantity;
+          console.log(`  Delivery encontrado: ${item.productName} - Total: ${itemTotal}`);
+          return sum + itemTotal;
+        }, 0);
+      
+      console.log('Monto Delivery Total:', deliveryAmount);
+      console.log('================');
       
       const paymentStatus = sale.status === "completed" ? "Pagado" : "Pendiente";
       const balance = sale.status === "completed" ? 0 : sale.total;
