@@ -1,3 +1,5 @@
+import { Sale } from "@/types/pos";
+
 // Print Service - Comunicación con Print Server local
 
 export interface PrinterConfig {
@@ -13,9 +15,18 @@ export interface PrintJob {
   copies?: number;
 }
 
-const PRINT_SERVER_URL = "http://localhost:3001";
+export interface PrintFormatConfig {
+  header?: string;
+  footer?: string;
+  showLogo?: boolean;
+  paperSize?: "80mm" | "58mm";
+  kitchenCopies?: number;
+  clientCopies?: number;
+}
 
 export class PrintService {
+  private static PRINT_SERVER_URL = "http://localhost:3001";
+
   private static config: PrinterConfig = {
     kitchenPrinter: "",
     clientPrinter: "",
@@ -42,16 +53,20 @@ export class PrintService {
 
   static async getAvailablePrinters(): Promise<string[]> {
     try {
-      const response = await fetch(`${PRINT_SERVER_URL}/printers`);
-      if (!response.ok) throw new Error("No se pudo conectar con el servidor de impresión");
+      const response = await fetch(`${this.PRINT_SERVER_URL}/printers`);
+      if (!response.ok) {
+        console.warn("Print Server no disponible");
+        return [];
+      }
       const data = await response.json();
       return data.printers || [];
     } catch (error) {
-      console.error("Error obteniendo impresoras:", error);
+      console.warn("No se pudo conectar con el servidor de impresión:", error);
       return [];
     }
   }
 
+  // Método legacy (mantener por compatibilidad si es necesario, o refactorizar)
   static async printKitchenOrder(
     orderNumber: string,
     items: Array<{ name: string; quantity: number; note?: string }>,
@@ -67,7 +82,7 @@ export class PrintService {
       return false;
     }
 
-    const content = this.generateKitchenReceipt(
+    const content = this.generateKitchenReceiptLegacy(
       orderNumber,
       items,
       type,
@@ -84,6 +99,7 @@ export class PrintService {
     });
   }
 
+  // Método legacy
   static async printClientReceipt(
     saleNumber: string,
     items: Array<{ name: string; quantity: number; price: number; subtotal: number }>,
@@ -99,7 +115,7 @@ export class PrintService {
       return false;
     }
 
-    const content = this.generateClientReceipt(
+    const content = this.generateClientReceiptLegacy(
       saleNumber,
       items,
       subtotal,
@@ -116,12 +132,76 @@ export class PrintService {
     });
   }
 
+  static async printKitchenTicket(
+    sale: Sale,
+    printerName: string,
+    config: PrintFormatConfig
+  ): Promise<boolean> {
+    try {
+      const content = this.generateKitchenTicketContent(sale, config);
+      const response = await fetch(`${this.PRINT_SERVER_URL}/print`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          printerName,
+          content,
+          copies: config.kitchenCopies || 1,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Error al imprimir comanda de cocina");
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error al conectar con el servidor de impresión:", error);
+      alert(
+        "⚠️ Servidor de impresión no disponible.\n\nPara usar la función de impresión automática:\n1. Instala el Print Server (ver carpeta print-server/)\n2. Inicia el servidor: npm start\n3. Configura las impresoras en Ajustes"
+      );
+      return false;
+    }
+  }
+
+  static async printClientTicket(
+    sale: Sale,
+    printerName: string,
+    config: PrintFormatConfig
+  ): Promise<boolean> {
+    try {
+      const content = this.generateClientTicketContent(sale, config);
+      const response = await fetch(`${this.PRINT_SERVER_URL}/print`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          printerName,
+          content,
+          copies: config.clientCopies || 1,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Error al imprimir ticket de cliente");
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error al conectar con el servidor de impresión:", error);
+      alert(
+        "⚠️ Servidor de impresión no disponible.\n\nPara usar la función de impresión automática:\n1. Instala el Print Server (ver carpeta print-server/)\n2. Inicia el servidor: npm start\n3. Configura las impresoras en Ajustes"
+      );
+      return false;
+    }
+  }
+
   private static async sendPrintJob(job: PrintJob): Promise<boolean> {
     try {
       const config = this.getConfig();
       const printer = job.type === "kitchen" ? config.kitchenPrinter : config.clientPrinter;
 
-      const response = await fetch(`${PRINT_SERVER_URL}/print`, {
+      const response = await fetch(`${this.PRINT_SERVER_URL}/print`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -144,7 +224,7 @@ export class PrintService {
     }
   }
 
-  private static generateKitchenReceipt(
+  private static generateKitchenReceiptLegacy(
     orderNumber: string,
     items: Array<{ name: string; quantity: number; note?: string }>,
     type: string,
@@ -205,7 +285,7 @@ export class PrintService {
     return receipt;
   }
 
-  private static generateClientReceipt(
+  private static generateClientReceiptLegacy(
     saleNumber: string,
     items: Array<{ name: string; quantity: number; price: number; subtotal: number }>,
     subtotal: number,
@@ -259,64 +339,159 @@ export class PrintService {
     return receipt;
   }
 
-  static async testPrint(printerName: string, type: "kitchen" | "client"): Promise<boolean> {
-    const content = type === "kitchen" 
-      ? this.generateTestKitchenReceipt()
-      : this.generateTestClientReceipt();
+  private static generateKitchenTicketContent(sale: Sale, config: PrintFormatConfig): string {
+    const now = new Date(sale.date);
+    const date = now.toLocaleDateString("es-PY");
+    const time = now.toLocaleTimeString("es-PY", { hour: "2-digit", minute: "2-digit" });
 
+    let receipt = "\x1B\x40"; // Initialize
+    receipt += "\x1B\x61\x01"; // Center align
+    receipt += "\x1B\x21\x30"; // Double size
+    receipt += "COMANDA COCINA\n";
+    receipt += "\x1B\x21\x00"; // Normal size
+    receipt += "================================\n";
+    receipt += "\x1B\x61\x00"; // Left align
+    
+    receipt += `Pedido #: ${sale.id.toString().slice(0, 8)}\n`;
+    receipt += `Fecha: ${date} ${time}\n`;
+    receipt += `Tipo: ${sale.type === 'dineIn' ? 'En Local' : sale.type === 'pickup' ? 'Para llevar' : 'Delivery'}\n`;
+    receipt += "--------------------------------\n";
+
+    // Items
+    receipt += "\x1B\x21\x10"; // Bold
+    sale.items.forEach((item) => {
+      receipt += `${item.quantity}x ${item.productName}\n`;
+      // Notas específicas del item si existieran (en el futuro)
+    });
+    receipt += "\x1B\x21\x00"; // Normal
+
+    // General note
+    if (sale.note) {
+      receipt += "--------------------------------\n";
+      receipt += "\x1B\x21\x20"; // Double height
+      receipt += `NOTA: ${sale.note}\n`;
+      receipt += "\x1B\x21\x00"; // Normal
+    }
+
+    // Customer info for delivery
+    if (sale.type === "delivery" && sale.customer) {
+      receipt += "--------------------------------\n";
+      receipt += `Cliente: ${sale.customer.name}\n`;
+      if (sale.customer.phone) receipt += `Tel: ${sale.customer.phone}\n`;
+      if (sale.customer.address) receipt += `Dir: ${sale.customer.address}\n`;
+    }
+
+    receipt += "================================\n\n\n";
+    receipt += "\x1B\x64\x03"; // Feed 3 lines
+    receipt += "\x1B\x69"; // Cut paper
+
+    return receipt;
+  }
+
+  private static generateClientTicketContent(sale: Sale, config: PrintFormatConfig): string {
+    const now = new Date(sale.date);
+    const date = now.toLocaleDateString("es-PY");
+    const time = now.toLocaleTimeString("es-PY", { hour: "2-digit", minute: "2-digit" });
+
+    let receipt = "\x1B\x40"; // Initialize
+    receipt += "\x1B\x61\x01"; // Center align
+    
+    // Header personalizado
+    if (config.header) {
+      receipt += `${config.header}\n`;
+    } else {
+      receipt += "\x1B\x21\x30"; // Double size
+      receipt += "De la Gran Burger\n";
+      receipt += "\x1B\x21\x00"; // Normal size
+    }
+    
+    receipt += "================================\n";
+    receipt += "\x1B\x61\x00"; // Left align
+    
+    receipt += `Venta #: ${sale.id.toString().slice(0, 8)}\n`;
+    receipt += `Fecha: ${date} ${time}\n`;
+    if (sale.customer?.name) receipt += `Cliente: ${sale.customer.name}\n`;
+    if (sale.customer?.ruc) receipt += `RUC: ${sale.customer.ruc}\n`;
+    receipt += "--------------------------------\n";
+
+    // Items
+    sale.items.forEach((item) => {
+      receipt += `${item.quantity}x ${item.productName}\n`;
+      receipt += `   Gs. ${item.price.toLocaleString("es-PY")} x ${item.quantity}\n`;
+      receipt += `   Subtotal: Gs. ${(item.price * item.quantity).toLocaleString("es-PY")}\n`;
+    });
+
+    receipt += "--------------------------------\n";
+    receipt += `Subtotal: Gs. ${sale.total.toLocaleString("es-PY")}\n`; // Nota: Sale no tiene subtotal explícito, asumimos total por ahora o calculamos
+    if (sale.discount > 0) {
+      receipt += `Descuento: Gs. ${sale.discount.toLocaleString("es-PY")}\n`;
+    }
+    receipt += "\x1B\x21\x20"; // Double height
+    receipt += `TOTAL: Gs. ${sale.total.toLocaleString("es-PY")}\n`;
+    receipt += "\x1B\x21\x00"; // Normal
+    receipt += "--------------------------------\n";
+    receipt += `Pago: ${sale.paymentMethod}\n`;
+    
+    // Footer personalizado
+    if (config.footer) {
+      receipt += "================================\n";
+      receipt += "\x1B\x61\x01"; // Center align
+      receipt += `${config.footer}\n`;
+    } else {
+      receipt += "================================\n";
+      receipt += "\x1B\x61\x01"; // Center align
+      receipt += "¡Gracias por tu compra!\n";
+    }
+    
+    receipt += "\x1B\x61\x00"; // Left align
+    receipt += "\n\n\n";
+    receipt += "\x1B\x64\x03"; // Feed 3 lines
+    receipt += "\x1B\x69"; // Cut paper
+
+    return receipt;
+  }
+
+  static async testPrint(printerName: string): Promise<boolean> {
     try {
-      const response = await fetch(`${PRINT_SERVER_URL}/print`, {
+      const testContent = `
+================================
+     PRUEBA DE IMPRESIÓN
+================================
+
+Impresora: ${printerName}
+Fecha: ${new Date().toLocaleString("es-PY")}
+
+Esta es una prueba de impresión
+para verificar que la impresora
+está funcionando correctamente.
+
+================================
+      De la Gran Burger
+================================
+      `;
+
+      const response = await fetch(`${this.PRINT_SERVER_URL}/print`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          printer: printerName,
-          content,
+          printerName,
+          content: testContent,
           copies: 1,
         }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error al imprimir");
+        console.error("Error en prueba de impresión");
+        return false;
       }
 
       return true;
     } catch (error) {
-      console.error("Error en impresión de prueba:", error);
-      alert(`Error al imprimir: ${error instanceof Error ? error.message : "Error desconocido"}`);
+      console.error("Error al conectar con el servidor de impresión:", error);
+      alert(
+        "⚠️ Servidor de impresión no disponible.\n\nPara usar la función de impresión automática:\n1. Instala el Print Server (ver carpeta print-server/)\n2. Inicia el servidor: npm start\n3. Configura las impresoras en Ajustes"
+      );
       return false;
     }
-  }
-
-  private static generateTestKitchenReceipt(): string {
-    let receipt = "\x1B\x40";
-    receipt += "\x1B\x61\x01";
-    receipt += "\x1B\x21\x30";
-    receipt += "PRUEBA COCINA\n";
-    receipt += "\x1B\x21\x00";
-    receipt += "================================\n";
-    receipt += "\x1B\x61\x00";
-    receipt += "Esta es una impresión de prueba\n";
-    receipt += "para la impresora de cocina.\n";
-    receipt += "================================\n\n\n";
-    receipt += "\x1B\x64\x03";
-    receipt += "\x1B\x69";
-    return receipt;
-  }
-
-  private static generateTestClientReceipt(): string {
-    let receipt = "\x1B\x40";
-    receipt += "\x1B\x61\x01";
-    receipt += "\x1B\x21\x30";
-    receipt += "PRUEBA CLIENTE\n";
-    receipt += "\x1B\x21\x00";
-    receipt += "================================\n";
-    receipt += "\x1B\x61\x00";
-    receipt += "Esta es una impresión de prueba\n";
-    receipt += "para la impresora de cliente.\n";
-    receipt += "================================\n\n\n";
-    receipt += "\x1B\x64\x03";
-    receipt += "\x1B\x69";
-    return receipt;
   }
 }

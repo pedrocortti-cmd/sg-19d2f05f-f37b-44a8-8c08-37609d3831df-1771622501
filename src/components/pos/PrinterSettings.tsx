@@ -34,13 +34,19 @@ export function PrinterSettings() {
     alert("Configuración de impresoras guardada correctamente");
   };
 
+  const handleTestPrint = async (printer: string) => {
+    setLoading(true);
+    await PrintService.testPrint(printer);
+    setLoading(false);
+  };
+
   const handleTestKitchen = async () => {
     if (!config.kitchenPrinter) {
       alert("Selecciona una impresora de cocina primero");
       return;
     }
     setTestingKitchen(true);
-    await PrintService.testPrint(config.kitchenPrinter, "kitchen");
+    await PrintService.testPrint(config.kitchenPrinter);
     setTestingKitchen(false);
   };
 
@@ -50,7 +56,7 @@ export function PrinterSettings() {
       return;
     }
     setTestingClient(true);
-    await PrintService.testPrint(config.clientPrinter, "client");
+    await PrintService.testPrint(config.clientPrinter);
     setTestingClient(false);
   };
 
