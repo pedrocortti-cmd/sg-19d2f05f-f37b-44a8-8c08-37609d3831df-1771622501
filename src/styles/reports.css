@@ -1,0 +1,62 @@
+/* Estilos específicos para el módulo de Reports */
+
+.reports-full-width-container {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #F9FAFB;
+  padding: 1rem 2rem 2rem 2rem;
+  box-sizing: border-box;
+}
+
+.reports-metrics-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2rem;
+  margin-bottom: 2rem;
+  table-layout: fixed;
+}
+
+.reports-metrics-table td {
+  background-color: white;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  vertical-align: top;
+}
+
+.reports-metric-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6B7280;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+}
+
+.reports-metric-value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #111827;
+  display: block;
+}
+
+@media (max-width: 1400px) {
+  .reports-metrics-table {
+    border-spacing: 1.5rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .reports-metrics-table {
+    border-spacing: 1rem;
+  }
+  
+  .reports-metrics-table td {
+    padding: 1.5rem;
+  }
+  
+  .reports-metric-value {
+    font-size: 1.75rem;
+  }
+}

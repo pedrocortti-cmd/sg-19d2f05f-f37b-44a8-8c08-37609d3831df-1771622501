@@ -255,7 +255,7 @@ export function Reports({ sales, products }: ReportsProps) {
       padding: '1rem 1rem 2rem 1rem',
       backgroundColor: '#F9FAFB',
       minHeight: '100vh',
-      maxWidth: '1600px',
+      width: '100%',
       margin: '0 auto'
     }}>
       {/* Identificador de versión para confirmar que el código nuevo se está cargando */}
