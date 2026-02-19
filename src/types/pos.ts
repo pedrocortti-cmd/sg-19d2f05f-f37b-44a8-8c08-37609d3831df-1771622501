@@ -47,6 +47,7 @@ export interface CustomerInfo {
   ruc?: string;
   businessName?: string;
   isExempt?: boolean;
+  exempt?: boolean; // Added for compatibility
 }
 
 export type OrderType = "delivery" | "pickup" | "dineIn" | "local";

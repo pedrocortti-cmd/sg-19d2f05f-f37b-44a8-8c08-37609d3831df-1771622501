@@ -29,16 +29,16 @@ import type { Product, Category } from "@/types/pos";
 
 interface ProductsManagerProps {
   products: Product[];
-  categories: Category[];
-  onProductsChange: (products: Product[]) => void;
-  onCategoriesChange: (categories: Category[]) => void;
+  categories?: Category[];
+  onSaveProduct: (product: Product) => void;
+  onDeleteProduct: (productId: number) => void;
 }
 
 export function ProductsManager({ 
   products, 
-  categories, 
-  onProductsChange, 
-  onCategoriesChange 
+  categories = [], 
+  onSaveProduct, 
+  onDeleteProduct 
 }: ProductsManagerProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -63,39 +63,24 @@ export function ProductsManager({
   });
 
   // Handle create/update product
-  const handleSaveProduct = () => {
-    if (isEditMode && currentProduct.id) {
-      // Update existing product
-      onProductsChange(
-        products.map((p) =>
-          p.id === currentProduct.id ? (currentProduct as Product) : p
-        )
-      );
-    } else {
-      // Create new product
-      const newProduct: Product = {
-        ...currentProduct,
-        id: Math.max(...products.map((p) => p.id), 0) + 1,
-      } as Product;
-      onProductsChange([...products, newProduct]);
-    }
+  const handleSave = () => {
+    const productToSave = {
+      ...currentProduct,
+      id: isEditMode && currentProduct.id ? currentProduct.id : Math.max(...products.map((p) => p.id), 0) + 1,
+    } as Product;
+    
+    onSaveProduct(productToSave);
     handleCloseDialog();
   };
 
   // Handle delete product
-  const handleDeleteProduct = (id: number) => {
-    if (confirm("¿Estás seguro de eliminar este producto?")) {
-      onProductsChange(products.filter((p) => p.id !== id));
-    }
+  const handleDelete = (id: number) => {
+    onDeleteProduct(id);
   };
 
   // Handle toggle active status
-  const handleToggleActive = (id: number) => {
-    onProductsChange(
-      products.map((p) =>
-        p.id === id ? { ...p, active: !p.active } : p
-      )
-    );
+  const handleToggleActive = (product: Product) => {
+    onSaveProduct({ ...product, active: !product.active });
   };
 
   // Handle open dialog
@@ -200,7 +185,7 @@ export function ProductsManager({
                   <TableCell>{formatCurrency(product.price)}</TableCell>
                   <TableCell>
                     <button
-                      onClick={() => handleToggleActive(product.id)}
+                      onClick={() => handleToggleActive(product)}
                       className={`status-badge ${
                         product.active ? "status-active" : "status-inactive"
                       }`}
@@ -220,7 +205,7 @@ export function ProductsManager({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteProduct(product.id)}
+                        onClick={() => handleDelete(product.id)}
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
@@ -315,7 +300,7 @@ export function ProductsManager({
             <Button variant="outline" onClick={handleCloseDialog}>
               Cancelar
             </Button>
-            <Button onClick={handleSaveProduct}>
+            <Button onClick={handleSave}>
               {isEditMode ? "Guardar Cambios" : "Crear Producto"}
             </Button>
           </DialogFooter>

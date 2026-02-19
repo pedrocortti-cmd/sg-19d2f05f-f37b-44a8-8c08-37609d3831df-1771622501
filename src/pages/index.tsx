@@ -21,8 +21,11 @@ import {
   Sale, 
   CustomerInfo, 
   OrderType,
-  User 
+  User,
+  Payment,
+  PrintFormatConfig
 } from "@/types/pos";
+import { Plus, Minus } from "lucide-react";
 
 // Datos de prueba iniciales
 const INITIAL_PRODUCTS: Product[] = [
@@ -84,6 +87,26 @@ export default function POS() {
     name: "Juan Pérez",
     role: "cashier",
     active: true
+  });
+
+  const [printConfig, setPrintConfig] = useState<PrintFormatConfig>({
+    comandaTitleSize: 2,
+    comandaProductSize: 1,
+    comandaShowPrices: false,
+    comandaCopies: 2,
+    comandaCustomFields: [],
+    ticketHeaderSize: 2,
+    ticketProductSize: 1,
+    ticketTotalSize: 2,
+    ticketThankYouMessage: "¡Gracias por su compra!",
+    ticketShowLogo: true,
+    businessInfo: {
+      name: "De la Gran Burger",
+      address: "Av. Principal 123",
+      phone: "(021) 123-4567",
+      ruc: "80012345-6",
+      additionalInfo: ""
+    }
   });
 
   // Cálculos del carrito
@@ -171,12 +194,9 @@ export default function POS() {
   };
 
   // Confirmar pago y generar venta
-  const handleConfirmPayment = (paymentData: {
-    paymentMethod: string;
-    amountPaid: number;
-    change: number;
-  }) => {
+  const handleConfirmPayment = (payments: Payment[], note: string) => {
     const saleNumber = (sales.length + 1).toString().padStart(6, '0');
+    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
     
     const newSale: Sale = {
       id: Date.now(),
@@ -194,8 +214,10 @@ export default function POS() {
       customer: customerInfo,
       type: orderType,
       status: "completed",
-      paymentMethod: paymentData.paymentMethod,
-      amountPaid: paymentData.amountPaid
+      paymentMethod: payments.map(p => p.method).join(", "),
+      amountPaid: totalPaid,
+      payments: payments,
+      deliveryPerson: orderType === 'delivery' ? 'Sin asignar' : undefined
     };
 
     // Guardar venta
@@ -449,7 +471,12 @@ export default function POS() {
       case "sales":
         return <SalesHistory sales={sales} />;
       case "products":
-        return <ProductsManager products={products} onSaveProduct={handleSaveProduct} onDeleteProduct={handleDeleteProduct} />;
+        return <ProductsManager 
+          products={products} 
+          categories={CATEGORIES}
+          onSaveProduct={handleSaveProduct} 
+          onDeleteProduct={handleDeleteProduct} 
+        />;
       case "inventory":
         return <Inventory products={products} onUpdateProduct={handleSaveProduct} />;
       case "informes":
@@ -461,7 +488,7 @@ export default function POS() {
               <h2>Configuración</h2>
               <div className="settings-grid">
                 <PrinterSettings />
-                <PrintFormatSettings />
+                <PrintFormatSettings config={printConfig} onSave={setPrintConfig} />
               </div>
              </div>
           </div>
@@ -480,9 +507,6 @@ export default function POS() {
     { id: "informes", label: "Informes", icon: "📊" },
     { id: "settings", label: "Ajustes", icon: "⚙️" },
   ];
-
-  // Importar iconos faltantes para el JSX
-  const { Plus, Minus } = require("lucide-react");
 
   return (
     <>
