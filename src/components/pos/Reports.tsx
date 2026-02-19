@@ -433,6 +433,7 @@ export function Reports({ sales, products }: ReportsProps) {
               borderRadius: '0.75rem',
               padding: '2rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              width: '50%',
               verticalAlign: 'top',
               display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
             }}>
@@ -460,6 +461,7 @@ export function Reports({ sales, products }: ReportsProps) {
               borderRadius: '0.75rem',
               padding: '2rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              width: '50%',
               verticalAlign: 'top',
               display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
             }}>
