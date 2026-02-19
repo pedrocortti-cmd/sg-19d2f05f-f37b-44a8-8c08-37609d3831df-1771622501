@@ -16,6 +16,7 @@
   height: 100vh;
   overflow: hidden;
   position: relative;
+  overflow-y: auto;
 }
 
 /* Sidebar navegación */

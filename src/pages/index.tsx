@@ -1314,17 +1314,19 @@ export default function Home() {
         );
       case "reports":
         return (
-          <Reports 
-            sales={sales}
-            products={products}
-          />
+          <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>
+            <TrendingUp size={64} style={{ margin: "0 auto 1rem", opacity: 0.3 }} />
+            <h2>Reportes</h2>
+            <p>Próximamente disponible</p>
+          </div>
         );
       case "informes":
         return (
-          <Reports 
-            sales={sales}
-            products={products}
-          />
+          <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>
+            <TrendingUp size={64} style={{ margin: "0 auto 1rem", opacity: 0.3 }} />
+            <h2>Informes</h2>
+            <p>Próximamente disponible</p>
+          </div>
         );
       case "settings":
         return (
