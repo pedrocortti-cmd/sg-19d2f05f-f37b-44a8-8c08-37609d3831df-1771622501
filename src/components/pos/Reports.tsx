@@ -1,6 +1,15 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, TrendingUp } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  ShoppingCart,
+  Clock,
+  ChevronDown,
+  Package,
+  Users
+} from "lucide-react";
 import type { Sale, Product as ProductType } from "@/types/pos";
 
 interface ReportsProps {
@@ -36,24 +45,10 @@ interface PendingByClient {
 }
 
 export function Reports({ sales, products }: ReportsProps) {
-  const [activeTab, setActiveTab] = useState<"sales" | "expenses">("sales");
-  const [dateFilter, setDateFilter] = useState<DateFilter>("today");
-  const [customDateFrom, setCustomDateFrom] = useState("");
-  const [customDateTo, setCustomDateTo] = useState("");
-  const metricsGridRef = useRef<HTMLDivElement>(null);
-
-  // Force grid layout with JavaScript as fallback
-  useEffect(() => {
-    if (metricsGridRef.current) {
-      const grid = metricsGridRef.current;
-      grid.style.display = 'flex';
-      grid.style.flexDirection = 'row';
-      grid.style.flexWrap = 'wrap';
-      grid.style.gap = '1.5rem';
-      grid.style.marginBottom = '2rem';
-      grid.style.width = '100%';
-    }
-  }, []); // Only run once on mount
+  const [activeTab, setActiveTab] = useState<'sales' | 'expenses'>('sales');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('today');
+  const [customDateFrom, setCustomDateFrom] = useState<string>("");
+  const [customDateTo, setCustomDateTo] = useState<string>("");
 
   // Filtrar ventas según el rango de fechas seleccionado
   const filteredSales = useMemo(() => {
@@ -89,7 +84,10 @@ export function Reports({ sales, products }: ReportsProps) {
           if (!customDateFrom || !customDateTo) return true;
           const from = new Date(customDateFrom);
           const to = new Date(customDateTo);
-          return saleDate >= from && saleDate <= to;
+          // Ajustar fin del día para 'to'
+          const toEndOfDay = new Date(to);
+          toEndOfDay.setHours(23, 59, 59, 999);
+          return saleDate >= from && saleDate <= toEndOfDay;
         case "all":
           return true;
         default:
@@ -257,16 +255,40 @@ export function Reports({ sales, products }: ReportsProps) {
       {/* Encabezado con selector de fecha */}
       <div className="reports-header">
         <h2 style={{ margin: 0, fontSize: "1.5rem", fontWeight: "700" }}>Informes</h2>
-        <select
-          className="reports-date-selector"
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-        >
-          <option value="today">Hoy</option>
-          <option value="last7days">Últimos 7 días</option>
-          <option value="thisMonth">Este mes</option>
-          <option value="all">Todo el período</option>
-        </select>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <select
+            className="reports-date-selector"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value as DateFilter)}
+          >
+            <option value="today">Hoy</option>
+            <option value="yesterday">Ayer</option>
+            <option value="last7days">Últimos 7 días</option>
+            <option value="last30days">Últimos 30 días</option>
+            <option value="thisMonth">Este mes</option>
+            <option value="lastMonth">Mes anterior</option>
+            <option value="all">Todo el período</option>
+            <option value="custom">Personalizado</option>
+          </select>
+          
+          {dateFilter === 'custom' && (
+            <div className="custom-date-inputs">
+              <input 
+                type="date" 
+                className="date-input"
+                value={customDateFrom}
+                onChange={(e) => setCustomDateFrom(e.target.value)}
+              />
+              <span>a</span>
+              <input 
+                type="date" 
+                className="date-input"
+                value={customDateTo}
+                onChange={(e) => setCustomDateTo(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tabs de reportes */}
@@ -285,63 +307,63 @@ export function Reports({ sales, products }: ReportsProps) {
         </button>
       </div>
 
-      {/* Tarjetas de métricas principales */}
-      <div 
-        ref={metricsGridRef}
-        className="reports-metrics-grid-v2"
-        data-layout="horizontal-metrics"
-        style={{
-          display: 'flex',
-          flexDirection: 'column', // Column para apilar las FILAS, no las tarjetas
-          gap: '1.5rem',
-          marginBottom: '2rem',
-          width: '100%'
-        }}
-      >
-        {/* Primera fila: 3 tarjetas */}
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'row', 
-          gap: '1.5rem', 
-          width: '100%',
-          flexWrap: 'nowrap' 
-        }}>
-          <div className="reports-metric-card" style={{ flex: '1', minWidth: '0' }}>
-            <div className="reports-metric-label">VENTAS TOTALES</div>
-            <div className="reports-metric-value">
-              Gs. {metrics.totalSales.toLocaleString('es-PY')}
-            </div>
+      {/* Tarjetas de métricas principales - LAYOUT NUCLEAR */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .metrics-container-nuclear {
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 1.5rem !important;
+          margin-bottom: 2rem !important;
+          width: 100% !important;
+        }
+        .metrics-row-nuclear {
+          display: flex !important;
+          flex-direction: row !important;
+          gap: 1.5rem !important;
+          width: 100% !important;
+          flex-wrap: nowrap !important;
+        }
+        .metric-card-nuclear {
+          flex: 1 !important;
+          min-width: 0 !important;
+          background: white !important;
+          padding: 1.5rem !important;
+          border-radius: 12px !important;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
+        @media (max-width: 768px) {
+          .metrics-row-nuclear {
+            flex-direction: column !important;
+          }
+        }
+      `}} />
+      
+      <div className="metrics-container-nuclear">
+        {/* Fila 1: 3 tarjetas */}
+        <div className="metrics-row-nuclear">
+          <div className="metric-card-nuclear">
+            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>VENTAS TOTALES</div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>Gs. {metrics.totalSales.toLocaleString('es-PY')}</div>
           </div>
-
-          <div className="reports-metric-card" style={{ flex: '1', minWidth: '0' }}>
-            <div className="reports-metric-label">CANTIDAD DE VENTAS</div>
-            <div className="reports-metric-value">{metrics.salesCount}</div>
+          <div className="metric-card-nuclear">
+            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CANTIDAD DE VENTAS</div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>{metrics.salesCount}</div>
           </div>
-
-          <div className="reports-metric-card" style={{ flex: '1', minWidth: '0' }}>
-            <div className="reports-metric-label">VALOR PROMEDIO DE PEDIDO</div>
-            <div className="reports-metric-value">
-              Gs. {Math.round(metrics.averageOrderValue).toLocaleString('es-PY')}
-            </div>
+          <div className="metric-card-nuclear">
+            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>VALOR PROMEDIO DE PEDIDO</div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>Gs. {metrics.averageOrderValue.toLocaleString('es-PY')}</div>
           </div>
         </div>
-
-        {/* Segunda fila: 2 tarjetas */}
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'row', 
-          gap: '1.5rem', 
-          width: '100%',
-          flexWrap: 'nowrap' 
-        }}>
-          <div className="reports-metric-card" style={{ flex: '1', minWidth: '0' }}>
-            <div className="reports-metric-label">FACTURAS PENDIENTES DE COBRO</div>
-            <div className="reports-metric-value">{metrics.pendingInvoices}</div>
+        
+        {/* Fila 2: 2 tarjetas */}
+        <div className="metrics-row-nuclear">
+          <div className="metric-card-nuclear">
+            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>FACTURAS PENDIENTES DE COBRO</div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>{metrics.pendingInvoices}</div>
           </div>
-
-          <div className="reports-metric-card" style={{ flex: '1', minWidth: '0' }}>
-            <div className="reports-metric-label">MONTO TOTAL A COBRAR</div>
-            <div className="reports-metric-value">Gs. {metrics.totalPending.toLocaleString('es-PY')}</div>
+          <div className="metric-card-nuclear">
+            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MONTO TOTAL A COBRAR</div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>Gs. {metrics.totalPending.toLocaleString('es-PY')}</div>
           </div>
         </div>
       </div>
@@ -496,6 +518,15 @@ export function Reports({ sales, products }: ReportsProps) {
           cursor: pointer;
         }
 
+        .reports-date-selector {
+          padding: 0.5rem 1rem;
+          border: 1px solid #cbd5e0;
+          border-radius: 6px;
+          font-size: 0.95rem;
+          background: white;
+          cursor: pointer;
+        }
+
         .custom-date-inputs {
           display: flex;
           align-items: center;
@@ -509,14 +540,14 @@ export function Reports({ sales, products }: ReportsProps) {
           font-size: 0.9rem;
         }
 
-        .report-tabs {
+        .reports-tabs {
           display: flex;
           gap: 0.5rem;
           margin-bottom: 2rem;
           border-bottom: 2px solid #e2e8f0;
         }
 
-        .report-tab {
+        .reports-tab {
           display: flex;
           align-items: center;
           gap: 0.5rem;
@@ -531,12 +562,12 @@ export function Reports({ sales, products }: ReportsProps) {
           transition: all 0.2s;
         }
 
-        .report-tab.active {
+        .reports-tab.active {
           color: #10b981;
           border-bottom-color: #10b981;
         }
 
-        .report-tab:hover {
+        .reports-tab:hover {
           color: #10b981;
         }
 
@@ -546,57 +577,15 @@ export function Reports({ sales, products }: ReportsProps) {
           padding: 2rem;
         }
 
-        .metrics-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .metrics-grid-2 {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 1.5rem;
-          margin-bottom: 2rem;
-        }
-
-        .metric-card {
+        .reports-table-container {
           background: #f8f9fa;
           padding: 1.5rem;
           border-radius: 8px;
           border: 1px solid #e2e8f0;
-        }
-
-        .metric-label {
-          font-size: 0.85rem;
-          font-weight: 600;
-          color: #64748b;
-          margin-bottom: 0.5rem;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .metric-value {
-          font-size: 1.75rem;
-          font-weight: 700;
-          color: #1a202c;
-        }
-
-        .details-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 1.5rem;
           margin-bottom: 2rem;
         }
 
-        .detail-table-container {
-          background: #f8f9fa;
-          padding: 1.5rem;
-          border-radius: 8px;
-          border: 1px solid #e2e8f0;
-        }
-
-        .detail-table-container h3 {
+        .reports-table-title {
           font-size: 0.95rem;
           font-weight: 600;
           color: #1a202c;
@@ -605,17 +594,17 @@ export function Reports({ sales, products }: ReportsProps) {
           letter-spacing: 0.5px;
         }
 
-        .detail-table {
+        .reports-table {
           width: 100%;
           border-collapse: collapse;
           font-size: 0.9rem;
         }
 
-        .detail-table thead {
+        .reports-table thead {
           background: white;
         }
 
-        .detail-table th {
+        .reports-table th {
           padding: 0.75rem;
           text-align: left;
           font-weight: 600;
@@ -624,52 +613,17 @@ export function Reports({ sales, products }: ReportsProps) {
           border-bottom: 2px solid #e2e8f0;
         }
 
-        .detail-table td {
+        .reports-table td {
           padding: 0.75rem;
           border-bottom: 1px solid #e2e8f0;
           color: #1a202c;
         }
 
-        .detail-table tbody tr:hover {
+        .reports-table tbody tr:hover {
           background: #f1f5f9;
         }
 
-        .table-pagination {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 0.5rem;
-          margin-top: 1rem;
-        }
-
-        .table-pagination button {
-          padding: 0.5rem 1rem;
-          background: white;
-          border: 1px solid #cbd5e0;
-          border-radius: 4px;
-          font-size: 0.85rem;
-          cursor: pointer;
-        }
-
-        .table-pagination button:hover {
-          background: #f1f5f9;
-        }
-
-        .table-pagination span {
-          padding: 0.5rem 1rem;
-          background: #10b981;
-          color: white;
-          border-radius: 4px;
-          font-weight: 600;
-        }
-
-        .download-section {
-          display: flex;
-          justify-content: center;
-          margin-top: 2rem;
-        }
-
-        .download-button {
+        .reports-download-btn {
           background: #10b981;
           color: white;
           padding: 1rem 2rem;
@@ -682,9 +636,10 @@ export function Reports({ sales, products }: ReportsProps) {
           align-items: center;
           gap: 0.75rem;
           transition: background 0.2s;
+          margin: 0 auto;
         }
 
-        .download-button:hover {
+        .reports-download-btn:hover {
           background: #059669;
         }
 
@@ -716,28 +671,13 @@ export function Reports({ sales, products }: ReportsProps) {
           line-height: 1.6;
         }
 
-        @media (max-width: 1200px) {
-          .metrics-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-          
-          .details-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-
         @media (max-width: 768px) {
           .reports-header {
             flex-direction: column;
             gap: 1rem;
           }
 
-          .metrics-grid,
-          .metrics-grid-2 {
-            grid-template-columns: 1fr;
-          }
-
-          .report-tabs {
+          .reports-tabs {
             flex-direction: column;
           }
         }
