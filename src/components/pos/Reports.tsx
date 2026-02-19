@@ -478,7 +478,9 @@ export function Reports({ sales, products }: ReportsProps) {
       width: '100%',
       minHeight: '100vh',
       backgroundColor: '#F9FAFB',
-      padding: '1.5rem'
+      padding: '1.5rem',
+      overflowY: 'auto',
+      overflowX: 'hidden'
     }}>
       {/* Identificador de versión */}
       <div style={{
@@ -497,10 +499,18 @@ export function Reports({ sales, products }: ReportsProps) {
         ✅ GRID REDESIGN - {new Date().toLocaleTimeString()}
       </div>
 
-      {/* Encabezado con selector de fecha */}
-      <div className="reports-header">
+      {/* Encabezado con selector de fecha Y BOTÓN EXPORTAR */}
+      <div className="reports-header" style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '1.5rem',
+        flexWrap: 'wrap',
+        gap: '1rem'
+      }}>
         <h2 style={{ margin: 0, fontSize: "1.5rem", fontWeight: "700" }}>Informes</h2>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <select
             className="reports-date-selector"
             value={dateFilter}
@@ -533,6 +543,26 @@ export function Reports({ sales, products }: ReportsProps) {
               />
             </div>
           )}
+
+          {/* BOTÓN EXPORTAR MOVIDO AL HEADER */}
+          <Button
+            onClick={exportToExcel}
+            disabled={filteredSales.length === 0}
+            style={{
+              background: filteredSales.length === 0 ? "#94a3b8" : "#10b981",
+              color: "white",
+              padding: "0.75rem 1.5rem",
+              fontSize: "0.875rem",
+              border: "none",
+              borderRadius: "8px",
+              cursor: filteredSales.length === 0 ? "not-allowed" : "pointer",
+              fontWeight: "600",
+              boxShadow: filteredSales.length === 0 ? "none" : "0 4px 6px rgba(16, 185, 129, 0.3)",
+              whiteSpace: 'nowrap'
+            }}
+          >
+            📥 Exportar a Excel
+          </Button>
         </div>
       </div>
 
@@ -996,25 +1026,38 @@ export function Reports({ sales, products }: ReportsProps) {
         </div>
       </div>
 
-      {/* BOTÓN EXPORTAR EXCEL */}
-      <div style={{ marginTop: "2rem", textAlign: "center" }}>
-        <Button
-          onClick={exportToExcel}
-          style={{
-            background: "#10b981",
-            color: "white",
-            padding: "1rem 2rem",
-            fontSize: "1rem",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontWeight: "600",
-            boxShadow: "0 4px 6px rgba(16, 185, 129, 0.3)",
-          }}
-        >
-          Descargar Ventas en Excel
-        </Button>
-      </div>
+      {/* MENSAJE CUANDO NO HAY DATOS */}
+      {filteredSales.length === 0 && (
+        <div style={{
+          background: "white",
+          borderRadius: "12px",
+          padding: "3rem",
+          textAlign: "center",
+          marginTop: "2rem",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        }}>
+          <div style={{
+            fontSize: "3rem",
+            marginBottom: "1rem"
+          }}>
+            📊
+          </div>
+          <h3 style={{
+            fontSize: "1.25rem",
+            fontWeight: 600,
+            color: "#475569",
+            marginBottom: "0.5rem"
+          }}>
+            No hay ventas en este período
+          </h3>
+          <p style={{
+            fontSize: "0.875rem",
+            color: "#94a3b8"
+          }}>
+            Selecciona otro rango de fechas para ver los informes
+          </p>
+        </div>
+      )}
 
       {activeTab === "expenses" && (
         <div className="report-content">

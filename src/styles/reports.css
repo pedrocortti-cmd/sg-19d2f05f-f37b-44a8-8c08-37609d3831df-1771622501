@@ -6,6 +6,92 @@
   background-color: #F9FAFB;
   padding: 1rem 2rem 2rem 2rem;
   box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.reports-header {
+  position: sticky;
+  top: 0;
+  background-color: #F9FAFB;
+  z-index: 10;
+  padding: 1rem 0;
+  margin-bottom: 1.5rem;
+}
+
+.reports-date-selector {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 180px;
+}
+
+.reports-date-selector:hover {
+  border-color: #cbd5e1;
+}
+
+.reports-date-selector:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.custom-date-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-input {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.date-input:hover {
+  border-color: #cbd5e1;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.reports-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.reports-tab {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: white;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reports-tab:hover {
+  background: #f1f5f9;
+}
+
+.reports-tab.active {
+  background: #3b82f6;
+  color: white;
 }
 
 .reports-metrics-table {
@@ -58,5 +144,10 @@
   
   .reports-metric-value {
     font-size: 1.75rem;
+  }
+  
+  .reports-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
