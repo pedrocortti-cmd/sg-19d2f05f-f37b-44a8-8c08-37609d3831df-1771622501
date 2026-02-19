@@ -214,79 +214,85 @@ export function Reports({ sales, products }: ReportsProps) {
       "Total del Producto",
     ]);
 
-    // ORDENAR LAS VENTAS DE MÁS ANTIGUA A MÁS RECIENTE (ASCENDENTE)
+    // Procesar cada venta con orden ascendente (más antigua primero)
     const sortedSales = [...filteredSales].sort((a, b) => {
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
-    // Procesar cada venta
     sortedSales.forEach((sale) => {
       const saleDate = new Date(sale.date);
-      const formattedDate = `${saleDate.getDate()}/${
-        saleDate.getMonth() + 1
-      }/${saleDate.getFullYear()} ${saleDate.getHours()}:${String(
-        saleDate.getMinutes()
-      ).padStart(2, "0")}`;
+      const formattedDate = `${saleDate.getDate()}/${saleDate.getMonth() + 1}/${saleDate.getFullYear()} ${saleDate.getHours()}:${String(saleDate.getMinutes()).padStart(2, "0")}`;
 
-      const customerName = sale.customer?.name || "Cliente Anónimo";
-      const total = sale.total;
-      const deliveryPerson = sale.deliveryDriverName || "";
-      
-      // DEBUG: Mostrar los items de la venta en consola
-      console.log('=== VENTA ID:', sale.id, '===');
-      console.log('Items:', sale.items);
-      
-      // Calcular monto del delivery - BUSCAR EN TODOS LOS ITEMS
-      const deliveryAmount = sale.items
-        .filter(item => {
-          const hasDelivery = item.productName.toLowerCase().includes("delivery");
-          console.log(`  Producto: "${item.productName}" - ¿Es delivery?: ${hasDelivery}`);
-          return hasDelivery;
-        })
-        .reduce((sum, item) => {
-          const itemTotal = item.price * item.quantity;
-          console.log(`  Delivery encontrado: ${item.productName} - Total: ${itemTotal}`);
-          return sum + itemTotal;
-        }, 0);
-      
-      console.log('Monto Delivery Total:', deliveryAmount);
-      console.log('================');
-      
-      const paymentStatus = sale.status === "completed" ? "Pagado" : "Pendiente";
-      const balance = sale.status === "completed" ? 0 : sale.total;
-      const paymentMethod = sale.payments?.map((p) => p.method).join(", ") || "N/A";
-      const amountPaid = sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+      const customerName = sale.customer?.name || sale.customerName || "";
+      const total = sale.total || 0;
+      // Usar deliveryDriverName si deliveryPerson no está definido
+      const deliveryPerson = sale.deliveryPerson || sale.deliveryDriverName || "";
+      const paymentStatus = sale.paymentStatus || (sale.status === "completed" ? "Pagado" : "Pendiente");
+      const balance = sale.balance || 0;
+      const paymentMethod = sale.paymentMethod || "cash";
+      const amountPaid = sale.amountPaid || (sale.status === "completed" ? total : 0);
 
-      // Agregar cada producto de la venta
+      // Usar deliveryCost directamente de la venta
+      const deliveryAmount = sale.deliveryCost || 0;
+
+      console.log(`=== VENTA ID: ${sale.id} ===`);
+      console.log("deliveryCost:", sale.deliveryCost);
+      console.log("Monto Delivery Total:", deliveryAmount);
+      console.log("================");
+
+      // Si la venta no tiene items, crear una fila con la información básica
+      if (!sale.items || sale.items.length === 0) {
+        const row: any[] = [
+          sale.id,
+          formattedDate,
+          customerName,
+          total,
+          deliveryPerson,
+          deliveryAmount,
+          paymentStatus,
+          balance,
+          paymentMethod,
+          amountPaid,
+          "",
+          "",
+          "",
+          "",
+          ""
+        ];
+        excelData.push(row);
+        return;
+      }
+
+      // Agregar una fila por cada item en la venta
       sale.items.forEach((item, itemIndex) => {
         const row: any[] = [];
 
-        // Solo mostrar info de venta en la primera fila de productos
+        // Primera fila: información completa de la venta
         if (itemIndex === 0) {
           row.push(
-            sale.id,                    // ID
-            formattedDate,              // Fecha
-            customerName,               // Nombre del Cliente
-            total,                      // Total
-            deliveryPerson,             // Repartidor
-            deliveryAmount,             // Monto Delivery
-            paymentStatus,              // Pagado
-            balance,                    // Saldo
-            paymentMethod,              // Método de Pago
-            amountPaid,                 // Monto
-            ""                          // Pagado (columna vacía)
+            sale.id,
+            formattedDate,
+            customerName,
+            total,
+            deliveryPerson,
+            deliveryAmount,
+            paymentStatus,
+            balance,
+            paymentMethod,
+            amountPaid,
+            ""
           );
         } else {
           // Filas subsecuentes: celdas vacías para info de venta
           row.push("", "", "", "", "", "", "", "", "", "", "");
         }
 
-        // Información del producto (siempre presente)
+        // Información del producto (siempre)
         row.push(
-          item.productName,             // Nombre del Producto
-          item.quantity,                // Cantidad
-          item.price,                   // Precio Unitario
-          item.quantity * item.price    // Total del Producto
+          item.productName || "", // Solo usar productName que es garantizado en SaleItem
+          item.quantity || 0,
+          item.price || 0,
+          (item.quantity || 0) * (item.price || 0)
         );
 
         excelData.push(row);
