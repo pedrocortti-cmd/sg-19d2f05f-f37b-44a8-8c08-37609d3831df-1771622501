@@ -133,7 +133,7 @@ export function Reports({ sales, products }: ReportsProps) {
     filteredSales
       .filter(s => s.status === "completed")
       .forEach(sale => {
-        const clientName = sale.customerName || "Cliente Anónimo";
+        const clientName = sale.customer?.name || "Cliente Anónimo";
         const existing = clientMap.get(clientName) || { totalSpent: 0, ordersCount: 0 };
         clientMap.set(clientName, {
           totalSpent: existing.totalSpent + sale.total,
@@ -174,7 +174,7 @@ export function Reports({ sales, products }: ReportsProps) {
     filteredSales
       .filter(s => s.status === "pending")
       .forEach(sale => {
-        const clientName = sale.customerName || "Cliente Anónimo";
+        const clientName = sale.customer?.name || "Cliente Anónimo";
         const existing = clientMap.get(clientName) || 0;
         clientMap.set(clientName, existing + sale.total);
       });
@@ -207,8 +207,8 @@ export function Reports({ sales, products }: ReportsProps) {
       csvContent += `${sale.id},`;
       csvContent += `${date.toLocaleDateString()},`;
       csvContent += `${date.toLocaleTimeString()},`;
-      csvContent += `"${sale.customerName || "N/A"}",`;
-      csvContent += `${sale.customerPhone || "N/A"},`;
+      csvContent += `"${sale.customer?.name || "N/A"}",`;
+      csvContent += `${sale.customer?.phone || "N/A"},`;
       csvContent += `${sale.type},`;
       csvContent += `${sale.total},`;
       csvContent += `${sale.status},`;

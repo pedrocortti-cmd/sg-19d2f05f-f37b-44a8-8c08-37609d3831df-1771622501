@@ -800,6 +800,12 @@ export default function Home() {
       return;
     }
     
+    // Validar que el campo Cliente no esté vacío
+    if (!customer.name || customer.name.trim() === "") {
+      alert("⚠️ El campo Cliente es obligatorio.\n\nPor favor ingrese el nombre del cliente antes de confirmar el pedido.");
+      return;
+    }
+    
     // Si estamos editando un pedido existente
     if (currentOrderId) {
       const existingOrder = sales.find(s => s.id === currentOrderId);
@@ -920,6 +926,13 @@ export default function Home() {
       alert("No hay productos en el carrito");
       return;
     }
+    
+    // Validar que el campo Cliente no esté vacío
+    if (!customer.name || customer.name.trim() === "") {
+      alert("⚠️ El campo Cliente es obligatorio.\n\nPor favor ingrese el nombre del cliente antes de procesar el pago.");
+      return;
+    }
+    
     setShowPaymentModal(true);
   };
   
