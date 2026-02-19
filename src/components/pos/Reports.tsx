@@ -319,23 +319,24 @@ export function Reports({ sales, products }: ReportsProps) {
           <tr>
             <td style={{
               backgroundColor: 'white',
-              borderRadius: '0.5rem',
-              padding: '1.5rem',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-              width: '33.33%'
+              borderRadius: '0.75rem',
+              padding: '2rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              width: '33.33%',
+              verticalAlign: 'top'
             }}>
               <div style={{
-                fontSize: '0.875rem',
-                fontWeight: '500',
+                fontSize: '0.75rem',
+                fontWeight: '600',
                 color: '#6B7280',
-                marginBottom: '0.5rem',
+                marginBottom: '0.75rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
                 VENTAS TOTALES
               </div>
               <div style={{
-                fontSize: '2rem',
+                fontSize: '2.25rem',
                 fontWeight: '700',
                 color: '#111827'
               }}>
@@ -345,23 +346,24 @@ export function Reports({ sales, products }: ReportsProps) {
 
             <td style={{
               backgroundColor: 'white',
-              borderRadius: '0.5rem',
-              padding: '1.5rem',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-              width: '33.33%'
+              borderRadius: '0.75rem',
+              padding: '2rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              width: '33.33%',
+              verticalAlign: 'top'
             }}>
               <div style={{
-                fontSize: '0.875rem',
-                fontWeight: '500',
+                fontSize: '0.75rem',
+                fontWeight: '600',
                 color: '#6B7280',
-                marginBottom: '0.5rem',
+                marginBottom: '0.75rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
                 CANTIDAD DE VENTAS
               </div>
               <div style={{
-                fontSize: '2rem',
+                fontSize: '2.25rem',
                 fontWeight: '700',
                 color: '#111827'
               }}>
@@ -371,23 +373,24 @@ export function Reports({ sales, products }: ReportsProps) {
 
             <td style={{
               backgroundColor: 'white',
-              borderRadius: '0.5rem',
-              padding: '1.5rem',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-              width: '33.33%'
+              borderRadius: '0.75rem',
+              padding: '2rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              width: '33.33%',
+              verticalAlign: 'top'
             }}>
               <div style={{
-                fontSize: '0.875rem',
-                fontWeight: '500',
+                fontSize: '0.75rem',
+                fontWeight: '600',
                 color: '#6B7280',
-                marginBottom: '0.5rem',
+                marginBottom: '0.75rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
                 VALOR PROMEDIO DE PEDIDO
               </div>
               <div style={{
-                fontSize: '2rem',
+                fontSize: '2.25rem',
                 fontWeight: '700',
                 color: '#111827'
               }}>
@@ -400,22 +403,23 @@ export function Reports({ sales, products }: ReportsProps) {
           <tr>
             <td style={{
               backgroundColor: 'white',
-              borderRadius: '0.5rem',
-              padding: '1.5rem',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+              borderRadius: '0.75rem',
+              padding: '2rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              verticalAlign: 'top'
             }}>
               <div style={{
-                fontSize: '0.875rem',
-                fontWeight: '500',
+                fontSize: '0.75rem',
+                fontWeight: '600',
                 color: '#6B7280',
-                marginBottom: '0.5rem',
+                marginBottom: '0.75rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
                 FACTURAS PENDIENTES DE COBRO
               </div>
               <div style={{
-                fontSize: '2rem',
+                fontSize: '2.25rem',
                 fontWeight: '700',
                 color: '#111827'
               }}>
@@ -425,22 +429,23 @@ export function Reports({ sales, products }: ReportsProps) {
 
             <td style={{
               backgroundColor: 'white',
-              borderRadius: '0.5rem',
-              padding: '1.5rem',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+              borderRadius: '0.75rem',
+              padding: '2rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              verticalAlign: 'top'
             }}>
               <div style={{
-                fontSize: '0.875rem',
-                fontWeight: '500',
+                fontSize: '0.75rem',
+                fontWeight: '600',
                 color: '#6B7280',
-                marginBottom: '0.5rem',
+                marginBottom: '0.75rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
                 MONTO TOTAL A COBRAR
               </div>
               <div style={{
-                fontSize: '2rem',
+                fontSize: '2.25rem',
                 fontWeight: '700',
                 color: '#111827'
               }}>
