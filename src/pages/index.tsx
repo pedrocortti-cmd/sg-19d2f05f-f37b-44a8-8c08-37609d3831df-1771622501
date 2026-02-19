@@ -347,17 +347,18 @@ export default function POS() {
     <div className="pos-layout">
       {/* Panel Izquierdo: Cliente + Carrito */}
       <div className="pos-customer-panel">
-        <div className="pos-customer-info">
-          <button className="customer-toggle">
-            <span>👤</span>
-            Información del Cliente
-          </button>
+        {/* Sección de Cliente */}
+        <div className="pos-customer-section expanded">
+          <div className="pos-section-title">
+            <span>👤 Información del Cliente</span>
+          </div>
 
-          <div className="customer-form">
-            <div className="form-group">
-              <label>Cliente</label>
+          <div className="pos-customer-form">
+            <div className="pos-input-group">
+              <label className="pos-input-label">Cliente</label>
               <input
                 type="text"
+                className="pos-input"
                 placeholder="Nombre del cliente"
                 value={customerInfo.name}
                 onChange={(e) =>
@@ -366,10 +367,11 @@ export default function POS() {
               />
             </div>
 
-            <div className="form-group">
-              <label>Teléfono</label>
+            <div className="pos-input-group">
+              <label className="pos-input-label">Teléfono</label>
               <input
                 type="tel"
+                className="pos-input"
                 placeholder="Teléfono"
                 value={customerInfo.phone}
                 onChange={(e) =>
@@ -378,10 +380,11 @@ export default function POS() {
               />
             </div>
 
-            <div className="form-group">
-              <label>Dirección</label>
+            <div className="pos-input-group">
+              <label className="pos-input-label">Dirección</label>
               <input
                 type="text"
+                className="pos-input"
                 placeholder="Dirección de entrega"
                 value={customerInfo.address}
                 onChange={(e) =>
@@ -390,11 +393,12 @@ export default function POS() {
               />
             </div>
 
-            <div className="form-group">
-              <label>RUC</label>
+            <div className="pos-input-group">
+              <label className="pos-input-label">RUC (opcional)</label>
               <input
                 type="text"
-                placeholder="RUC (opcional)"
+                className="pos-input"
+                placeholder="RUC"
                 value={customerInfo.ruc || ""}
                 onChange={(e) =>
                   setCustomerInfo({ ...customerInfo, ruc: e.target.value })
@@ -402,11 +406,12 @@ export default function POS() {
               />
             </div>
 
-            <div className="form-group">
-              <label>Razón Social</label>
+            <div className="pos-input-group">
+              <label className="pos-input-label">Razón Social (opcional)</label>
               <input
                 type="text"
-                placeholder="Razón Social (opcional)"
+                className="pos-input"
+                placeholder="Razón Social"
                 value={customerInfo.businessName || ""}
                 onChange={(e) =>
                   setCustomerInfo({ ...customerInfo, businessName: e.target.value })
@@ -414,69 +419,72 @@ export default function POS() {
               />
             </div>
 
-            <div className="form-group-checkbox">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={customerInfo.isExempt || false}
-                  onChange={(e) =>
-                    setCustomerInfo({ ...customerInfo, isExempt: e.target.checked, exempt: e.target.checked })
-                  }
-                />
-                Exento
-              </label>
+            <div className="pos-checkbox-group">
+              <input
+                type="checkbox"
+                id="exempt-checkbox"
+                checked={customerInfo.isExempt || false}
+                onChange={(e) =>
+                  setCustomerInfo({ 
+                    ...customerInfo, 
+                    isExempt: e.target.checked,
+                    exempt: e.target.checked 
+                  })
+                }
+              />
+              <label htmlFor="exempt-checkbox">Exento</label>
             </div>
           </div>
         </div>
 
-        <div className="pos-cart">
-          <div className="cart-header">
+        {/* Sección de Carrito */}
+        <div className="pos-cart-section">
+          <div className="pos-cart-header">
             <ShoppingCart size={20} />
-            <h3>Orden Actual</h3>
+            Orden Actual
           </div>
 
-          <div className="cart-items">
+          <div className="pos-cart-items">
             {cart.length === 0 ? (
-              <div className="cart-empty">
+              <div className="pos-cart-empty">
+                <ShoppingCart className="pos-cart-empty-icon" />
                 <p>No hay productos en el carrito</p>
               </div>
             ) : (
               cart.map((item) => (
-                <div key={item.product.id} className="cart-item">
-                  <div className="cart-item-info">
-                    <span className="cart-item-name">{item.product.name}</span>
-                    <span className="cart-item-price">
-                      Gs. {item.product.price.toLocaleString("es-PY")}
-                    </span>
-                  </div>
-
-                  <div className="cart-item-controls">
-                    <button
-                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                      className="qty-btn"
-                    >
-                      <Minus size={16} />
-                    </button>
-
-                    <span className="cart-item-qty">{item.quantity}</span>
-
-                    <button
-                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                      className="qty-btn"
-                    >
-                      <Plus size={16} />
-                    </button>
-
+                <div key={item.product.id} className="pos-cart-item">
+                  <div className="pos-cart-item-header">
+                    <span className="pos-cart-item-name">{item.product.name}</span>
                     <button
                       onClick={() => removeFromCart(item.product.id)}
-                      className="remove-btn"
+                      className="pos-cart-item-remove"
                     >
                       <Trash2 size={16} />
                     </button>
                   </div>
 
-                  <div className="cart-item-subtotal">
-                    Gs. {(item.product.price * item.quantity).toLocaleString("es-PY")}
+                  <div className="pos-cart-item-controls">
+                    <div className="pos-quantity-control">
+                      <button
+                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                        className="pos-quantity-btn"
+                      >
+                        <Minus size={16} />
+                      </button>
+
+                      <span className="pos-quantity-display">{item.quantity}</span>
+
+                      <button
+                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                        className="pos-quantity-btn"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+
+                    <span className="pos-cart-item-price">
+                      Gs. {(item.product.price * item.quantity).toLocaleString("es-PY")}
+                    </span>
                   </div>
                 </div>
               ))
@@ -484,142 +492,165 @@ export default function POS() {
           </div>
 
           {cart.length > 0 && (
-            <div className="cart-discount">
-              <label>Descuento</label>
-              <div className="discount-controls">
-                <select
-                  value={discountType}
-                  onChange={(e) => setDiscountType(e.target.value as "percentage" | "amount")}
+            <div className="pos-cart-footer">
+              {/* Descuento */}
+              <div className="pos-discount-section">
+                <div className="pos-input-group">
+                  <label className="pos-input-label">Descuento</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <select
+                      value={discountType}
+                      onChange={(e) => setDiscountType(e.target.value as "percentage" | "amount")}
+                      className="pos-input"
+                      style={{ width: '80px' }}
+                    >
+                      <option value="percentage">%</option>
+                      <option value="amount">Gs.</option>
+                    </select>
+                    <input
+                      type="number"
+                      min="0"
+                      value={discountValue}
+                      onChange={(e) => setDiscountValue(Number(e.target.value))}
+                      placeholder="0"
+                      className="pos-input"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Nota */}
+              <div className="pos-note-section">
+                <div className="pos-input-group">
+                  <label className="pos-input-label">Nota del pedido</label>
+                  <textarea
+                    placeholder="Comentarios o instrucciones especiales..."
+                    value={orderNote}
+                    onChange={(e) => setOrderNote(e.target.value)}
+                    rows={2}
+                    className="pos-input"
+                    style={{ resize: 'vertical', minHeight: '60px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Tipo de Orden */}
+              <div className="pos-order-type">
+                <button
+                  className={`pos-order-type-btn ${orderType === "delivery" ? "active" : ""}`}
+                  onClick={() => setOrderType("delivery")}
                 >
-                  <option value="percentage">%</option>
-                  <option value="amount">Gs.</option>
-                </select>
-                <input
-                  type="number"
-                  min="0"
-                  value={discountValue}
-                  onChange={(e) => setDiscountValue(Number(e.target.value))}
-                  placeholder="0"
-                />
+                  🛵 Delivery
+                </button>
+                <button
+                  className={`pos-order-type-btn ${orderType === "pickup" ? "active" : ""}`}
+                  onClick={() => setOrderType("pickup")}
+                >
+                  🚶 Para Retirar
+                </button>
+                <button
+                  className={`pos-order-type-btn ${orderType === "dineIn" ? "active" : ""}`}
+                  onClick={() => setOrderType("dineIn")}
+                >
+                  🍽️ En Local
+                </button>
+              </div>
+
+              {/* Total */}
+              <div className="pos-total-section">
+                <div className="pos-total-row">
+                  <span className="pos-total-label">Subtotal:</span>
+                  <span className="pos-total-value">Gs. {subtotal.toLocaleString("es-PY")}</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="pos-total-row">
+                    <span className="pos-total-label">Descuento:</span>
+                    <span className="pos-total-value">-Gs. {discountAmount.toLocaleString("es-PY")}</span>
+                  </div>
+                )}
+                <div className="pos-total-row pos-total-final">
+                  <span className="pos-total-label">Total:</span>
+                  <span className="pos-total-value">Gs. {cartTotal.toLocaleString("es-PY")}</span>
+                </div>
+              </div>
+
+              {/* Botones de Acción */}
+              <div className="pos-action-buttons">
+                <div className="pos-action-buttons-row">
+                  <button
+                    className="pos-btn pos-btn-clear"
+                    onClick={clearCart}
+                  >
+                    <Trash2 size={18} />
+                    Vaciar
+                  </button>
+                </div>
+                <div className="pos-action-buttons-row">
+                  <button
+                    className="pos-btn pos-btn-pay"
+                    onClick={() => setShowPaymentModal(true)}
+                  >
+                    Confirmar Pago
+                  </button>
+                </div>
               </div>
             </div>
           )}
-
-          {cart.length > 0 && (
-            <div className="cart-note">
-              <label>Nota</label>
-              <textarea
-                placeholder="Nota del pedido (opcional)"
-                value={orderNote}
-                onChange={(e) => setOrderNote(e.target.value)}
-                rows={2}
-              />
-            </div>
-          )}
-
-          {cart.length > 0 && (
-            <div className="cart-order-type">
-              <button
-                className={`order-type-btn ${orderType === "delivery" ? "active" : ""}`}
-                onClick={() => setOrderType("delivery")}
-              >
-                🛵 Delivery
-              </button>
-              <button
-                className={`order-type-btn ${orderType === "pickup" ? "active" : ""}`}
-                onClick={() => setOrderType("pickup")}
-              >
-                🚶 Para Retirar
-              </button>
-              <button
-                className={`order-type-btn ${orderType === "dineIn" ? "active" : ""}`}
-                onClick={() => setOrderType("dineIn")}
-              >
-                🍽️ En Local
-              </button>
-            </div>
-          )}
-
-          <div className="cart-summary">
-            <div className="summary-row">
-              <span>Subtotal:</span>
-              <span>Gs. {subtotal.toLocaleString("es-PY")}</span>
-            </div>
-            {discountAmount > 0 && (
-              <div className="summary-row discount">
-                <span>Descuento:</span>
-                <span>-Gs. {discountAmount.toLocaleString("es-PY")}</span>
-              </div>
-            )}
-            <div className="summary-row total">
-              <span>Total:</span>
-              <span>Gs. {cartTotal.toLocaleString("es-PY")}</span>
-            </div>
-          </div>
-
-          <div className="cart-actions">
-            <button
-              className="btn-clear"
-              onClick={clearCart}
-              disabled={cart.length === 0}
-            >
-              <Trash2 size={18} />
-              Vaciar
-            </button>
-            <button
-              className="btn-pay"
-              onClick={() => setShowPaymentModal(true)}
-              disabled={cart.length === 0}
-            >
-              Confirmar Pago
-            </button>
-          </div>
         </div>
       </div>
 
+      {/* Panel Central: Productos */}
       <div className="pos-products-panel">
-        <div className="products-search">
-          <input
-            type="text"
-            placeholder="🔍 Buscar productos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="pos-products-header">
+          <div className="pos-search-bar">
+            <input
+              type="text"
+              className="pos-search-input"
+              placeholder="🔍 Buscar productos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="pos-categories">
+            {CATEGORIES.map((category) => (
+              <button
+                key={category.id}
+                className={`pos-category-btn ${
+                  selectedCategory === category.name ? "active" : ""
+                }`}
+                onClick={() => setSelectedCategory(category.name)}
+              >
+                <span>{category.icon}</span>
+                {category.name}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="products-categories">
-          {CATEGORIES.map((category) => (
-            <button
-              key={category.id}
-              className={`category-btn ${
-                selectedCategory === category.name ? "active" : ""
-              }`}
-              onClick={() => setSelectedCategory(category.name)}
-            >
-              <span>{category.icon}</span>
-              {category.name}
-            </button>
-          ))}
-        </div>
-
-        <div className="products-grid">
+        <div className="pos-products-grid">
           {filteredProducts.map((product) => (
             <div
               key={product.id}
-              className={`product-card ${product.stock !== undefined && product.stock <= 0 ? 'out-of-stock' : ''}`}
+              className={`pos-product-card ${
+                product.stock !== undefined && product.stock <= 0 ? 'out-of-stock' : ''
+              }`}
               onClick={() => addToCart(product)}
+              style={{ cursor: product.stock !== undefined && product.stock <= 0 ? 'not-allowed' : 'pointer' }}
             >
-              <div className="product-info">
-                <h4>{product.name}</h4>
-                <p className="product-price">Gs. {product.price.toLocaleString("es-PY")}</p>
-                {product.stock !== undefined && (
-                  <p className="product-stock">
-                    {product.stock <= 0 ? '❌ Agotado' : 
-                     product.stock < 10 ? `⚠️ ${product.stock} disponibles` :
-                     `✓ ${product.stock} disponibles`}
-                  </p>
-                )}
-              </div>
+              <div className="pos-product-name">{product.name}</div>
+              <div className="pos-product-price">Gs. {product.price.toLocaleString("es-PY")}</div>
+              {product.stock !== undefined && (
+                <div style={{ 
+                  fontSize: '0.8rem', 
+                  color: product.stock <= 0 ? '#ef4444' : product.stock < 10 ? '#f59e0b' : '#10b981',
+                  marginTop: '0.5rem'
+                }}>
+                  {product.stock <= 0 ? '❌ Agotado' : 
+                   product.stock < 10 ? `⚠️ ${product.stock} disponibles` :
+                   `✓ ${product.stock} disponibles`}
+                </div>
+              )}
             </div>
           ))}
         </div>
