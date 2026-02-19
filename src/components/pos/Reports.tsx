@@ -252,6 +252,23 @@ export function Reports({ sales, products }: ReportsProps) {
 
   return (
     <div style={{ padding: '2rem', backgroundColor: '#F9FAFB', minHeight: '100vh' }}>
+      {/* Identificador de versión para confirmar que el código nuevo se está cargando */}
+      <div style={{
+        position: 'fixed',
+        top: '10px',
+        right: '10px',
+        background: '#10B981',
+        color: 'white',
+        padding: '0.5rem 1rem',
+        borderRadius: '0.5rem',
+        fontSize: '0.875rem',
+        fontWeight: '600',
+        zIndex: 9999,
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+      }}>
+        ✅ VERSIÓN ACTUALIZADA - {new Date().toLocaleTimeString()}
+      </div>
+
       {/* Encabezado con selector de fecha */}
       <div className="reports-header">
         <h2 style={{ margin: 0, fontSize: "1.5rem", fontWeight: "700" }}>Informes</h2>
