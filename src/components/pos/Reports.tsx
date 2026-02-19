@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, TrendingUp } from "lucide-react";
 import type { Sale, Product as ProductType } from "@/types/pos";
@@ -40,6 +40,20 @@ export function Reports({ sales, products }: ReportsProps) {
   const [dateFilter, setDateFilter] = useState<DateFilter>("today");
   const [customDateFrom, setCustomDateFrom] = useState("");
   const [customDateTo, setCustomDateTo] = useState("");
+  const metricsGridRef = useRef<HTMLDivElement>(null);
+
+  // FORCE GRID LAYOUT WITH JAVASCRIPT (GUARANTEED TO WORK)
+  useEffect(() => {
+    if (metricsGridRef.current) {
+      const grid = metricsGridRef.current;
+      grid.style.display = 'grid';
+      grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+      grid.style.gap = '1.5rem';
+      grid.style.marginBottom = '2rem';
+      grid.style.width = '100%';
+      grid.style.gridAutoFlow = 'row';
+    }
+  }, [dateFilter]); // Re-apply when filter changes
 
   // Filtrar ventas según el rango de fechas seleccionado
   const filteredSales = useMemo(() => {
@@ -273,6 +287,7 @@ export function Reports({ sales, products }: ReportsProps) {
 
       {/* Tarjetas de métricas principales */}
       <div 
+        ref={metricsGridRef}
         className="reports-metrics-grid-v2"
         data-layout="horizontal-metrics"
         style={{

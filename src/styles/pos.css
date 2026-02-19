@@ -1413,6 +1413,7 @@ div[data-layout="horizontal-metrics"] {
   grid-auto-flow: row !important;
 }
 
+/* Force grid with data attribute for maximum specificity */
 div[data-grid="metrics-3col"],
 div[data-layout="horizontal-metrics"] {
   display: grid !important;
@@ -1423,6 +1424,13 @@ div[data-layout="horizontal-metrics"] {
 div[class*="reports-metrics"] {
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
+}
+
+/* Override ANY flex or block display */
+.reports-container div[data-layout="horizontal-metrics"] {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  grid-auto-flow: row !important;
 }
 
 /* Individual Metric Card */
