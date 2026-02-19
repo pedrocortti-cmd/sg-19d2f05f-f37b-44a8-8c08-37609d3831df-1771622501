@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import {
   TrendingUp,
   TrendingDown,
@@ -44,6 +46,15 @@ interface PendingByClient {
   client: string;
   pendingAmount: number;
 }
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("es-PY", {
+    style: "currency",
+    currency: "PYG",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
 export function Reports({ sales, products }: ReportsProps) {
   const [activeTab, setActiveTab] = useState<'sales' | 'expenses'>('sales');
@@ -185,171 +196,6 @@ export function Reports({ sales, products }: ReportsProps) {
       .sort((a, b) => b.pendingAmount - a.pendingAmount);
   }, [filteredSales]);
 
-  // Función para exportar a Excel
-  const exportToExcel = () => {
-    if (filteredSales.length === 0) {
-      alert("No hay datos para exportar");
-      return;
-    }
-
-    // Preparar datos en el formato del screenshot
-    const excelData: any[] = [];
-
-    // Encabezados
-    excelData.push([
-      "ID",
-      "Fecha",
-      "Nombre del Cliente",
-      "Total",
-      "Repartidor",
-      "Monto Delivery",
-      "Pagado",
-      "Saldo",
-      "Método de Pago",
-      "Monto",
-      "Pagado",
-      "Nombre del Producto",
-      "Cantidad",
-      "Precio Unitario",
-      "Total del Producto",
-    ]);
-
-    // Procesar cada venta con orden ascendente (más antigua primero)
-    const sortedSales = [...filteredSales].sort((a, b) => {
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    });
-
-    sortedSales.forEach((sale) => {
-      const saleDate = new Date(sale.date);
-      const formattedDate = `${saleDate.getDate()}/${saleDate.getMonth() + 1}/${saleDate.getFullYear()} ${saleDate.getHours()}:${String(saleDate.getMinutes()).padStart(2, "0")}`;
-
-      const customerName = sale.customer?.name || sale.customerName || "";
-      const total = sale.total || 0;
-      // Usar deliveryDriverName si deliveryPerson no está definido
-      const deliveryPerson = sale.deliveryPerson || sale.deliveryDriverName || "";
-      const paymentStatus = sale.paymentStatus || (sale.status === "completed" ? "Pagado" : "Pendiente");
-      const balance = sale.balance || 0;
-      const paymentMethod = sale.paymentMethod || "cash";
-      const amountPaid = sale.amountPaid || (sale.status === "completed" ? total : 0);
-
-      // Usar deliveryCost directamente de la venta
-      const deliveryAmount = sale.deliveryCost || 0;
-
-      console.log(`=== VENTA ID: ${sale.id} ===`);
-      console.log("deliveryCost:", sale.deliveryCost);
-      console.log("Monto Delivery Total:", deliveryAmount);
-      console.log("================");
-
-      // Si la venta no tiene items, crear una fila con la información básica
-      if (!sale.items || sale.items.length === 0) {
-        const row: any[] = [
-          sale.id,
-          formattedDate,
-          customerName,
-          total,
-          deliveryPerson,
-          deliveryAmount,
-          paymentStatus,
-          balance,
-          paymentMethod,
-          amountPaid,
-          "",
-          "",
-          "",
-          "",
-          ""
-        ];
-        excelData.push(row);
-        return;
-      }
-
-      // Agregar una fila por cada item en la venta
-      sale.items.forEach((item, itemIndex) => {
-        const row: any[] = [];
-
-        // Primera fila: información completa de la venta
-        if (itemIndex === 0) {
-          row.push(
-            sale.id,
-            formattedDate,
-            customerName,
-            total,
-            deliveryPerson,
-            deliveryAmount,
-            paymentStatus,
-            balance,
-            paymentMethod,
-            amountPaid,
-            ""
-          );
-        } else {
-          // Filas subsecuentes: celdas vacías para info de venta
-          row.push("", "", "", "", "", "", "", "", "", "", "");
-        }
-
-        // Información del producto (siempre)
-        row.push(
-          item.productName || "", // Solo usar productName que es garantizado en SaleItem
-          item.quantity || 0,
-          item.price || 0,
-          (item.quantity || 0) * (item.price || 0)
-        );
-
-        excelData.push(row);
-      });
-    });
-
-    // Crear libro de Excel
-    const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-
-    // Ajustar anchos de columnas
-    const columnWidths = [
-      { wch: 8 },   // ID
-      { wch: 18 },  // Fecha
-      { wch: 20 },  // Nombre del Cliente
-      { wch: 10 },  // Total
-      { wch: 12 },  // Repartidor
-      { wch: 12 },  // Monto Delivery
-      { wch: 10 },  // Pagado
-      { wch: 8 },   // Saldo
-      { wch: 15 },  // Método de Pago
-      { wch: 10 },  // Monto
-      { wch: 8 },   // Pagado
-      { wch: 40 },  // Nombre del Producto
-      { wch: 10 },  // Cantidad
-      { wch: 15 },  // Precio Unitario
-      { wch: 18 },  // Total del Producto
-    ];
-    worksheet["!cols"] = columnWidths;
-
-    // Crear libro y agregar hoja
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Ventas");
-
-    // Generar nombre de archivo con fecha
-    const today = new Date();
-    const fileName = `Ventas_${today.getDate()}-${
-      today.getMonth() + 1
-    }-${today.getFullYear()}.xlsx`;
-
-    // Descargar archivo
-    XLSX.writeFile(workbook, fileName);
-  };
-
-  const getDateFilterLabel = () => {
-    switch (dateFilter) {
-      case "today": return "Hoy";
-      case "yesterday": return "Ayer";
-      case "last7days": return "Últimos 7 días";
-      case "last30days": return "Últimos 30 días";
-      case "thisMonth": return "Este mes";
-      case "lastMonth": return "Mes anterior";
-      case "custom": return `${customDateFrom} a ${customDateTo}`;
-      case "all": return "Todo el período";
-      default: return "";
-    }
-  };
-
   // Funciones de ordenamiento
   const sortedCustomers = useMemo(() => {
     const sorted = [...salesByClient].sort((a, b) => 
@@ -371,6 +217,116 @@ export function Reports({ sales, products }: ReportsProps) {
     );
     return sorted;
   }, [pendingSort, pendingByClient]);
+
+  const getDateFilterLabel = () => {
+    switch (dateFilter) {
+      case "today": return `Hoy (${format(new Date(), "dd/MM/yyyy")})`;
+      case "yesterday": {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        return `Ayer (${format(d, "dd/MM/yyyy")})`;
+      }
+      case "last7days": return "Últimos 7 días";
+      case "last30days": return "Últimos 30 días";
+      case "thisMonth": return `Este mes (${format(new Date(), "MMMM", { locale: es })})`;
+      case "lastMonth": return "Mes anterior";
+      case "custom": return `${customDateFrom} a ${customDateTo}`;
+      case "all": return "Todo el período";
+      default: return "";
+    }
+  };
+
+  // Exportar todas las ventas a Excel
+  const exportToExcel = () => {
+    const workbook = XLSX.utils.book_new();
+    
+    // Hoja 1: Resumen
+    const summaryData = [
+      ["REPORTE DE VENTAS - DE LA GRAN BURGER"],
+      [],
+      ["Período:", getDateFilterLabel()],
+      [],
+      ["RESUMEN GENERAL"],
+      ["Ventas Totales", formatCurrency(metrics.totalSales)],
+      ["Cantidad de Ventas", metrics.salesCount],
+      ["Valor Promedio de Pedido", formatCurrency(metrics.averageOrderValue)],
+      ["Facturas Pendientes", metrics.pendingInvoices],
+      ["Monto Total a Cobrar", formatCurrency(metrics.totalPending)],
+    ];
+    
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, "Resumen");
+    XLSX.writeFile(workbook, `reporte-general-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+  };
+
+  // Exportar solo Ventas por Cliente
+  const exportSalesByClient = () => {
+    const workbook = XLSX.utils.book_new();
+    
+    const data = [
+      ["VENTAS POR CLIENTE"],
+      [],
+      ["Período:", getDateFilterLabel()],
+      [],
+      ["Cliente", "Total Gastado"],
+      ...sortedCustomers.map((item) => [
+        item.client || "Cliente sin nombre",
+        item.totalSpent
+      ])
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(data);
+    worksheet["!cols"] = [{ wch: 30 }, { wch: 15 }];
+    
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Ventas por Cliente");
+    XLSX.writeFile(workbook, `ventas-por-cliente-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+  };
+
+  // Exportar solo Productos Vendidos
+  const exportProductsSold = () => {
+    const workbook = XLSX.utils.book_new();
+    
+    const data = [
+      ["DETALLE PRODUCTOS VENDIDOS"],
+      [],
+      ["Período:", getDateFilterLabel()],
+      [],
+      ["Producto", "Cantidad Vendida"],
+      ...sortedProducts.map((item) => [
+        item.productName,
+        item.quantitySold
+      ])
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(data);
+    worksheet["!cols"] = [{ wch: 30 }, { wch: 18 }];
+    
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Productos Vendidos");
+    XLSX.writeFile(workbook, `productos-vendidos-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+  };
+
+  // Exportar solo Cuentas por Cobrar
+  const exportPendingAccounts = () => {
+    const workbook = XLSX.utils.book_new();
+    
+    const data = [
+      ["MONTO A COBRAR POR CLIENTE"],
+      [],
+      ["Período:", getDateFilterLabel()],
+      [],
+      ["Cliente", "Monto Adeudado"],
+      ...sortedPending.map((item) => [
+        item.client || "Cliente sin nombre",
+        item.pendingAmount
+      ])
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(data);
+    worksheet["!cols"] = [{ wch: 30 }, { wch: 15 }];
+    
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Cuentas por Cobrar");
+    XLSX.writeFile(workbook, `cuentas-por-cobrar-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+  };
 
   // Funciones de paginación
   const paginateData = (data: any[], page: number) => {
@@ -473,6 +429,114 @@ export function Reports({ sales, products }: ReportsProps) {
     );
   };
 
+  const renderTable = (
+    title: string,
+    headers: string[],
+    data: [string, number][],
+    currentPage: number,
+    setPage: (page: number) => void,
+    exportFunction?: () => void
+  ) => {
+    const totalPages = getTotalPages(data.length);
+    const paginatedData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    return (
+      <div style={{ 
+        background: 'white',
+        borderRadius: '12px',
+        padding: '1.5rem',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        height: 'fit-content'
+      }}>
+        <h3 style={{ 
+          fontSize: '1.1rem',
+          fontWeight: '600',
+          marginBottom: '1rem',
+          color: '#2c3e50',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          {title}
+          {exportFunction && (
+            <button
+              onClick={exportFunction}
+              style={{
+                background: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '0.4rem 0.8rem',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#059669';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#10b981';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+              title="Exportar esta tabla a Excel"
+            >
+              📊 Excel
+            </button>
+          )}
+        </h3>
+        
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                {headers.map((header, i) => (
+                  <th key={i} style={{ 
+                    textAlign: i === 0 ? 'left' : 'right',
+                    padding: '0.75rem 0.5rem',
+                    color: '#64748b',
+                    fontWeight: '600',
+                    fontSize: '0.875rem'
+                  }}>
+                    {header} ↕
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedData.map((row, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ 
+                    padding: '0.75rem 0.5rem',
+                    color: '#334155',
+                    fontWeight: '500'
+                  }}>
+                    {row[0]}
+                  </td>
+                  <td style={{ 
+                    padding: '0.75rem 0.5rem',
+                    textAlign: 'right',
+                    color: '#1e293b',
+                    fontFamily: 'monospace'
+                  }}>
+                    {headers[1].includes("Monto") || headers[1].includes("Total") 
+                      ? formatCurrency(row[1]) 
+                      : row[1]}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {totalPages > 1 && renderPagination(currentPage, totalPages, setPage)}
+      </div>
+    );
+  };
+
   return (
     <div style={{ 
       width: '100%',
@@ -496,7 +560,7 @@ export function Reports({ sales, products }: ReportsProps) {
         zIndex: 9999,
         boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
       }}>
-        ✅ GRID REDESIGN - {new Date().toLocaleTimeString()}
+        ✅ EXPORT BUTTONS ADDED - {new Date().toLocaleTimeString()}
       </div>
 
       {/* Encabezado con selector de fecha Y BOTÓN EXPORTAR */}
@@ -561,7 +625,7 @@ export function Reports({ sales, products }: ReportsProps) {
               whiteSpace: 'nowrap'
             }}
           >
-            📥 Exportar a Excel
+            📥 Exportar General
           </Button>
         </div>
       </div>
@@ -612,7 +676,7 @@ export function Reports({ sales, products }: ReportsProps) {
             fontWeight: '700',
             color: '#111827'
           }}>
-            Gs. {metrics.totalSales.toLocaleString('es-PY')}
+            {formatCurrency(metrics.totalSales)}
           </div>
         </div>
 
@@ -664,7 +728,7 @@ export function Reports({ sales, products }: ReportsProps) {
             fontWeight: '700',
             color: '#111827'
           }}>
-            Gs. {metrics.averageOrderValue.toLocaleString('es-PY')}
+            {formatCurrency(metrics.averageOrderValue)}
           </div>
         </div>
       </div>
@@ -725,7 +789,7 @@ export function Reports({ sales, products }: ReportsProps) {
             fontWeight: '700',
             color: '#111827'
           }}>
-            Gs. {metrics.totalPending.toLocaleString('es-PY')}
+            {formatCurrency(metrics.totalPending)}
           </div>
         </div>
       </div>
@@ -733,297 +797,36 @@ export function Reports({ sales, products }: ReportsProps) {
       {/* DETALLE DE VENTAS - 3 TABLAS */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
+        gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
         gap: "1.5rem",
         marginTop: "2rem",
       }}>
-        {/* VENTAS POR CLIENTE */}
-        <div style={{
-          background: "white",
-          borderRadius: "12px",
-          padding: "1.5rem",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}>
-          <h3 style={{
-            fontSize: "0.875rem",
-            fontWeight: 700,
-            color: "#64748b",
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-            marginBottom: "1rem",
-          }}>
-            Ventas por Cliente
-          </h3>
-          
-          <div style={{ overflow: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
-                  <th style={{
-                    textAlign: "left",
-                    padding: "0.75rem 0.5rem",
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    color: "#475569",
-                  }}>
-                    Cliente
-                    <button
-                      onClick={() => setCustomerSort(customerSort === "desc" ? "asc" : "desc")}
-                      style={{
-                        marginLeft: "0.5rem",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#94a3b8",
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      {customerSort === "desc" ? "↓" : "↑"}
-                    </button>
-                  </th>
-                  <th style={{
-                    textAlign: "right",
-                    padding: "0.75rem 0.5rem",
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    color: "#475569",
-                  }}>
-                    Total Gastado
-                    <button
-                      onClick={() => setCustomerSort(customerSort === "desc" ? "asc" : "desc")}
-                      style={{
-                        marginLeft: "0.5rem",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#94a3b8",
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      {customerSort === "desc" ? "↓" : "↑"}
-                    </button>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginateData(sortedCustomers, customerPage).map((item, index) => (
-                  <tr key={index} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                    <td style={{
-                      padding: "0.75rem 0.5rem",
-                      fontSize: "0.875rem",
-                      color: "#1e293b",
-                    }}>
-                      {item.client}
-                    </td>
-                    <td style={{
-                      padding: "0.75rem 0.5rem",
-                      fontSize: "0.875rem",
-                      color: "#1e293b",
-                      textAlign: "right",
-                      fontWeight: 600,
-                    }}>
-                      Gs. {item.totalSpent.toLocaleString('es-PY')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {renderTable(
+          "VENTAS POR CLIENTE",
+          ["Cliente", "Total Gastado"],
+          sortedCustomers.map(c => [c.client || "Anónimo", c.totalSpent]),
+          customerPage,
+          setCustomerPage,
+          exportSalesByClient
+        )}
 
-          {renderPagination(customerPage, getTotalPages(sortedCustomers.length), setCustomerPage)}
-        </div>
+        {renderTable(
+          "DETALLE PRODUCTOS VENDIDOS",
+          ["Producto", "Cantidad Vendida"],
+          sortedProducts.map(p => [p.productName, p.quantitySold]),
+          productPage,
+          setProductPage,
+          exportProductsSold
+        )}
 
-        {/* DETALLE PRODUCTOS VENDIDOS */}
-        <div style={{
-          background: "white",
-          borderRadius: "12px",
-          padding: "1.5rem",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}>
-          <h3 style={{
-            fontSize: "0.875rem",
-            fontWeight: 700,
-            color: "#64748b",
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-            marginBottom: "1rem",
-          }}>
-            Detalle Productos Vendidos
-          </h3>
-          
-          <div style={{ overflow: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
-                  <th style={{
-                    textAlign: "left",
-                    padding: "0.75rem 0.5rem",
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    color: "#475569",
-                  }}>
-                    Producto
-                    <button
-                      onClick={() => setProductSort(productSort === "desc" ? "asc" : "desc")}
-                      style={{
-                        marginLeft: "0.5rem",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#94a3b8",
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      {productSort === "desc" ? "↓" : "↑"}
-                    </button>
-                  </th>
-                  <th style={{
-                    textAlign: "right",
-                    padding: "0.75rem 0.5rem",
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    color: "#475569",
-                  }}>
-                    Cantidad Vendida
-                    <button
-                      onClick={() => setProductSort(productSort === "desc" ? "asc" : "desc")}
-                      style={{
-                        marginLeft: "0.5rem",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#94a3b8",
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      {productSort === "desc" ? "↓" : "↑"}
-                    </button>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginateData(sortedProducts, productPage).map((item, index) => (
-                  <tr key={index} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                    <td style={{
-                      padding: "0.75rem 0.5rem",
-                      fontSize: "0.875rem",
-                      color: "#1e293b",
-                    }}>
-                      {item.productName}
-                    </td>
-                    <td style={{
-                      padding: "0.75rem 0.5rem",
-                      fontSize: "0.875rem",
-                      color: "#1e293b",
-                      textAlign: "right",
-                      fontWeight: 600,
-                    }}>
-                      {item.quantitySold}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {renderPagination(productPage, getTotalPages(sortedProducts.length), setProductPage)}
-        </div>
-
-        {/* MONTO A COBRAR POR CLIENTE */}
-        <div style={{
-          background: "white",
-          borderRadius: "12px",
-          padding: "1.5rem",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}>
-          <h3 style={{
-            fontSize: "0.875rem",
-            fontWeight: 700,
-            color: "#64748b",
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-            marginBottom: "1rem",
-          }}>
-            Monto a Cobrar por Cliente
-          </h3>
-          
-          <div style={{ overflow: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
-                  <th style={{
-                    textAlign: "left",
-                    padding: "0.75rem 0.5rem",
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    color: "#475569",
-                  }}>
-                    Cliente
-                    <button
-                      onClick={() => setPendingSort(pendingSort === "desc" ? "asc" : "desc")}
-                      style={{
-                        marginLeft: "0.5rem",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#94a3b8",
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      {pendingSort === "desc" ? "↓" : "↑"}
-                    </button>
-                  </th>
-                  <th style={{
-                    textAlign: "right",
-                    padding: "0.75rem 0.5rem",
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    color: "#475569",
-                  }}>
-                    Monto Adeudado
-                    <button
-                      onClick={() => setPendingSort(pendingSort === "desc" ? "asc" : "desc")}
-                      style={{
-                        marginLeft: "0.5rem",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#94a3b8",
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      {pendingSort === "desc" ? "↓" : "↑"}
-                    </button>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginateData(sortedPending, pendingPage).map((item, index) => (
-                  <tr key={index} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                    <td style={{
-                      padding: "0.75rem 0.5rem",
-                      fontSize: "0.875rem",
-                      color: "#1e293b",
-                    }}>
-                      {item.client}
-                    </td>
-                    <td style={{
-                      padding: "0.75rem 0.5rem",
-                      fontSize: "0.875rem",
-                      color: "#1e293b",
-                      textAlign: "right",
-                      fontWeight: 600,
-                    }}>
-                      Gs. {item.pendingAmount.toLocaleString('es-PY')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {renderPagination(pendingPage, getTotalPages(sortedPending.length), setPendingPage)}
-        </div>
+        {renderTable(
+          "MONTO A COBRAR POR CLIENTE",
+          ["Cliente", "Monto Adeudado"],
+          sortedPending.map(p => [p.client || "Anónimo", p.pendingAmount]),
+          pendingPage,
+          setPendingPage,
+          exportPendingAccounts
+        )}
       </div>
 
       {/* MENSAJE CUANDO NO HAY DATOS */}
