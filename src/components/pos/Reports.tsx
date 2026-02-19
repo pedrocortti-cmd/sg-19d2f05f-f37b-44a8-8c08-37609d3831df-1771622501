@@ -202,6 +202,7 @@ export function Reports({ sales, products }: ReportsProps) {
       "Nombre del Cliente",
       "Total",
       "Repartidor",
+      "Monto Delivery",
       "Pagado",
       "Saldo",
       "Método de Pago",
@@ -225,6 +226,13 @@ export function Reports({ sales, products }: ReportsProps) {
       const customerName = sale.customer?.name || "Cliente Anónimo";
       const total = sale.total;
       const deliveryPerson = sale.deliveryDriverName || "";
+      
+      // Calcular monto del delivery (buscar producto con "delivery" en el nombre)
+      const deliveryItem = sale.items.find(item => 
+        item.productName.toLowerCase().includes("delivery")
+      );
+      const deliveryAmount = deliveryItem ? deliveryItem.price * deliveryItem.quantity : 0;
+      
       const paymentStatus = sale.status === "completed" ? "Pagado" : "Pendiente";
       const balance = sale.status === "completed" ? 0 : sale.total;
       const paymentMethod = sale.payments?.map((p) => p.method).join(", ") || "N/A";
@@ -242,6 +250,7 @@ export function Reports({ sales, products }: ReportsProps) {
             customerName,               // Nombre del Cliente
             total,                      // Total
             deliveryPerson,             // Repartidor
+            deliveryAmount,             // Monto Delivery
             paymentStatus,              // Pagado
             balance,                    // Saldo
             paymentMethod,              // Método de Pago
@@ -250,7 +259,7 @@ export function Reports({ sales, products }: ReportsProps) {
           );
         } else {
           // Filas subsecuentes: celdas vacías para info de venta
-          row.push("", "", "", "", "", "", "", "", "", "");
+          row.push("", "", "", "", "", "", "", "", "", "", "");
         }
 
         // Información del producto (siempre presente)
@@ -275,6 +284,7 @@ export function Reports({ sales, products }: ReportsProps) {
       { wch: 20 },  // Nombre del Cliente
       { wch: 10 },  // Total
       { wch: 12 },  // Repartidor
+      { wch: 12 },  // Monto Delivery
       { wch: 10 },  // Pagado
       { wch: 8 },   // Saldo
       { wch: 15 },  // Método de Pago
