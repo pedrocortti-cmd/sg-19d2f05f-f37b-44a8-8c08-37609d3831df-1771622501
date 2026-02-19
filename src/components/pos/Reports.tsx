@@ -329,7 +329,8 @@ export function Reports({ sales, products }: ReportsProps) {
         width: '100%',
         borderCollapse: 'separate',
         borderSpacing: '1.5rem',
-        marginBottom: '2rem'
+        marginBottom: '2rem',
+        tableLayout: 'fixed'  // CRÍTICO: Fuerza ancho fijo de columnas
       }}>
         <tbody>
           {/* Fila 1: 3 tarjetas */}
@@ -340,7 +341,8 @@ export function Reports({ sales, products }: ReportsProps) {
               padding: '2rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
               width: '33.33%',
-              verticalAlign: 'top'
+              verticalAlign: 'top',
+              display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
             }}>
               <div style={{
                 fontSize: '0.75rem',
@@ -367,7 +369,8 @@ export function Reports({ sales, products }: ReportsProps) {
               padding: '2rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
               width: '33.33%',
-              verticalAlign: 'top'
+              verticalAlign: 'top',
+              display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
             }}>
               <div style={{
                 fontSize: '0.75rem',
@@ -394,7 +397,8 @@ export function Reports({ sales, products }: ReportsProps) {
               padding: '2rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
               width: '33.33%',
-              verticalAlign: 'top'
+              verticalAlign: 'top',
+              display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
             }}>
               <div style={{
                 fontSize: '0.75rem',
@@ -423,7 +427,8 @@ export function Reports({ sales, products }: ReportsProps) {
               borderRadius: '0.75rem',
               padding: '2rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              verticalAlign: 'top'
+              verticalAlign: 'top',
+              display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
             }}>
               <div style={{
                 fontSize: '0.75rem',
@@ -449,7 +454,8 @@ export function Reports({ sales, products }: ReportsProps) {
               borderRadius: '0.75rem',
               padding: '2rem',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              verticalAlign: 'top'
+              verticalAlign: 'top',
+              display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
             }}>
               <div style={{
                 fontSize: '0.75rem',
@@ -472,7 +478,8 @@ export function Reports({ sales, products }: ReportsProps) {
 
             <td style={{
               backgroundColor: 'transparent',
-              border: 'none'
+              border: 'none',
+              display: 'table-cell'  // CRÍTICO: Fuerza comportamiento de celda
             }}>
               {/* Celda vacía para mantener el layout */}
             </td>
