@@ -322,16 +322,18 @@ export function Reports({ sales, products }: ReportsProps) {
         </button>
       </div>
 
-      {/* GRID DE MÉTRICAS PRINCIPALES - SIMPLE Y DIRECTO */}
+      {/* GRID DE MÉTRICAS PRINCIPALES - FLEXBOX */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        display: 'flex',
+        flexWrap: 'wrap',
         gap: '1.5rem',
         marginBottom: '1.5rem',
         width: '100%'
       }}>
         {/* Tarjeta 1: Ventas Totales */}
         <div style={{
+          flex: '1 1 calc(33.33% - 1rem)',
+          minWidth: '280px',
           backgroundColor: 'white',
           borderRadius: '0.75rem',
           padding: '2rem',
@@ -358,6 +360,8 @@ export function Reports({ sales, products }: ReportsProps) {
 
         {/* Tarjeta 2: Cantidad de Ventas */}
         <div style={{
+          flex: '1 1 calc(33.33% - 1rem)',
+          minWidth: '280px',
           backgroundColor: 'white',
           borderRadius: '0.75rem',
           padding: '2rem',
@@ -384,6 +388,8 @@ export function Reports({ sales, products }: ReportsProps) {
 
         {/* Tarjeta 3: Valor Promedio de Pedido */}
         <div style={{
+          flex: '1 1 calc(33.33% - 1rem)',
+          minWidth: '280px',
           backgroundColor: 'white',
           borderRadius: '0.75rem',
           padding: '2rem',
@@ -411,14 +417,16 @@ export function Reports({ sales, products }: ReportsProps) {
 
       {/* SEGUNDA FILA DE MÉTRICAS - 2 COLUMNAS */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
+        display: 'flex',
+        flexWrap: 'wrap',
         gap: '1.5rem',
         marginBottom: '2rem',
         width: '100%'
       }}>
         {/* Tarjeta 4: Facturas Pendientes */}
         <div style={{
+          flex: '1 1 calc(50% - 0.75rem)',
+          minWidth: '280px',
           backgroundColor: 'white',
           borderRadius: '0.75rem',
           padding: '2rem',
@@ -445,6 +453,8 @@ export function Reports({ sales, products }: ReportsProps) {
 
         {/* Tarjeta 5: Monto Total a Cobrar */}
         <div style={{
+          flex: '1 1 calc(50% - 0.75rem)',
+          minWidth: '280px',
           backgroundColor: 'white',
           borderRadius: '0.75rem',
           padding: '2rem',
