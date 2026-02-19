@@ -668,35 +668,41 @@ export default function POS() {
         />
       </Head>
 
-      <div className="pos-container">
+      <div className="pos-layout">
+        {/* Sidebar */}
         <div className="pos-sidebar">
-          <div className="sidebar-header">
-            <div className="logo">DG</div>
-            <h1>De la Gran Burger</h1>
+          <div className="pos-sidebar-header">
+            <div className="pos-sidebar-logo">DG</div>
+            <h1 className="pos-sidebar-title">De la Gran Burger</h1>
           </div>
 
-          <nav className="sidebar-nav">
+          <nav className="pos-sidebar-nav">
             {navigationItems.map((item) => (
               <button
                 key={item.id}
-                className={`nav-item ${currentView === item.id ? "active" : ""}`}
+                className={`pos-nav-item ${currentView === item.id ? "active" : ""}`}
                 onClick={() => setCurrentView(item.id as typeof currentView)}
               >
-                <span className="nav-icon">{item.icon}</span>
-                <span className="nav-label">{item.label}</span>
+                <span className="pos-nav-icon">{item.icon}</span>
+                <span>{item.label}</span>
               </button>
             ))}
           </nav>
 
-          <div className="sidebar-footer">
-            <button className="nav-item" onClick={() => alert("Cerrar sesión")}>
-              <span className="nav-icon">👤</span>
-              <span className="nav-label">Cerrar sesión</span>
+          <div className="pos-sidebar-footer">
+            <button className="pos-nav-item" onClick={() => alert("Cerrar sesión")}>
+              <span className="pos-nav-icon">👤</span>
+              <span>Cerrar sesión</span>
             </button>
           </div>
         </div>
 
-        <div className="pos-content">{renderContent()}</div>
+        {/* Contenido Principal */}
+        {currentView === "pos" ? renderPOS() : (
+          <div className="pos-layout-two-column">
+            {renderContent()}
+          </div>
+        )}
       </div>
 
       {showPaymentModal && (

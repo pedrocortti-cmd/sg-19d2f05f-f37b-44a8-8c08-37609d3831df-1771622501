@@ -1,12 +1,12 @@
 /* Estilos específicos para el sistema POS */
 
-/* Layout principal de 3 columnas */
+/* Layout principal del POS */
 .pos-layout {
   display: grid;
   grid-template-columns: 250px 420px 1fr;
   height: 100vh;
   overflow: hidden;
-  position: relative;
+  background: #f8fafc;
 }
 
 /* Layout de 2 columnas para vistas que no son POS */
@@ -19,13 +19,16 @@
   overflow-y: auto;
 }
 
-/* Sidebar navegación */
+/* Sidebar (Menú lateral) */
 .pos-sidebar {
   background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
   color: white;
   display: flex;
   flex-direction: column;
-  padding: 0;
+  padding: 1.5rem 0;
+  overflow-y: auto;
+  height: 100vh;
+  position: relative;
   box-shadow: 2px 0 10px rgba(0,0,0,0.1);
 }
 
@@ -102,8 +105,10 @@
   border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  max-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  gap: 1.5rem;
 }
 
 .pos-customer-section {
@@ -607,10 +612,12 @@
 
 /* Panel de productos */
 .pos-products-panel {
-  background: #ffffff;
+  background: white;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 1.5rem;
 }
 
 .pos-products-header {
