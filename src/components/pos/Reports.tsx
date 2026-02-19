@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import * as XLSX from "xlsx";
 import {
   TrendingUp,
   TrendingDown,
@@ -184,60 +185,120 @@ export function Reports({ sales, products }: ReportsProps) {
       .sort((a, b) => b.pendingAmount - a.pendingAmount);
   }, [filteredSales]);
 
-  // Función para exportar a Excel (CSV)
+  // Función para exportar a Excel
   const exportToExcel = () => {
-    let csvContent = "data:text/csv;charset=utf-8,";
-    
-    csvContent += "REPORTE DE VENTAS - DE LA GRAN BURGER\n";
-    csvContent += `Período: ${getDateFilterLabel()}\n`;
-    csvContent += `Fecha de generación: ${new Date().toLocaleString()}\n\n`;
-    
-    csvContent += "RESUMEN GENERAL\n";
-    csvContent += "Métrica,Valor\n";
-    csvContent += `Ventas Totales,Gs. ${metrics.totalSales.toLocaleString()}\n`;
-    csvContent += `Cantidad de Ventas,${metrics.salesCount}\n`;
-    csvContent += `Valor Promedio de Pedido,Gs. ${metrics.averageOrderValue.toLocaleString()}\n`;
-    csvContent += `Facturas Pendientes,${metrics.pendingInvoices}\n`;
-    csvContent += `Monto Total a Cobrar,Gs. ${metrics.totalPending.toLocaleString()}\n\n`;
-    
-    csvContent += "DETALLE DE VENTAS\n";
-    csvContent += "N° Venta,Fecha,Hora,Cliente,Teléfono,Tipo,Total,Estado,Método Pago\n";
-    filteredSales.forEach(sale => {
-      const date = new Date(sale.date);
-      csvContent += `${sale.id},`;
-      csvContent += `${date.toLocaleDateString()},`;
-      csvContent += `${date.toLocaleTimeString()},`;
-      csvContent += `"${sale.customer?.name || "N/A"}",`;
-      csvContent += `${sale.customer?.phone || "N/A"},`;
-      csvContent += `${sale.type},`;
-      csvContent += `${sale.total},`;
-      csvContent += `${sale.status},`;
-      csvContent += `${sale.payments.map(p => p.method).join(" + ")}\n`;
-    });
-    
-    csvContent += "\n";
-    
-    csvContent += "PRODUCTOS VENDIDOS\n";
-    csvContent += "Producto,Cantidad Vendida,Ingresos Totales\n";
-    productSales.forEach(product => {
-      csvContent += `"${product.productName}",${product.quantitySold},Gs. ${product.totalRevenue.toLocaleString()}\n`;
-    });
-    
-    csvContent += "\n";
-    
-    csvContent += "VENTAS POR CLIENTE\n";
-    csvContent += "Cliente,Total Gastado,Cantidad de Pedidos\n";
-    salesByClient.forEach(client => {
-      csvContent += `"${client.client}",Gs. ${client.totalSpent.toLocaleString()},${client.ordersCount}\n`;
+    if (filteredSales.length === 0) {
+      alert("No hay datos para exportar");
+      return;
+    }
+
+    // Preparar datos en el formato del screenshot
+    const excelData: any[] = [];
+
+    // Encabezados
+    excelData.push([
+      "ID",
+      "Fecha",
+      "Nombre del Cliente",
+      "Total",
+      "Repartidor",
+      "Pagado",
+      "Saldo",
+      "Método de Pago",
+      "Monto",
+      "Pagado",
+      "Nombre del Producto",
+      "Cantidad",
+      "Precio Unitario",
+      "Total del Producto",
+    ]);
+
+    // Procesar cada venta
+    filteredSales.forEach((sale) => {
+      const saleDate = new Date(sale.date);
+      const formattedDate = `${saleDate.getDate()}/${
+        saleDate.getMonth() + 1
+      }/${saleDate.getFullYear()} ${saleDate.getHours()}:${String(
+        saleDate.getMinutes()
+      ).padStart(2, "0")}`;
+
+      const customerName = sale.customer?.name || "Cliente Anónimo";
+      const total = sale.total;
+      const deliveryPerson = sale.deliveryDriverName || "";
+      const paymentStatus = sale.status === "completed" ? "Pagado" : "Pendiente";
+      const balance = sale.status === "completed" ? 0 : sale.total;
+      const paymentMethod = sale.payments?.map((p) => p.method).join(", ") || "N/A";
+      const amountPaid = sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+
+      // Agregar cada producto de la venta
+      sale.items.forEach((item, itemIndex) => {
+        const row: any[] = [];
+
+        // Solo mostrar info de venta en la primera fila de productos
+        if (itemIndex === 0) {
+          row.push(
+            sale.id,                    // ID
+            formattedDate,              // Fecha
+            customerName,               // Nombre del Cliente
+            total,                      // Total
+            deliveryPerson,             // Repartidor
+            paymentStatus,              // Pagado
+            balance,                    // Saldo
+            paymentMethod,              // Método de Pago
+            amountPaid,                 // Monto
+            ""                          // Pagado (columna vacía)
+          );
+        } else {
+          // Filas subsecuentes: celdas vacías para info de venta
+          row.push("", "", "", "", "", "", "", "", "", "");
+        }
+
+        // Información del producto (siempre presente)
+        row.push(
+          item.productName,             // Nombre del Producto
+          item.quantity,                // Cantidad
+          item.price,                   // Precio Unitario
+          item.quantity * item.price    // Total del Producto
+        );
+
+        excelData.push(row);
+      });
     });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `reporte_ventas_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Crear libro de Excel
+    const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+
+    // Ajustar anchos de columnas
+    const columnWidths = [
+      { wch: 8 },   // ID
+      { wch: 18 },  // Fecha
+      { wch: 20 },  // Nombre del Cliente
+      { wch: 10 },  // Total
+      { wch: 12 },  // Repartidor
+      { wch: 10 },  // Pagado
+      { wch: 8 },   // Saldo
+      { wch: 15 },  // Método de Pago
+      { wch: 10 },  // Monto
+      { wch: 8 },   // Pagado
+      { wch: 40 },  // Nombre del Producto
+      { wch: 10 },  // Cantidad
+      { wch: 15 },  // Precio Unitario
+      { wch: 18 },  // Total del Producto
+    ];
+    worksheet["!cols"] = columnWidths;
+
+    // Crear libro y agregar hoja
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Ventas");
+
+    // Generar nombre de archivo con fecha
+    const today = new Date();
+    const fileName = `Ventas_${today.getDate()}-${
+      today.getMonth() + 1
+    }-${today.getFullYear()}.xlsx`;
+
+    // Descargar archivo
+    XLSX.writeFile(workbook, fileName);
   };
 
   const getDateFilterLabel = () => {
@@ -900,17 +961,20 @@ export function Reports({ sales, products }: ReportsProps) {
         </div>
       </div>
 
-      {/* BOTÓN EXPORTAR */}
+      {/* BOTÓN EXPORTAR EXCEL */}
       <div style={{ marginTop: "2rem", textAlign: "center" }}>
         <Button
-          variant="outline"
-          size="lg"
+          onClick={exportToExcel}
           style={{
-            padding: "1rem 3rem",
+            background: "#10b981",
+            color: "white",
+            padding: "1rem 2rem",
             fontSize: "1rem",
-            fontWeight: 600,
-            borderColor: "#3b82f6",
-            color: "#3b82f6",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontWeight: "600",
+            boxShadow: "0 4px 6px rgba(16, 185, 129, 0.3)",
           }}
         >
           Descargar Ventas en Excel
