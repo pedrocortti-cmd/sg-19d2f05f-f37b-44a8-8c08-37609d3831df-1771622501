@@ -273,13 +273,15 @@ export function Reports({ sales, products }: ReportsProps) {
 
       {/* Tarjetas de métricas principales */}
       <div 
-        className="reports-metrics-grid"
+        className="reports-metrics-grid-v2"
+        data-layout="horizontal-metrics"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
           gap: '1.5rem',
           marginBottom: '2rem',
-          width: '100%'
+          width: '100%',
+          gridAutoFlow: 'row'
         }}
       >
         <div className="reports-metric-card">

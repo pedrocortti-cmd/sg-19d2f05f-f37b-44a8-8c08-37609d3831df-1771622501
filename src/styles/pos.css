@@ -1402,13 +1402,21 @@
 }
 
 /* CRITICAL: Metrics Grid Container - Forces horizontal layout */
-.reports-metrics-grid {
+.reports-metrics-grid,
+.reports-metrics-grid-v2,
+div[data-layout="horizontal-metrics"] {
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
   gap: 1.5rem !important;
   margin-bottom: 2rem !important;
   width: 100% !important;
   grid-auto-flow: row !important;
+}
+
+div[data-grid="metrics-3col"],
+div[data-layout="horizontal-metrics"] {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
 }
 
 /* Force grid layout with data attribute for maximum specificity */
