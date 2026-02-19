@@ -4,6 +4,7 @@ export interface Product {
   id: number;
   name: string;
   price: number;
+  stock?: number;
   categoryId: number;
   category?: string;
   image?: string;
@@ -136,4 +137,32 @@ export interface BusinessInfo {
   phone: string;
   ruc: string;
   additionalInfo: string;
+}
+
+export interface PrinterSettings {
+  kitchenPrinter: string;
+  clientPrinter: string;
+  paperSize: "80mm" | "58mm";
+  copies: number;
+}
+
+export interface StockMovement {
+  id: number;
+  productId: number;
+  productName: string;
+  type: "sale" | "adjustment" | "initial" | "return";
+  quantity: number;
+  previousStock: number;
+  newStock: number;
+  reason: string;
+  createdBy: string;
+  createdAt: Date;
+}
+
+export interface InventoryAlert {
+  productId: number;
+  productName: string;
+  currentStock: number;
+  minStock: number;
+  status: "low" | "critical" | "out";
 }
