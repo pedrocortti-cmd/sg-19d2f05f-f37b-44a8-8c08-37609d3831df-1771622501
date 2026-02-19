@@ -1314,11 +1314,10 @@ export default function Home() {
         );
       case "reports":
         return (
-          <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>
-            <TrendingUp size={64} style={{ margin: "0 auto 1rem", opacity: 0.3 }} />
-            <h2>Reportes</h2>
-            <p>Próximamente disponible</p>
-          </div>
+          <Reports 
+            sales={sales}
+            products={products}
+          />
         );
       case "informes":
         return (
@@ -1574,17 +1573,17 @@ export default function Home() {
             <div className="pos-total-section">
               <div className="pos-total-row">
                 <span className="pos-total-label">Subtotal:</span>
-                <span className="pos-total-value">Gs. ${formatCurrency(subtotal)}</span>
+                <span className="pos-total-value">Gs. {formatCurrency(subtotal)}</span>
               </div>
               {orderType === "delivery" && deliveryCost > 0 && (
                 <div className="pos-total-row">
                   <span className="pos-total-label">Delivery:</span>
-                  <span className="pos-total-value">Gs. ${formatCurrency(deliveryCost)}</span>
+                  <span className="pos-total-value">Gs. {formatCurrency(deliveryCost)}</span>
                 </div>
               )}
               <div className="pos-total-row pos-total-final">
                 <span className="pos-total-label">Total:</span>
-                <span className="pos-total-value">Gs. ${formatCurrency(total)}</span>
+                <span className="pos-total-value">Gs. {formatCurrency(total)}</span>
               </div>
             </div>
             
@@ -1841,6 +1840,14 @@ export default function Home() {
             <button 
               className={`pos-nav-item ${currentView === "reports" ? "active" : ""}`}
               onClick={() => setCurrentView("reports")}
+            >
+              <TrendingUp className="pos-nav-icon" />
+              <span>Reportes</span>
+            </button>
+
+            <button 
+              className={`pos-nav-item ${currentView === "informes" ? "active" : ""}`}
+              onClick={() => setCurrentView("informes")}
             >
               <TrendingUp className="pos-nav-icon" />
               <span>Informes</span>
