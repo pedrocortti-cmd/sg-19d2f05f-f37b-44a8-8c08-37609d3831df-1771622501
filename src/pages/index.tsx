@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Head from "next/head";
-import { ShoppingCart, Package, Warehouse, TrendingUp, FileText, Settings, HelpCircle, LogOut, Search, Trash2, X, ChevronDown, ChevronUp, Printer, Edit2, Check, Clock, DollarSign, Bike } from "lucide-react";
+import { ShoppingCart, Package, Warehouse, Search, X, Plus, Minus, Bike } from "lucide-react";
 import { ProductsManager } from "@/components/pos/ProductsManager";
 import { SalesHistory } from "@/components/pos/SalesHistory";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
@@ -9,13 +9,6 @@ import { PrintFormatSettings } from "@/components/pos/PrintFormatSettings";
 import { Reports } from "@/components/pos/Reports";
 import { Inventory } from "@/components/pos/Inventory";
 
-// CSS Imports moved to _app.tsx
-// import "@/styles/globals.css";
-// import "@/styles/pos.css";
-// import "@/styles/reports.css";
-// import "@/styles/inventory.css";
-
-// Importar tipos y datos mock
 import { 
   Product, 
   Category, 
@@ -27,7 +20,6 @@ import {
   Payment,
   PrintFormatConfig
 } from "@/types/pos";
-import { Plus, Minus } from "lucide-react";
 
 // Datos de prueba iniciales
 const INITIAL_PRODUCTS: Product[] = [
@@ -51,25 +43,13 @@ const CATEGORIES: Category[] = [
 ];
 
 export default function POS() {
-  // Estados principales
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
-  
-  // Estados de UI
   const [currentCategory, setCurrentCategory] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [currentView, setCurrentView] = useState<
-    | "pos"
-    | "sales"
-    | "products"
-    | "inventory"
-    | "informes"
-    | "settings"
-  >("pos");
-
-  // Estado del pedido actual
+  const [currentView, setCurrentView] = useState<"pos" | "sales" | "products" | "inventory" | "informes" | "settings">("pos");
   const [orderType, setOrderType] = useState<OrderType>("delivery");
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: "",
@@ -81,16 +61,13 @@ export default function POS() {
   });
   const [orderNote, setOrderNote] = useState("");
   const [cartDiscount, setCartDiscount] = useState(0);
-
-  // Usuario actual (mock)
-  const [currentUser, setCurrentUser] = useState<User>({
+  const [currentUser] = useState<User>({
     id: 1,
     username: "cajero1",
     name: "Juan Pérez",
     role: "cashier",
     active: true
   });
-
   const [printConfig, setPrintConfig] = useState<PrintFormatConfig>({
     comandaTitleSize: 2,
     comandaProductSize: 1,
@@ -111,7 +88,6 @@ export default function POS() {
     }
   });
 
-  // Cálculos del carrito
   const cartSubtotal = useMemo(() => {
     return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   }, [cart]);
@@ -120,7 +96,6 @@ export default function POS() {
     return Math.max(0, cartSubtotal - cartDiscount);
   }, [cartSubtotal, cartDiscount]);
 
-  // Filtrado de productos
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
       const matchesCategory = currentCategory === 0 || product.categoryId === currentCategory;
@@ -129,13 +104,11 @@ export default function POS() {
     });
   }, [products, currentCategory, searchTerm]);
 
-  // Manejadores del carrito
   const addToCart = (product: Product) => {
     if ((product.stock || 0) <= 0) {
       alert("¡Producto sin stock!");
       return;
     }
-
     setCart(prev => {
       const existing = prev.find(item => item.product.id === product.id);
       if (existing) {
@@ -162,13 +135,10 @@ export default function POS() {
       return prev.map(item => {
         if (item.product.id === productId) {
           const newQuantity = Math.max(1, item.quantity + delta);
-          
-          // Verificar stock
           if (delta > 0 && newQuantity > (item.product.stock || 0)) {
             alert("No hay suficiente stock disponible");
             return item;
           }
-          
           return { ...item, quantity: newQuantity };
         }
         return item;
@@ -176,7 +146,6 @@ export default function POS() {
     });
   };
 
-  // Manejadores de productos
   const handleSaveProduct = (product: Product) => {
     setProducts(prev => {
       const exists = prev.find(p => p.id === product.id);
@@ -195,7 +164,6 @@ export default function POS() {
     }
   };
 
-  // Confirmar pago y generar venta
   const handleConfirmPayment = (payments: Payment[], note: string) => {
     const saleNumber = (sales.length + 1).toString().padStart(6, '0');
     const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -222,10 +190,8 @@ export default function POS() {
       deliveryPerson: orderType === 'delivery' ? 'Sin asignar' : undefined
     };
 
-    // Guardar venta
     setSales([...sales, newSale]);
 
-    // Descontar stock automáticamente
     const updatedProducts = products.map((product) => {
       const cartItem = cart.find((item) => item.product.id === product.id);
       if (cartItem) {
@@ -236,7 +202,6 @@ export default function POS() {
     });
     setProducts(updatedProducts);
 
-    // Limpiar carrito
     setCart([]);
     setCartDiscount(0);
     setOrderNote("");
@@ -250,210 +215,234 @@ export default function POS() {
     });
     setShowPaymentModal(false);
 
-    alert(`✅ Venta #${saleNumber} confirmada exitosamente`);
+    alert(`✅ Venta #${saleNumber} confirmada exitosamente\n💾 Stock actualizado automáticamente`);
   };
 
-  // Renderizado de contenido principal
   const renderContent = () => {
     switch (currentView) {
       case "pos":
         return (
-          <div className="pos-content">
-            {/* Panel Izquierdo: Productos */}
-            <div className="pos-products-section">
-              {/* Header y Buscador */}
-              <div className="pos-header">
-                <div className="search-bar">
-                  <Search size={20} className="text-gray-400" />
+          <>
+            {/* Panel de Cliente y Carrito */}
+            <div className="pos-customer-panel">
+              {/* Información del Cliente */}
+              <div className="pos-customer-section expanded">
+                <div className="pos-section-title">
+                  INFORMACIÓN DEL CLIENTE
+                </div>
+                <div className="pos-customer-form">
+                  <div className="pos-input-group">
+                    <label className="pos-input-label">Cliente</label>
+                    <input 
+                      type="text" 
+                      className="pos-input"
+                      placeholder="Nombre del cliente"
+                      value={customerInfo.name}
+                      onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
+                    />
+                  </div>
+                  {orderType === 'delivery' && (
+                    <>
+                      <div className="pos-input-group">
+                        <label className="pos-input-label">Teléfono</label>
+                        <input 
+                          type="tel" 
+                          className="pos-input"
+                          placeholder="Teléfono / WhatsApp"
+                          value={customerInfo.phone}
+                          onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
+                        />
+                      </div>
+                      <div className="pos-input-group">
+                        <label className="pos-input-label">Dirección</label>
+                        <textarea 
+                          className="pos-input"
+                          placeholder="Dirección de entrega"
+                          rows={2}
+                          value={customerInfo.address}
+                          onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Carrito */}
+              <div className="pos-cart-section">
+                <div className="pos-cart-header">
+                  ORDEN ACTUAL
+                </div>
+
+                <div className="pos-cart-items">
+                  {cart.length === 0 ? (
+                    <div className="pos-cart-empty">
+                      <ShoppingCart className="pos-cart-empty-icon" />
+                      <p>El carrito está vacío</p>
+                      <span>Selecciona productos para agregar</span>
+                    </div>
+                  ) : (
+                    cart.map(item => (
+                      <div key={item.product.id} className="pos-cart-item">
+                        <div className="pos-cart-item-header">
+                          <div className="pos-cart-item-name">{item.product.name}</div>
+                          <button
+                            className="pos-cart-item-remove"
+                            onClick={() => removeFromCart(item.product.id)}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                        <div className="pos-cart-item-controls">
+                          <div className="pos-quantity-control">
+                            <button
+                              className="pos-quantity-btn"
+                              onClick={() => updateQuantity(item.product.id, -1)}
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span className="pos-quantity-display">{item.quantity}</span>
+                            <button
+                              className="pos-quantity-btn"
+                              onClick={() => updateQuantity(item.product.id, 1)}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                          <span className="pos-cart-item-price">
+                            Gs. {(item.product.price * item.quantity).toLocaleString("es-PY")}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Footer del Carrito */}
+                <div className="pos-cart-footer">
+                  <div className="pos-order-type">
+                    <button 
+                      className={`pos-order-type-btn ${orderType === 'delivery' ? 'active' : ''}`}
+                      onClick={() => setOrderType('delivery')}
+                    >
+                      <Bike size={16} /> Delivery
+                    </button>
+                    <button 
+                      className={`pos-order-type-btn ${orderType === 'pickup' ? 'active' : ''}`}
+                      onClick={() => setOrderType('pickup')}
+                    >
+                      <Package size={16} /> Retiro
+                    </button>
+                    <button 
+                      className={`pos-order-type-btn ${orderType === 'dineIn' ? 'active' : ''}`}
+                      onClick={() => setOrderType('dineIn')}
+                    >
+                      <Warehouse size={16} /> Local
+                    </button>
+                  </div>
+
+                  <div className="pos-total-section">
+                    <div className="pos-total-row">
+                      <span className="pos-total-label">Subtotal:</span>
+                      <span className="pos-total-value">Gs. {cartSubtotal.toLocaleString("es-PY")}</span>
+                    </div>
+                    {cartDiscount > 0 && (
+                      <div className="pos-total-row">
+                        <span className="pos-total-label">Descuento:</span>
+                        <span className="pos-total-value">-Gs. {cartDiscount.toLocaleString("es-PY")}</span>
+                      </div>
+                    )}
+                    <div className="pos-total-row pos-total-final">
+                      <span className="pos-total-label">Total:</span>
+                      <span className="pos-total-value">Gs. {cartTotal.toLocaleString("es-PY")}</span>
+                    </div>
+                  </div>
+
+                  <div className="pos-action-buttons">
+                    <div className="pos-action-buttons-row">
+                      <button 
+                        className="pos-btn pos-btn-clear"
+                        onClick={() => {
+                          if(confirm('¿Vaciar carrito?')) {
+                            setCart([]);
+                            setCustomerInfo({name: '', phone: '', address: '', ruc: '', businessName: '', exempt: false});
+                          }
+                        }}
+                        disabled={cart.length === 0}
+                      >
+                        Vaciar
+                      </button>
+                    </div>
+                    <div className="pos-action-buttons-row">
+                      <button 
+                        className="pos-btn pos-btn-pay"
+                        onClick={() => setShowPaymentModal(true)}
+                        disabled={cart.length === 0}
+                      >
+                        Confirmar Pago
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Panel de Productos */}
+            <div className="pos-products-panel">
+              <div className="pos-products-header">
+                <div className="pos-search-bar">
+                  <Search className="pos-search-icon" />
                   <input 
                     type="text" 
+                    className="pos-search-input"
                     placeholder="Buscar productos..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                   {searchTerm && (
-                    <button onClick={() => setSearchTerm("")} className="clear-search">
-                      <X size={16} />
+                    <button 
+                      onClick={() => setSearchTerm("")}
+                      style={{
+                        position: 'absolute',
+                        right: '1rem',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#94a3b8'
+                      }}
+                    >
+                      <X size={18} />
                     </button>
                   )}
                 </div>
-                
-                <div className="user-info">
-                  <div className="user-avatar">
-                    {currentUser.name.charAt(0)}
-                  </div>
-                  <span>{currentUser.name}</span>
+
+                <div className="pos-categories">
+                  {CATEGORIES.map(category => (
+                    <button
+                      key={category.id}
+                      className={`pos-category-btn ${currentCategory === category.id ? 'active' : ''}`}
+                      onClick={() => setCurrentCategory(category.id)}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Categorías */}
-              <div className="categories-list">
-                {CATEGORIES.map(category => (
-                  <button
-                    key={category.id}
-                    className={`category-pill ${currentCategory === category.id ? 'active' : ''}`}
-                    onClick={() => setCurrentCategory(category.id)}
-                  >
-                    {category.name}
-                  </button>
-                ))}
-              </div>
-
-              {/* Grid de Productos */}
-              <div className="products-grid">
+              <div className="pos-products-grid">
                 {filteredProducts.map(product => (
                   <div 
                     key={product.id}
-                    className="product-card"
+                    className="pos-product-card"
                     onClick={() => addToCart(product)}
                   >
-                    {product.image && (
-                      <img 
-                        src={product.image} 
-                        alt={product.name}
-                        className="product-image"
-                      />
-                    )}
-                    <div className="product-name">{product.name}</div>
-                    <span className="price">Gs. {product.price.toLocaleString("es-PY")}</span>
+                    <div className="pos-product-name">{product.name}</div>
+                    <div className="pos-product-price">Gs. {product.price.toLocaleString("es-PY")}</div>
                   </div>
                 ))}
               </div>
             </div>
-
-            {/* Panel Derecho: Carrito */}
-            <div className="pos-cart-section">
-              <div className="cart-header">
-                <h2>Orden Actual</h2>
-                <div className="order-type-selector">
-                  <button 
-                    className={orderType === 'delivery' ? 'active' : ''}
-                    onClick={() => setOrderType('delivery')}
-                  >
-                    <Bike size={18} /> Delivery
-                  </button>
-                  <button 
-                    className={orderType === 'pickup' ? 'active' : ''}
-                    onClick={() => setOrderType('pickup')}
-                  >
-                    <Package size={18} /> Retiro
-                  </button>
-                  <button 
-                    className={orderType === 'dineIn' ? 'active' : ''}
-                    onClick={() => setOrderType('dineIn')}
-                  >
-                    <Warehouse size={18} /> Local
-                  </button>
-                </div>
-              </div>
-
-              {/* Información del Cliente */}
-              <div className="customer-form">
-                <input 
-                  type="text" 
-                  placeholder="Nombre del Cliente"
-                  value={customerInfo.name}
-                  onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                />
-                {orderType === 'delivery' && (
-                  <>
-                    <input 
-                      type="tel" 
-                      placeholder="Teléfono / WhatsApp"
-                      value={customerInfo.phone}
-                      onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                    />
-                    <textarea 
-                      placeholder="Dirección de entrega"
-                      rows={2}
-                      value={customerInfo.address}
-                      onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                    />
-                  </>
-                )}
-              </div>
-
-              {/* Items del Carrito */}
-              <div className="cart-items">
-                {cart.length === 0 ? (
-                  <div className="empty-cart">
-                    <ShoppingCart size={48} />
-                    <p>El carrito está vacío</p>
-                    <span>Selecciona productos para agregar</span>
-                  </div>
-                ) : (
-                  cart.map(item => (
-                    <div key={item.product.id} className="cart-item">
-                      <div className="cart-item-details">
-                        <div className="cart-item-name">{item.product.name}</div>
-                        <span className="item-price">Gs. {item.product.price.toLocaleString("es-PY")}</span>
-                      </div>
-                      <div className="cart-item-controls">
-                        <button
-                          className="quantity-btn"
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        >
-                          <Minus size={16} />
-                        </button>
-                        <span className="quantity">{item.quantity}</span>
-                        <button
-                          className="quantity-btn"
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                      <span className="item-total">
-                        Gs. {(item.product.price * item.quantity).toLocaleString("es-PY")}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Totales y Acciones */}
-              <div className="cart-footer">
-                <div className="cart-summary">
-                  <div className="summary-row">
-                    <span>Subtotal:</span>
-                    <span>Gs. {cartSubtotal.toLocaleString("es-PY")}</span>
-                  </div>
-                  {cartDiscount > 0 && (
-                    <div className="summary-row discount">
-                      <span>Descuento:</span>
-                      <span>-Gs. {cartDiscount.toLocaleString("es-PY")}</span>
-                    </div>
-                  )}
-                  <div className="summary-row total">
-                    <span>Total:</span>
-                    <span>Gs. {cartTotal.toLocaleString("es-PY")}</span>
-                  </div>
-                </div>
-
-                <div className="cart-actions">
-                  <button 
-                    className="cancel-btn"
-                    onClick={() => {
-                      if(confirm('¿Vaciar carrito?')) {
-                        setCart([]);
-                        setCustomerInfo({name: '', phone: '', address: ''});
-                      }
-                    }}
-                    disabled={cart.length === 0}
-                  >
-                    Cancelar
-                  </button>
-                  <button 
-                    className="pay-btn"
-                    onClick={() => setShowPaymentModal(true)}
-                    disabled={cart.length === 0}
-                  >
-                    Confirmar Pago <DollarSign size={20} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          </>
         );
       case "sales":
         return <SalesHistory sales={sales} />;
@@ -471,13 +460,13 @@ export default function POS() {
       case "settings":
         return (
           <div className="settings-container">
-             <div className="settings-tabs">
+            <div className="settings-tabs">
               <h2>Configuración</h2>
               <div className="settings-grid">
                 <PrinterSettings />
                 <PrintFormatSettings config={printConfig} onSave={setPrintConfig} />
               </div>
-             </div>
+            </div>
           </div>
         );
       default:
@@ -485,7 +474,6 @@ export default function POS() {
     }
   };
 
-  // Navegación lateral
   const navigationItems = [
     { id: "pos", label: "Punto de Venta", icon: "🛒" },
     { id: "sales", label: "Ventas", icon: "📋" },
@@ -502,39 +490,41 @@ export default function POS() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div className="pos-layout">
+      <div className={currentView === "pos" ? "pos-layout" : "pos-layout-two-column"}>
         {/* Sidebar de Navegación */}
         <div className="pos-sidebar">
-          <div className="sidebar-header">
-            <div className="logo">DG</div>
-            <h1>De la Gran Burger</h1>
+          <div className="pos-sidebar-header">
+            <div className="pos-sidebar-logo">DG</div>
+            <h1 className="pos-sidebar-title">De la Gran Burger</h1>
           </div>
           
-          <nav className="sidebar-nav">
+          <nav className="pos-sidebar-nav">
             {navigationItems.map(item => (
-              <button
+              <a
                 key={item.id}
-                className={`nav-item ${currentView === item.id ? 'active' : ''}`}
-                onClick={() => setCurrentView(item.id as any)}
+                className={`pos-nav-item ${currentView === item.id ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setCurrentView(item.id as any);
+                }}
+                href="#"
               >
-                <span className="nav-icon">{item.icon}</span>
-                <span className="nav-label">{item.label}</span>
-              </button>
+                <span className="pos-nav-icon">{item.icon}</span>
+                <span>{item.label}</span>
+              </a>
             ))}
           </nav>
 
-          <div className="sidebar-footer">
-            <button className="nav-item">
-              <span className="nav-icon">👤</span>
-              <span className="nav-label">Cerrar sesión</span>
-            </button>
+          <div className="pos-sidebar-footer">
+            <a className="pos-nav-item" href="#">
+              <span className="pos-nav-icon">👤</span>
+              <span>Cerrar sesión</span>
+            </a>
           </div>
         </div>
 
         {/* Contenido Principal */}
-        <div className="pos-main">
-          {renderContent()}
-        </div>
+        {renderContent()}
       </div>
 
       {/* Modales */}
