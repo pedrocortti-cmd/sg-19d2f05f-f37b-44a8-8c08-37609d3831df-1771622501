@@ -227,11 +227,10 @@ export function Reports({ sales, products }: ReportsProps) {
       const total = sale.total;
       const deliveryPerson = sale.deliveryDriverName || "";
       
-      // Calcular monto del delivery (buscar producto con "delivery" en el nombre)
-      const deliveryItem = sale.items.find(item => 
-        item.productName.toLowerCase().includes("delivery")
-      );
-      const deliveryAmount = deliveryItem ? deliveryItem.price * deliveryItem.quantity : 0;
+      // Calcular monto del delivery AQUÍ - una vez por venta
+      const deliveryAmount = sale.items
+        .filter(item => item.productName.toLowerCase().includes("delivery"))
+        .reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
       const paymentStatus = sale.status === "completed" ? "Pagado" : "Pendiente";
       const balance = sale.status === "completed" ? 0 : sale.total;
