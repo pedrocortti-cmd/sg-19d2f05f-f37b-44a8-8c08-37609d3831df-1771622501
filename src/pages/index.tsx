@@ -245,8 +245,8 @@ export default function POS() {
       payments,
       paymentMethod: payments.length > 0 ? payments[0].method : 'mixed',
       note: note || orderNote,
-      status: "completed",
       user: currentUser.name,
+      status: "completed",
       amountPaid: amountPaid,
       balance: Math.max(0, cartTotal - amountPaid)
     };
@@ -328,7 +328,7 @@ export default function POS() {
           </div>
         );
       default:
-        return renderPOS();
+        return null;
     }
   };
 
@@ -342,322 +342,6 @@ export default function POS() {
     { id: "settings", label: "Ajustes", icon: "⚙️" },
   ];
 
-  // Render POS principal
-  const renderPOS = () => (
-    <>
-      {/* Panel Izquierdo: Cliente + Carrito */}
-      <div className="pos-customer-panel">
-        {/* Sección de Cliente */}
-        <div className="pos-customer-section expanded">
-          <div className="pos-section-title">
-            <span>👤 Información del Cliente</span>
-          </div>
-
-          <div className="pos-customer-form">
-            <div className="pos-input-group">
-              <label className="pos-input-label">Cliente</label>
-              <input
-                type="text"
-                className="pos-input"
-                placeholder="Nombre del cliente"
-                value={customerInfo.name}
-                onChange={(e) =>
-                  setCustomerInfo({ ...customerInfo, name: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="pos-input-group">
-              <label className="pos-input-label">Teléfono</label>
-              <input
-                type="tel"
-                className="pos-input"
-                placeholder="Teléfono"
-                value={customerInfo.phone}
-                onChange={(e) =>
-                  setCustomerInfo({ ...customerInfo, phone: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="pos-input-group">
-              <label className="pos-input-label">Dirección</label>
-              <input
-                type="text"
-                className="pos-input"
-                placeholder="Dirección de entrega"
-                value={customerInfo.address}
-                onChange={(e) =>
-                  setCustomerInfo({ ...customerInfo, address: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="pos-input-group">
-              <label className="pos-input-label">RUC (opcional)</label>
-              <input
-                type="text"
-                className="pos-input"
-                placeholder="RUC"
-                value={customerInfo.ruc || ""}
-                onChange={(e) =>
-                  setCustomerInfo({ ...customerInfo, ruc: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="pos-input-group">
-              <label className="pos-input-label">Razón Social (opcional)</label>
-              <input
-                type="text"
-                className="pos-input"
-                placeholder="Razón Social"
-                value={customerInfo.businessName || ""}
-                onChange={(e) =>
-                  setCustomerInfo({ ...customerInfo, businessName: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="pos-checkbox-group">
-              <input
-                type="checkbox"
-                id="exempt-checkbox"
-                checked={customerInfo.isExempt || false}
-                onChange={(e) =>
-                  setCustomerInfo({ 
-                    ...customerInfo, 
-                    isExempt: e.target.checked,
-                    exempt: e.target.checked 
-                  })
-                }
-              />
-              <label htmlFor="exempt-checkbox">Exento</label>
-            </div>
-          </div>
-        </div>
-
-        {/* Sección de Carrito */}
-        <div className="pos-cart-section">
-          <div className="pos-cart-header">
-            <ShoppingCart size={20} />
-            Orden Actual
-          </div>
-
-          <div className="pos-cart-items">
-            {cart.length === 0 ? (
-              <div className="pos-cart-empty">
-                <ShoppingCart className="pos-cart-empty-icon" />
-                <p>No hay productos en el carrito</p>
-              </div>
-            ) : (
-              cart.map((item) => (
-                <div key={item.product.id} className="pos-cart-item">
-                  <div className="pos-cart-item-header">
-                    <span className="pos-cart-item-name">{item.product.name}</span>
-                    <button
-                      onClick={() => removeFromCart(item.product.id)}
-                      className="pos-cart-item-remove"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-
-                  <div className="pos-cart-item-controls">
-                    <div className="pos-quantity-control">
-                      <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        className="pos-quantity-btn"
-                      >
-                        <Minus size={16} />
-                      </button>
-
-                      <span className="pos-quantity-display">{item.quantity}</span>
-
-                      <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        className="pos-quantity-btn"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-
-                    <span className="pos-cart-item-price">
-                      Gs. {(item.product.price * item.quantity).toLocaleString("es-PY")}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {cart.length > 0 && (
-            <div className="pos-cart-footer">
-              {/* Descuento */}
-              <div className="pos-discount-section">
-                <div className="pos-input-group">
-                  <label className="pos-input-label">Descuento</label>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <select
-                      value={discountType}
-                      onChange={(e) => setDiscountType(e.target.value as "percentage" | "amount")}
-                      className="pos-input"
-                      style={{ width: '80px' }}
-                    >
-                      <option value="percentage">%</option>
-                      <option value="amount">Gs.</option>
-                    </select>
-                    <input
-                      type="number"
-                      min="0"
-                      value={discountValue}
-                      onChange={(e) => setDiscountValue(Number(e.target.value))}
-                      placeholder="0"
-                      className="pos-input"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Nota */}
-              <div className="pos-note-section">
-                <div className="pos-input-group">
-                  <label className="pos-input-label">Nota del pedido</label>
-                  <textarea
-                    placeholder="Comentarios o instrucciones especiales..."
-                    value={orderNote}
-                    onChange={(e) => setOrderNote(e.target.value)}
-                    rows={2}
-                    className="pos-input"
-                    style={{ resize: 'vertical', minHeight: '60px' }}
-                  />
-                </div>
-              </div>
-
-              {/* Tipo de Orden */}
-              <div className="pos-order-type">
-                <button
-                  className={`pos-order-type-btn ${orderType === "delivery" ? "active" : ""}`}
-                  onClick={() => setOrderType("delivery")}
-                >
-                  🛵 Delivery
-                </button>
-                <button
-                  className={`pos-order-type-btn ${orderType === "pickup" ? "active" : ""}`}
-                  onClick={() => setOrderType("pickup")}
-                >
-                  🚶 Para Retirar
-                </button>
-                <button
-                  className={`pos-order-type-btn ${orderType === "dineIn" ? "active" : ""}`}
-                  onClick={() => setOrderType("dineIn")}
-                >
-                  🍽️ En Local
-                </button>
-              </div>
-
-              {/* Total */}
-              <div className="pos-total-section">
-                <div className="pos-total-row">
-                  <span className="pos-total-label">Subtotal:</span>
-                  <span className="pos-total-value">Gs. {subtotal.toLocaleString("es-PY")}</span>
-                </div>
-                {discountAmount > 0 && (
-                  <div className="pos-total-row">
-                    <span className="pos-total-label">Descuento:</span>
-                    <span className="pos-total-value">-Gs. {discountAmount.toLocaleString("es-PY")}</span>
-                  </div>
-                )}
-                <div className="pos-total-row pos-total-final">
-                  <span className="pos-total-label">Total:</span>
-                  <span className="pos-total-value">Gs. {cartTotal.toLocaleString("es-PY")}</span>
-                </div>
-              </div>
-
-              {/* Botones de Acción */}
-              <div className="pos-action-buttons">
-                <div className="pos-action-buttons-row">
-                  <button
-                    className="pos-btn pos-btn-clear"
-                    onClick={clearCart}
-                  >
-                    <Trash2 size={18} />
-                    Vaciar
-                  </button>
-                </div>
-                <div className="pos-action-buttons-row">
-                  <button
-                    className="pos-btn pos-btn-pay"
-                    onClick={() => setShowPaymentModal(true)}
-                  >
-                    Confirmar Pago
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Panel Central: Productos */}
-      <div className="pos-products-panel">
-        <div className="pos-products-header">
-          <div className="pos-search-bar">
-            <input
-              type="text"
-              className="pos-search-input"
-              placeholder="🔍 Buscar productos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <div className="pos-categories">
-            {CATEGORIES.map((category) => (
-              <button
-                key={category.id}
-                className={`pos-category-btn ${
-                  selectedCategory === category.name ? "active" : ""
-                }`}
-                onClick={() => setSelectedCategory(category.name)}
-              >
-                <span>{category.icon}</span>
-                {category.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="pos-products-grid">
-          {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className={`pos-product-card ${
-                product.stock !== undefined && product.stock <= 0 ? 'out-of-stock' : ''
-              }`}
-              onClick={() => addToCart(product)}
-              style={{ cursor: product.stock !== undefined && product.stock <= 0 ? 'not-allowed' : 'pointer' }}
-            >
-              <div className="pos-product-name">{product.name}</div>
-              <div className="pos-product-price">Gs. {product.price.toLocaleString("es-PY")}</div>
-              {product.stock !== undefined && (
-                <div style={{ 
-                  fontSize: '0.8rem', 
-                  color: product.stock <= 0 ? '#ef4444' : product.stock < 10 ? '#f59e0b' : '#10b981',
-                  marginTop: '0.5rem'
-                }}>
-                  {product.stock <= 0 ? '❌ Agotado' : 
-                   product.stock < 10 ? `⚠️ ${product.stock} disponibles` :
-                   `✓ ${product.stock} disponibles`}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-
   return (
     <>
       <Head>
@@ -668,38 +352,383 @@ export default function POS() {
         />
       </Head>
 
-      {/* Sidebar - SIEMPRE visible */}
-      <div className="pos-sidebar">
-        <div className="pos-sidebar-header">
-          <div className="pos-sidebar-logo">DG</div>
-          <h1 className="pos-sidebar-title">De la Gran Burger</h1>
+      {currentView === "pos" ? (
+        /* Vista POS - Grid de 3 columnas */
+        <div className="pos-layout">
+          {/* Sidebar */}
+          <div className="pos-sidebar">
+            <div className="pos-sidebar-header">
+              <div className="pos-sidebar-logo">DG</div>
+              <h1 className="pos-sidebar-title">De la Gran Burger</h1>
+            </div>
+
+            <nav className="pos-sidebar-nav">
+              {navigationItems.map((item) => (
+                <button
+                  key={item.id}
+                  className={`pos-nav-item ${currentView === item.id ? "active" : ""}`}
+                  onClick={() => setCurrentView(item.id as typeof currentView)}
+                >
+                  <span className="pos-nav-icon">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </nav>
+
+            <div className="pos-sidebar-footer">
+              <button className="pos-nav-item" onClick={() => alert("Cerrar sesión")}>
+                <span className="pos-nav-icon">👤</span>
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Panel Cliente + Carrito */}
+          <div className="pos-customer-panel">
+            {/* Sección de Cliente */}
+            <div className="pos-customer-section expanded">
+              <div className="pos-section-title">
+                <span>👤 Información del Cliente</span>
+              </div>
+
+              <div className="pos-customer-form">
+                <div className="pos-input-group">
+                  <label className="pos-input-label">Cliente</label>
+                  <input
+                    type="text"
+                    className="pos-input"
+                    placeholder="Nombre del cliente"
+                    value={customerInfo.name}
+                    onChange={(e) =>
+                      setCustomerInfo({ ...customerInfo, name: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="pos-input-group">
+                  <label className="pos-input-label">Teléfono</label>
+                  <input
+                    type="tel"
+                    className="pos-input"
+                    placeholder="Teléfono"
+                    value={customerInfo.phone}
+                    onChange={(e) =>
+                      setCustomerInfo({ ...customerInfo, phone: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="pos-input-group">
+                  <label className="pos-input-label">Dirección</label>
+                  <input
+                    type="text"
+                    className="pos-input"
+                    placeholder="Dirección de entrega"
+                    value={customerInfo.address}
+                    onChange={(e) =>
+                      setCustomerInfo({ ...customerInfo, address: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="pos-input-group">
+                  <label className="pos-input-label">RUC (opcional)</label>
+                  <input
+                    type="text"
+                    className="pos-input"
+                    placeholder="RUC"
+                    value={customerInfo.ruc || ""}
+                    onChange={(e) =>
+                      setCustomerInfo({ ...customerInfo, ruc: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="pos-input-group">
+                  <label className="pos-input-label">Razón Social (opcional)</label>
+                  <input
+                    type="text"
+                    className="pos-input"
+                    placeholder="Razón Social"
+                    value={customerInfo.businessName || ""}
+                    onChange={(e) =>
+                      setCustomerInfo({ ...customerInfo, businessName: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="pos-checkbox-group">
+                  <input
+                    type="checkbox"
+                    id="exempt-checkbox"
+                    checked={customerInfo.isExempt || false}
+                    onChange={(e) =>
+                      setCustomerInfo({ 
+                        ...customerInfo, 
+                        isExempt: e.target.checked,
+                        exempt: e.target.checked 
+                      })
+                    }
+                  />
+                  <label htmlFor="exempt-checkbox">Exento</label>
+                </div>
+              </div>
+            </div>
+
+            {/* Sección de Carrito */}
+            <div className="pos-cart-section">
+              <div className="pos-cart-header">
+                <ShoppingCart size={20} />
+                Orden Actual
+              </div>
+
+              <div className="pos-cart-items">
+                {cart.length === 0 ? (
+                  <div className="pos-cart-empty">
+                    <ShoppingCart className="pos-cart-empty-icon" />
+                    <p>No hay productos en el carrito</p>
+                  </div>
+                ) : (
+                  cart.map((item) => (
+                    <div key={item.product.id} className="pos-cart-item">
+                      <div className="pos-cart-item-header">
+                        <span className="pos-cart-item-name">{item.product.name}</span>
+                        <button
+                          onClick={() => removeFromCart(item.product.id)}
+                          className="pos-cart-item-remove"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+
+                      <div className="pos-cart-item-controls">
+                        <div className="pos-quantity-control">
+                          <button
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            className="pos-quantity-btn"
+                          >
+                            <Minus size={16} />
+                          </button>
+
+                          <span className="pos-quantity-display">{item.quantity}</span>
+
+                          <button
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                            className="pos-quantity-btn"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+
+                        <span className="pos-cart-item-price">
+                          Gs. {(item.product.price * item.quantity).toLocaleString("es-PY")}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {cart.length > 0 && (
+                <div className="pos-cart-footer">
+                  {/* Descuento */}
+                  <div className="pos-discount-section">
+                    <div className="pos-input-group">
+                      <label className="pos-input-label">Descuento</label>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <select
+                          value={discountType}
+                          onChange={(e) => setDiscountType(e.target.value as "percentage" | "amount")}
+                          className="pos-input"
+                          style={{ width: '80px' }}
+                        >
+                          <option value="percentage">%</option>
+                          <option value="amount">Gs.</option>
+                        </select>
+                        <input
+                          type="number"
+                          min="0"
+                          value={discountValue}
+                          onChange={(e) => setDiscountValue(Number(e.target.value))}
+                          placeholder="0"
+                          className="pos-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Nota */}
+                  <div className="pos-note-section">
+                    <div className="pos-input-group">
+                      <label className="pos-input-label">Nota del pedido</label>
+                      <textarea
+                        placeholder="Comentarios o instrucciones especiales..."
+                        value={orderNote}
+                        onChange={(e) => setOrderNote(e.target.value)}
+                        rows={2}
+                        className="pos-input"
+                        style={{ resize: 'vertical', minHeight: '60px' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Tipo de Orden */}
+                  <div className="pos-order-type">
+                    <button
+                      className={`pos-order-type-btn ${orderType === "delivery" ? "active" : ""}`}
+                      onClick={() => setOrderType("delivery")}
+                    >
+                      🛵 Delivery
+                    </button>
+                    <button
+                      className={`pos-order-type-btn ${orderType === "pickup" ? "active" : ""}`}
+                      onClick={() => setOrderType("pickup")}
+                    >
+                      🚶 Para Retirar
+                    </button>
+                    <button
+                      className={`pos-order-type-btn ${orderType === "dineIn" ? "active" : ""}`}
+                      onClick={() => setOrderType("dineIn")}
+                    >
+                      🍽️ En Local
+                    </button>
+                  </div>
+
+                  {/* Total */}
+                  <div className="pos-total-section">
+                    <div className="pos-total-row">
+                      <span className="pos-total-label">Subtotal:</span>
+                      <span className="pos-total-value">Gs. {subtotal.toLocaleString("es-PY")}</span>
+                    </div>
+                    {discountAmount > 0 && (
+                      <div className="pos-total-row">
+                        <span className="pos-total-label">Descuento:</span>
+                        <span className="pos-total-value">-Gs. {discountAmount.toLocaleString("es-PY")}</span>
+                      </div>
+                    )}
+                    <div className="pos-total-row pos-total-final">
+                      <span className="pos-total-label">Total:</span>
+                      <span className="pos-total-value">Gs. {cartTotal.toLocaleString("es-PY")}</span>
+                    </div>
+                  </div>
+
+                  {/* Botones de Acción */}
+                  <div className="pos-action-buttons">
+                    <div className="pos-action-buttons-row">
+                      <button
+                        className="pos-btn pos-btn-clear"
+                        onClick={clearCart}
+                      >
+                        <Trash2 size={18} />
+                        Vaciar
+                      </button>
+                    </div>
+                    <div className="pos-action-buttons-row">
+                      <button
+                        className="pos-btn pos-btn-pay"
+                        onClick={() => setShowPaymentModal(true)}
+                      >
+                        Confirmar Pago
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Panel Productos */}
+          <div className="pos-products-panel">
+            <div className="pos-products-header">
+              <div className="pos-search-bar">
+                <input
+                  type="text"
+                  className="pos-search-input"
+                  placeholder="🔍 Buscar productos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              <div className="pos-categories">
+                {CATEGORIES.map((category) => (
+                  <button
+                    key={category.id}
+                    className={`pos-category-btn ${
+                      selectedCategory === category.name ? "active" : ""
+                    }`}
+                    onClick={() => setSelectedCategory(category.name)}
+                  >
+                    <span>{category.icon}</span>
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="pos-products-grid">
+              {filteredProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className={`pos-product-card ${
+                    product.stock !== undefined && product.stock <= 0 ? 'out-of-stock' : ''
+                  }`}
+                  onClick={() => addToCart(product)}
+                  style={{ cursor: product.stock !== undefined && product.stock <= 0 ? 'not-allowed' : 'pointer' }}
+                >
+                  <div className="pos-product-name">{product.name}</div>
+                  <div className="pos-product-price">Gs. {product.price.toLocaleString("es-PY")}</div>
+                  {product.stock !== undefined && (
+                    <div style={{ 
+                      fontSize: '0.8rem', 
+                      color: product.stock <= 0 ? '#ef4444' : product.stock < 10 ? '#f59e0b' : '#10b981',
+                      marginTop: '0.5rem'
+                    }}>
+                      {product.stock <= 0 ? '❌ Agotado' : 
+                       product.stock < 10 ? `⚠️ ${product.stock} disponibles` :
+                       `✓ ${product.stock} disponibles`}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-
-        <nav className="pos-sidebar-nav">
-          {navigationItems.map((item) => (
-            <button
-              key={item.id}
-              className={`pos-nav-item ${currentView === item.id ? "active" : ""}`}
-              onClick={() => setCurrentView(item.id as typeof currentView)}
-            >
-              <span className="pos-nav-icon">{item.icon}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        <div className="pos-sidebar-footer">
-          <button className="pos-nav-item" onClick={() => alert("Cerrar sesión")}>
-            <span className="pos-nav-icon">👤</span>
-            <span>Cerrar sesión</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Contenido Principal */}
-      {currentView === "pos" ? renderPOS() : (
+      ) : (
+        /* Otras vistas - Layout de 2 columnas */
         <div className="pos-layout-two-column">
-          {renderContent()}
+          {/* Sidebar */}
+          <div className="pos-sidebar">
+            <div className="pos-sidebar-header">
+              <div className="pos-sidebar-logo">DG</div>
+              <h1 className="pos-sidebar-title">De la Gran Burger</h1>
+            </div>
+
+            <nav className="pos-sidebar-nav">
+              {navigationItems.map((item) => (
+                <button
+                  key={item.id}
+                  className={`pos-nav-item ${currentView === item.id ? "active" : ""}`}
+                  onClick={() => setCurrentView(item.id as typeof currentView)}
+                >
+                  <span className="pos-nav-icon">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </nav>
+
+            <div className="pos-sidebar-footer">
+              <button className="pos-nav-item" onClick={() => alert("Cerrar sesión")}>
+                <span className="pos-nav-icon">👤</span>
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Contenido */}
+          <div style={{ overflow: 'auto', height: '100vh' }}>
+            {renderContent()}
+          </div>
         </div>
       )}
 
