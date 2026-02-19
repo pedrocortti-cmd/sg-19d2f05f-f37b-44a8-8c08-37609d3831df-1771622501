@@ -42,18 +42,18 @@ export function Reports({ sales, products }: ReportsProps) {
   const [customDateTo, setCustomDateTo] = useState("");
   const metricsGridRef = useRef<HTMLDivElement>(null);
 
-  // FORCE GRID LAYOUT WITH JAVASCRIPT (GUARANTEED TO WORK)
+  // Force grid layout with JavaScript as fallback
   useEffect(() => {
     if (metricsGridRef.current) {
       const grid = metricsGridRef.current;
-      grid.style.display = 'grid';
-      grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+      grid.style.display = 'flex';
+      grid.style.flexDirection = 'row';
+      grid.style.flexWrap = 'wrap';
       grid.style.gap = '1.5rem';
       grid.style.marginBottom = '2rem';
       grid.style.width = '100%';
-      grid.style.gridAutoFlow = 'row';
     }
-  }, [dateFilter]); // Re-apply when filter changes
+  }, []); // Only run once on mount
 
   // Filtrar ventas según el rango de fechas seleccionado
   const filteredSales = useMemo(() => {
@@ -291,52 +291,57 @@ export function Reports({ sales, products }: ReportsProps) {
         className="reports-metrics-grid-v2"
         data-layout="horizontal-metrics"
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          display: 'flex',
+          flexDirection: 'column', // Column para apilar las FILAS, no las tarjetas
           gap: '1.5rem',
           marginBottom: '2rem',
-          width: '100%',
-          gridAutoFlow: 'row'
+          width: '100%'
         }}
       >
-        <div className="reports-metric-card">
-          <div className="reports-metric-content">
-            <h3 className="reports-metric-label">Ventas Totales</h3>
-            <p className="reports-metric-value">
-              Gs. {metrics.totalSales.toLocaleString()}
-            </p>
+        {/* Primera fila: 3 tarjetas */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'row', 
+          gap: '1.5rem', 
+          width: '100%',
+          flexWrap: 'nowrap' 
+        }}>
+          <div className="reports-metric-card" style={{ flex: '1', minWidth: '0' }}>
+            <div className="reports-metric-label">VENTAS TOTALES</div>
+            <div className="reports-metric-value">
+              Gs. {metrics.totalSales.toLocaleString('es-PY')}
+            </div>
+          </div>
+
+          <div className="reports-metric-card" style={{ flex: '1', minWidth: '0' }}>
+            <div className="reports-metric-label">CANTIDAD DE VENTAS</div>
+            <div className="reports-metric-value">{metrics.salesCount}</div>
+          </div>
+
+          <div className="reports-metric-card" style={{ flex: '1', minWidth: '0' }}>
+            <div className="reports-metric-label">VALOR PROMEDIO DE PEDIDO</div>
+            <div className="reports-metric-value">
+              Gs. {Math.round(metrics.averageOrderValue).toLocaleString('es-PY')}
+            </div>
           </div>
         </div>
 
-        <div className="reports-metric-card">
-          <div className="reports-metric-content">
-            <h3 className="reports-metric-label">Cantidad de Ventas</h3>
-            <p className="reports-metric-value">{metrics.salesCount}</p>
+        {/* Segunda fila: 2 tarjetas */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'row', 
+          gap: '1.5rem', 
+          width: '100%',
+          flexWrap: 'nowrap' 
+        }}>
+          <div className="reports-metric-card" style={{ flex: '1', minWidth: '0' }}>
+            <div className="reports-metric-label">FACTURAS PENDIENTES DE COBRO</div>
+            <div className="reports-metric-value">{metrics.pendingInvoices}</div>
           </div>
-        </div>
 
-        <div className="reports-metric-card">
-          <div className="reports-metric-content">
-            <h3 className="reports-metric-label">Valor Promedio de Pedido</h3>
-            <p className="reports-metric-value">
-              Gs. {metrics.averageOrderValue.toLocaleString()}
-            </p>
-          </div>
-        </div>
-
-        <div className="reports-metric-card">
-          <div className="reports-metric-content">
-            <h3 className="reports-metric-label">Facturas Pendientes de Cobro</h3>
-            <p className="reports-metric-value">{metrics.pendingInvoices}</p>
-          </div>
-        </div>
-
-        <div className="reports-metric-card">
-          <div className="reports-metric-content">
-            <h3 className="reports-metric-label">Monto Total a Cobrar</h3>
-            <p className="reports-metric-value">
-              Gs. {metrics.totalPending.toLocaleString()}
-            </p>
+          <div className="reports-metric-card" style={{ flex: '1', minWidth: '0' }}>
+            <div className="reports-metric-label">MONTO TOTAL A COBRAR</div>
+            <div className="reports-metric-value">Gs. {metrics.totalPending.toLocaleString('es-PY')}</div>
           </div>
         </div>
       </div>
