@@ -52,6 +52,8 @@ export interface CustomerInfo {
 
 export type OrderType = "delivery" | "pickup" | "dineIn" | "local";
 
+export type DiscountType = "percentage" | "amount";
+
 export type PaymentMethod = "cash" | "qr" | "card" | "transfer" | "other";
 
 export interface Payment {

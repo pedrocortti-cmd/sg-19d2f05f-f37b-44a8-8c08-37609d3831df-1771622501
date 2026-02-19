@@ -1,25 +1,16 @@
 import { useState, useMemo } from "react";
 import Head from "next/head";
-import { ShoppingCart, Plus, Minus, Trash2, X, Search, User as UserIcon } from "lucide-react";
-import { SEO } from "@/components/SEO";
-import { ProductsManager } from "@/components/pos/ProductsManager";
-import { SalesHistory } from "@/components/pos/SalesHistory";
-import { PrinterSettings } from "@/components/pos/PrinterSettings";
+import { ShoppingCart, Package, BarChart3, Settings, LogOut, X, User as UserIcon, Trash2, Plus, Minus, ShoppingBag, TrendingUp, DollarSign, Users, Clock, Search } from "lucide-react";
 import { PaymentModal } from "@/components/pos/PaymentModal";
-import { PrintFormatSettings } from "@/components/pos/PrintFormatSettings";
-import { Reports } from "@/components/pos/Reports";
+import { SalesHistory } from "@/components/pos/SalesHistory";
+import { ProductsManager } from "@/components/pos/ProductsManager";
 import { Inventory } from "@/components/pos/Inventory";
-
-import { 
-  Product, 
-  CartItem, 
-  Sale, 
-  CustomerInfo, 
-  OrderType,
-  User,
-  Payment,
-  PrintFormatConfig
-} from "@/types/pos";
+import { Reports } from "@/components/pos/Reports";
+import { PrinterSettings } from "@/components/pos/PrinterSettings";
+import { PrintFormatSettings } from "@/components/pos/PrintFormatSettings";
+import { SEO } from "@/components/SEO";
+import { cn, formatCurrency } from "@/lib/utils";
+import type { Product, CartItem, Sale, Category, PaymentMethod, DiscountType, OrderType, CustomerInfo, User, PrintFormatConfig, Payment } from "@/types/pos";
 
 // Datos de prueba iniciales
 const INITIAL_PRODUCTS: Product[] = [
@@ -448,35 +439,21 @@ export default function POS() {
             <div className="cart-items">
               {cart.map((item) => (
                 <div key={item.product.id} className="cart-item">
-                  <div className="item-info">
-                    <span className="item-name">{item.product.name}</span>
-                    <span className="item-price">
-                      Gs. {item.product.price.toLocaleString()}
-                    </span>
+                  <div className="cart-item-info">
+                    <span className="cart-item-name">{item.product.name}</span>
+                    <span className="cart-item-price">{formatCurrency(item.product.price * item.quantity)}</span>
                   </div>
-                  <div className="item-controls">
-                    <button
-                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                      className="btn-qty"
-                    >
-                      -
+                  <div className="cart-item-actions">
+                    <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>
+                      <Minus className="w-4 h-4" />
                     </button>
-                    <span className="item-qty">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                      className="btn-qty"
-                    >
-                      +
+                    <span className="cart-item-quantity">{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>
+                      <Plus className="w-4 h-4" />
                     </button>
-                    <button
-                      onClick={() => removeFromCart(item.product.id)}
-                      className="btn-remove"
-                    >
-                      ×
+                    <button className="remove-btn" onClick={() => removeFromCart(item.product.id)}>
+                      <X className="w-4 h-4" />
                     </button>
-                  </div>
-                  <div className="item-subtotal">
-                    Gs. {(item.product.price * item.quantity).toLocaleString()}
                   </div>
                 </div>
               ))}
@@ -549,19 +526,19 @@ export default function POS() {
         {/* Total y Botones */}
         <div className="cart-footer">
           <div className="cart-totals">
-            <div className="total-row">
+            <div className="cart-total-row">
               <span>Subtotal:</span>
-              <span>Gs. {subtotal.toLocaleString()}</span>
+              <span>{formatCurrency(subtotal)}</span>
             </div>
             {discountAmount > 0 && (
-              <div className="total-row discount">
+              <div className="cart-total-row discount-row">
                 <span>Descuento:</span>
-                <span>- Gs. {discountAmount.toLocaleString()}</span>
+                <span>-{formatCurrency(discountAmount)}</span>
               </div>
             )}
-            <div className="total-row total">
+            <div className="cart-total-row total-row">
               <span>TOTAL:</span>
-              <span>Gs. {cartTotal.toLocaleString()}</span>
+              <span>{formatCurrency(cartTotal)}</span>
             </div>
           </div>
           <div className="cart-actions">
@@ -623,12 +600,12 @@ export default function POS() {
               className="product-card"
               onClick={() => addToCart(product)}
             >
-              <div className="product-name">{product.name}</div>
-              <div className="product-price">
-                Gs. {product.price.toLocaleString()}
-              </div>
-              <div className="product-stock">
-                ✓ {product.stock} disponibles
+              <div className="product-info">
+                <h4>{product.name}</h4>
+                <p className="product-price">{formatCurrency(product.price)}</p>
+                <p className="product-stock">
+                  {product.stock > 0 ? `✓ ${product.stock} disponibles` : "Sin stock"}
+                </p>
               </div>
             </div>
           ))}
