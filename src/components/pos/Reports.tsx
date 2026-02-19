@@ -251,7 +251,7 @@ export function Reports({ sales, products }: ReportsProps) {
   };
 
   return (
-    <div className="reports-container">
+    <div style={{ padding: '2rem', backgroundColor: '#F9FAFB', minHeight: '100vh' }}>
       {/* Encabezado con selector de fecha */}
       <div className="reports-header">
         <h2 style={{ margin: 0, fontSize: "1.5rem", fontWeight: "700" }}>Informes</h2>
@@ -307,63 +307,167 @@ export function Reports({ sales, products }: ReportsProps) {
         </button>
       </div>
 
-      {/* Tarjetas de métricas principales - LAYOUT NUCLEAR */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .metrics-container-nuclear {
-          display: flex !important;
-          flex-direction: column !important;
-          gap: 1.5rem !important;
-          margin-bottom: 2rem !important;
-          width: 100% !important;
-        }
-        .metrics-row-nuclear {
-          display: flex !important;
-          flex-direction: row !important;
-          gap: 1.5rem !important;
-          width: 100% !important;
-          flex-wrap: nowrap !important;
-        }
-        .metric-card-nuclear {
-          flex: 1 !important;
-          min-width: 0 !important;
-          background: white !important;
-          padding: 1.5rem !important;
-          border-radius: 12px !important;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-        }
-        @media (max-width: 768px) {
-          .metrics-row-nuclear {
-            flex-direction: column !important;
-          }
-        }
-      `}} />
-      
-      <div className="metrics-container-nuclear">
+      {/* Tarjetas de métricas principales - PURE INLINE STYLES */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+        marginBottom: '2rem',
+        width: '100%'
+      }}>
         {/* Fila 1: 3 tarjetas */}
-        <div className="metrics-row-nuclear">
-          <div className="metric-card-nuclear">
-            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>VENTAS TOTALES</div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>Gs. {metrics.totalSales.toLocaleString('es-PY')}</div>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          gap: '1.5rem',
+          width: '100%'
+        }}>
+          {/* Tarjeta 1: Ventas Totales */}
+          <div style={{
+            flex: '1',
+            minWidth: '0',
+            backgroundColor: 'white',
+            borderRadius: '0.5rem',
+            padding: '1.5rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              color: '#6B7280',
+              marginBottom: '0.5rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              VENTAS TOTALES
+            </div>
+            <div style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              color: '#111827'
+            }}>
+              Gs. {metrics.totalSales.toLocaleString('es-PY')}
+            </div>
           </div>
-          <div className="metric-card-nuclear">
-            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CANTIDAD DE VENTAS</div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>{metrics.salesCount}</div>
+
+          {/* Tarjeta 2: Cantidad de Ventas */}
+          <div style={{
+            flex: '1',
+            minWidth: '0',
+            backgroundColor: 'white',
+            borderRadius: '0.5rem',
+            padding: '1.5rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              color: '#6B7280',
+              marginBottom: '0.5rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              CANTIDAD DE VENTAS
+            </div>
+            <div style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              color: '#111827'
+            }}>
+              {metrics.salesCount}
+            </div>
           </div>
-          <div className="metric-card-nuclear">
-            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>VALOR PROMEDIO DE PEDIDO</div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>Gs. {metrics.averageOrderValue.toLocaleString('es-PY')}</div>
+
+          {/* Tarjeta 3: Valor Promedio */}
+          <div style={{
+            flex: '1',
+            minWidth: '0',
+            backgroundColor: 'white',
+            borderRadius: '0.5rem',
+            padding: '1.5rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              color: '#6B7280',
+              marginBottom: '0.5rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              VALOR PROMEDIO DE PEDIDO
+            </div>
+            <div style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              color: '#111827'
+            }}>
+              Gs. {metrics.averageOrderValue.toLocaleString('es-PY')}
+            </div>
           </div>
         </div>
-        
+
         {/* Fila 2: 2 tarjetas */}
-        <div className="metrics-row-nuclear">
-          <div className="metric-card-nuclear">
-            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>FACTURAS PENDIENTES DE COBRO</div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>{metrics.pendingInvoices}</div>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          gap: '1.5rem',
+          width: '100%'
+        }}>
+          {/* Tarjeta 4: Facturas Pendientes */}
+          <div style={{
+            flex: '1',
+            minWidth: '0',
+            backgroundColor: 'white',
+            borderRadius: '0.5rem',
+            padding: '1.5rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              color: '#6B7280',
+              marginBottom: '0.5rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              FACTURAS PENDIENTES DE COBRO
+            </div>
+            <div style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              color: '#111827'
+            }}>
+              {metrics.pendingInvoices}
+            </div>
           </div>
-          <div className="metric-card-nuclear">
-            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MONTO TOTAL A COBRAR</div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>Gs. {metrics.totalPending.toLocaleString('es-PY')}</div>
+
+          {/* Tarjeta 5: Monto Total a Cobrar */}
+          <div style={{
+            flex: '1',
+            minWidth: '0',
+            backgroundColor: 'white',
+            borderRadius: '0.5rem',
+            padding: '1.5rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              color: '#6B7280',
+              marginBottom: '0.5rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              MONTO TOTAL A COBRAR
+            </div>
+            <div style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              color: '#111827'
+            }}>
+              Gs. {metrics.totalPending.toLocaleString('es-PY')}
+            </div>
           </div>
         </div>
       </div>
@@ -480,208 +584,6 @@ export function Reports({ sales, products }: ReportsProps) {
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        .reports-container {
-          width: 100%;
-          height: 100%;
-          padding: 2rem;
-          overflow-y: auto;
-          background: #f8f9fa;
-        }
-
-        .reports-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-        }
-
-        .reports-header h2 {
-          font-size: 1.75rem;
-          font-weight: 600;
-          color: #1a202c;
-        }
-
-        .date-filters {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .date-filter-select {
-          padding: 0.5rem 1rem;
-          border: 1px solid #cbd5e0;
-          border-radius: 6px;
-          font-size: 0.95rem;
-          background: white;
-          cursor: pointer;
-        }
-
-        .reports-date-selector {
-          padding: 0.5rem 1rem;
-          border: 1px solid #cbd5e0;
-          border-radius: 6px;
-          font-size: 0.95rem;
-          background: white;
-          cursor: pointer;
-        }
-
-        .custom-date-inputs {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-
-        .date-input {
-          padding: 0.5rem;
-          border: 1px solid #cbd5e0;
-          border-radius: 6px;
-          font-size: 0.9rem;
-        }
-
-        .reports-tabs {
-          display: flex;
-          gap: 0.5rem;
-          margin-bottom: 2rem;
-          border-bottom: 2px solid #e2e8f0;
-        }
-
-        .reports-tab {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 1rem 1.5rem;
-          background: transparent;
-          border: none;
-          border-bottom: 3px solid transparent;
-          font-size: 0.95rem;
-          font-weight: 500;
-          color: #64748b;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .reports-tab.active {
-          color: #10b981;
-          border-bottom-color: #10b981;
-        }
-
-        .reports-tab:hover {
-          color: #10b981;
-        }
-
-        .report-content {
-          background: white;
-          border-radius: 8px;
-          padding: 2rem;
-        }
-
-        .reports-table-container {
-          background: #f8f9fa;
-          padding: 1.5rem;
-          border-radius: 8px;
-          border: 1px solid #e2e8f0;
-          margin-bottom: 2rem;
-        }
-
-        .reports-table-title {
-          font-size: 0.95rem;
-          font-weight: 600;
-          color: #1a202c;
-          margin-bottom: 1rem;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .reports-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 0.9rem;
-        }
-
-        .reports-table thead {
-          background: white;
-        }
-
-        .reports-table th {
-          padding: 0.75rem;
-          text-align: left;
-          font-weight: 600;
-          color: #64748b;
-          font-size: 0.85rem;
-          border-bottom: 2px solid #e2e8f0;
-        }
-
-        .reports-table td {
-          padding: 0.75rem;
-          border-bottom: 1px solid #e2e8f0;
-          color: #1a202c;
-        }
-
-        .reports-table tbody tr:hover {
-          background: #f1f5f9;
-        }
-
-        .reports-download-btn {
-          background: #10b981;
-          color: white;
-          padding: 1rem 2rem;
-          font-size: 1rem;
-          font-weight: 600;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          transition: background 0.2s;
-          margin: 0 auto;
-        }
-
-        .reports-download-btn:hover {
-          background: #059669;
-        }
-
-        .empty-state {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 4rem 2rem;
-          text-align: center;
-          color: #64748b;
-        }
-
-        .empty-state svg {
-          margin-bottom: 1rem;
-          color: #cbd5e0;
-        }
-
-        .empty-state h3 {
-          font-size: 1.5rem;
-          font-weight: 600;
-          color: #1a202c;
-          margin-bottom: 0.5rem;
-        }
-
-        .empty-state p {
-          font-size: 1rem;
-          max-width: 500px;
-          line-height: 1.6;
-        }
-
-        @media (max-width: 768px) {
-          .reports-header {
-            flex-direction: column;
-            gap: 1rem;
-          }
-
-          .reports-tabs {
-            flex-direction: column;
-          }
-        }
-      `}</style>
     </div>
   );
 }
