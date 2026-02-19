@@ -86,6 +86,7 @@ export interface Sale {
   payments?: Payment[];
   
   note?: string;
+  user?: string;
 
   status: "pending" | "partial" | "completed" | "cancelled" | "pending_payment";
   
