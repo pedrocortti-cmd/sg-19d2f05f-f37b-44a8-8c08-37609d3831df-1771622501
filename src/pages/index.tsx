@@ -344,7 +344,7 @@ export default function POS() {
 
   // Render POS principal
   const renderPOS = () => (
-    <div className="pos-layout">
+    <>
       {/* Panel Izquierdo: Cliente + Carrito */}
       <div className="pos-customer-panel">
         {/* Sección de Cliente */}
@@ -655,7 +655,7 @@ export default function POS() {
           ))}
         </div>
       </div>
-    </div>
+    </>
   );
 
   return (
@@ -668,42 +668,40 @@ export default function POS() {
         />
       </Head>
 
-      <div className="pos-layout">
-        {/* Sidebar */}
-        <div className="pos-sidebar">
-          <div className="pos-sidebar-header">
-            <div className="pos-sidebar-logo">DG</div>
-            <h1 className="pos-sidebar-title">De la Gran Burger</h1>
-          </div>
-
-          <nav className="pos-sidebar-nav">
-            {navigationItems.map((item) => (
-              <button
-                key={item.id}
-                className={`pos-nav-item ${currentView === item.id ? "active" : ""}`}
-                onClick={() => setCurrentView(item.id as typeof currentView)}
-              >
-                <span className="pos-nav-icon">{item.icon}</span>
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </nav>
-
-          <div className="pos-sidebar-footer">
-            <button className="pos-nav-item" onClick={() => alert("Cerrar sesión")}>
-              <span className="pos-nav-icon">👤</span>
-              <span>Cerrar sesión</span>
-            </button>
-          </div>
+      {/* Sidebar - SIEMPRE visible */}
+      <div className="pos-sidebar">
+        <div className="pos-sidebar-header">
+          <div className="pos-sidebar-logo">DG</div>
+          <h1 className="pos-sidebar-title">De la Gran Burger</h1>
         </div>
 
-        {/* Contenido Principal */}
-        {currentView === "pos" ? renderPOS() : (
-          <div className="pos-layout-two-column">
-            {renderContent()}
-          </div>
-        )}
+        <nav className="pos-sidebar-nav">
+          {navigationItems.map((item) => (
+            <button
+              key={item.id}
+              className={`pos-nav-item ${currentView === item.id ? "active" : ""}`}
+              onClick={() => setCurrentView(item.id as typeof currentView)}
+            >
+              <span className="pos-nav-icon">{item.icon}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="pos-sidebar-footer">
+          <button className="pos-nav-item" onClick={() => alert("Cerrar sesión")}>
+            <span className="pos-nav-icon">👤</span>
+            <span>Cerrar sesión</span>
+          </button>
+        </div>
       </div>
+
+      {/* Contenido Principal */}
+      {currentView === "pos" ? renderPOS() : (
+        <div className="pos-layout-two-column">
+          {renderContent()}
+        </div>
+      )}
 
       {showPaymentModal && (
         <PaymentModal

@@ -4,9 +4,15 @@
 .pos-layout {
   display: grid;
   grid-template-columns: 250px 420px 1fr;
+  width: 100vw;
   height: 100vh;
   overflow: hidden;
   background: #f8fafc;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 /* Layout de 2 columnas para vistas que no son POS */
