@@ -853,7 +853,9 @@ export default function POS() {
             type: orderType,
             status: "pending",
             paymentMethod: "cash",
-            payments: []
+            payments: [],
+            deliveryCost,
+            deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined
           }}
           products={products}
           onClose={() => setShowPreviewModal(false)}
