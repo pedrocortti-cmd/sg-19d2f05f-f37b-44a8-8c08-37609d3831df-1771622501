@@ -1,14 +1,16 @@
 import { X, Printer } from "lucide-react";
-import { Sale, Product } from "@/types/pos";
+import { formatCurrency } from "@/lib/utils";
+import type { Sale, Product } from "@/types/pos";
 
 interface SalePreviewModalProps {
   sale: Sale;
   products: Product[];
   onClose: () => void;
   onPrint: () => void;
+  businessLogo?: string | null;
 }
 
-export function SalePreviewModal({ sale, products, onClose, onPrint }: SalePreviewModalProps) {
+export function SalePreviewModal({ sale, products, onClose, onPrint, businessLogo }: SalePreviewModalProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-PY", {
       style: "currency",

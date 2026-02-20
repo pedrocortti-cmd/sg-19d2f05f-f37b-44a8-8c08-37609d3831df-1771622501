@@ -9,6 +9,7 @@ import { Reports } from "@/components/pos/Reports";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
 import { PrintFormatSettings } from "@/components/pos/PrintFormatSettings";
 import { DeliveryDrivers } from "@/components/pos/DeliveryDrivers";
+import { LogoSettings } from "@/components/pos/LogoSettings";
 import { SEO } from "@/components/SEO";
 import { cn, formatCurrency } from "@/lib/utils";
 import { printKitchenOrder } from "@/lib/printService";
@@ -173,6 +174,21 @@ export default function POS() {
       additionalInfo: ""
     }
   });
+
+  // Estado para el logo del negocio
+  const [businessLogo, setBusinessLogo] = useState<string | null>(null);
+
+  // Cargar logo desde localStorage al iniciar
+  useState(() => {
+    const savedLogo = localStorage.getItem("businessLogo");
+    if (savedLogo) {
+      setBusinessLogo(savedLogo);
+    }
+  }, []);
+
+  const handleLogoChange = (logoUrl: string | null) => {
+    setBusinessLogo(logoUrl);
+  };
 
   // Cálculos del carrito
   const subtotal = useMemo(() => {
@@ -717,6 +733,10 @@ export default function POS() {
           <div className="settings-container">
             <h2>⚙️ Ajustes</h2>
             <div className="settings-sections">
+              <LogoSettings 
+                currentLogo={businessLogo}
+                onLogoChange={handleLogoChange}
+              />
               <PrinterSettings />
               <PrintFormatSettings 
                 config={printFormatConfig}
@@ -753,7 +773,15 @@ export default function POS() {
       {/* Sidebar de navegación principal */}
       <div className="pos-sidebar">
         <div className="sidebar-header">
-          <div className="sidebar-logo">DG</div>
+          {businessLogo ? (
+            <img 
+              src={businessLogo} 
+              alt="Logo" 
+              className="sidebar-logo-image"
+            />
+          ) : (
+            <div className="sidebar-logo">DG</div>
+          )}
           <h1 className="sidebar-title">De la Gran Burger</h1>
         </div>
         
@@ -1145,6 +1173,7 @@ export default function POS() {
             printKitchenOrder(printData);
             setShowPreviewModal(false);
           }}
+          businessLogo={businessLogo}
         />
       )}
     </div>
