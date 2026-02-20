@@ -370,38 +370,38 @@ export default function POS() {
                 <label>DIRECCIÓN</label>
                 <input
                   type="text"
-                  placeholder="Dirección de entrega"
+                  id="direccion"
                   value={customerInfo.address}
                   onChange={(e) =>
                     setCustomerInfo({ ...customerInfo, address: e.target.value })
                   }
+                  placeholder="Dirección de entrega"
                 />
               </div>
 
               <div className="form-group">
-                <label>RUC (OPCIONAL)</label>
+                <label htmlFor="ruc">RUC (OPCIONAL)</label>
                 <input
                   type="text"
-                  placeholder="RUC"
-                  value={customerInfo.ruc || ""}
+                  id="ruc"
+                  value={customerInfo.ruc}
                   onChange={(e) =>
                     setCustomerInfo({ ...customerInfo, ruc: e.target.value })
                   }
+                  placeholder="RUC"
                 />
               </div>
 
               <div className="form-group">
-                <label>RAZÓN SOCIAL (OPCIONAL)</label>
+                <label htmlFor="razon-social">RAZÓN SOCIAL (OPCIONAL)</label>
                 <input
                   type="text"
-                  placeholder="Razón Social"
-                  value={customerInfo.businessName || ""}
+                  id="razon-social"
+                  value={customerInfo.businessName}
                   onChange={(e) =>
-                    setCustomerInfo({
-                      ...customerInfo,
-                      businessName: e.target.value,
-                    })
+                    setCustomerInfo({ ...customerInfo, businessName: e.target.value })
                   }
+                  placeholder="Razón Social"
                 />
               </div>
 
@@ -409,13 +409,9 @@ export default function POS() {
                 <input
                   type="checkbox"
                   id="exento"
-                  checked={customerInfo.isExempt || false}
+                  checked={customerInfo.isExempt}
                   onChange={(e) =>
-                    setCustomerInfo({
-                      ...customerInfo,
-                      isExempt: e.target.checked,
-                      exempt: e.target.checked
-                    })
+                    setCustomerInfo({ ...customerInfo, isExempt: e.target.checked })
                   }
                 />
                 <label htmlFor="exento">Exento</label>
@@ -655,7 +651,7 @@ export default function POS() {
       {currentView === "pos" ? (
         renderPOS()
       ) : (
-        <div className="pos-content-area" style={{ flex: 1, overflow: 'auto', background: '#f8fafc' }}>
+        <div className="pos-content-area" style={{ gridColumn: '2 / 4' }}>
           {renderContent()}
         </div>
       )}
