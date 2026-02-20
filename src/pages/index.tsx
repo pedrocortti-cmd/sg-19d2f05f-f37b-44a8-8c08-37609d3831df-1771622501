@@ -690,10 +690,38 @@ export default function POS() {
         />
       </Head>
 
+      {/* Sidebar de navegación principal */}
+      <div className="pos-sidebar">
+        <div className="sidebar-header">
+          <div className="sidebar-logo">DG</div>
+          <h1 className="sidebar-title">De la Gran Burger</h1>
+        </div>
+        
+        <nav className="sidebar-nav">
+          {navigationItems.map((item) => (
+            <div
+              key={item.id}
+              className={`nav-item ${currentView === item.id ? "active" : ""}`}
+              onClick={() => setCurrentView(item.id as any)}
+            >
+              <span className="nav-item-icon">{item.icon}</span>
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <button className="logout-button" onClick={() => alert("Cerrar sesión")}>
+            <LogOut className="w-4 h-4" />
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
+
       {currentView === "pos" ? (
         renderPOS()
       ) : (
-        <div className="pos-content-area" style={{ gridColumn: '1 / 4' }}>
+        <div className="pos-content-area">
           {renderContent()}
         </div>
       )}

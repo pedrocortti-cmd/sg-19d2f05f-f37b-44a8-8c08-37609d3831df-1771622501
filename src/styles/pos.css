@@ -1,9 +1,9 @@
-/* Estilos específicos para el sistema POS - Diseño mejorado */
+/* Estilos específicos para el sistema POS - Diseño completo con 4 zonas */
 
-/* Layout principal del POS - 4 zonas */
+/* Layout principal del POS - 4 columnas */
 .pos-layout {
   display: grid;
-  grid-template-columns: 280px 1fr 320px;
+  grid-template-columns: 200px 280px 1fr 320px;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -15,7 +15,117 @@
   bottom: 0;
 }
 
-/* Panel izquierdo - Carrito y Cliente */
+/* ============================================ */
+/* SIDEBAR DE NAVEGACIÓN PRINCIPAL (COLUMNA 1) */
+/* ============================================ */
+
+.pos-sidebar {
+  background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  border-right: 1px solid #1a252f;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-logo {
+  width: 48px;
+  height: 48px;
+  background: #3b82f6;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.5rem;
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.sidebar-title {
+  color: white;
+  font-size: 0.938rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 1rem 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.nav-item.active {
+  background: rgba(59, 130, 246, 0.15);
+  color: white;
+  border-left-color: #3b82f6;
+}
+
+.nav-item-icon {
+  font-size: 1.25rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: #fca5a5;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-button:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* ============================================ */
+/* PANEL DE CARRITO (COLUMNA 2) */
+/* ============================================ */
+
 .pos-cart-panel {
   background: #f9fafb;
   display: flex;
@@ -25,7 +135,6 @@
   overflow: hidden;
 }
 
-/* Header del carrito */
 .cart-panel-header {
   background: #1f2937;
   color: white;
@@ -184,7 +293,7 @@
   opacity: 0.3;
 }
 
-/* Footer del carrito - Botones tipo pedido y total */
+/* Footer del carrito */
 .cart-footer {
   background: white;
   border-top: 2px solid #e5e7eb;
@@ -341,7 +450,10 @@
   background: #fecaca;
 }
 
-/* Panel central - Productos */
+/* ============================================ */
+/* PANEL DE PRODUCTOS (COLUMNA 3) */
+/* ============================================ */
+
 .pos-products-panel {
   background: #f9fafb;
   display: flex;
@@ -350,7 +462,6 @@
   overflow: hidden;
 }
 
-/* Header de productos */
 .products-panel-header {
   background: white;
   padding: 1rem 1.5rem;
@@ -413,7 +524,6 @@
   border-bottom-color: #3b82f6;
 }
 
-/* Grilla de productos */
 .products-grid-container {
   flex: 1;
   overflow-y: auto;
@@ -459,7 +569,10 @@
   opacity: 0.95;
 }
 
-/* Panel derecho - Historial */
+/* ============================================ */
+/* PANEL DE HISTORIAL (COLUMNA 4) */
+/* ============================================ */
+
 .pos-history-panel {
   background: white;
   border-left: 1px solid #d1d5db;
@@ -564,6 +677,12 @@
   color: #9ca3af;
 }
 
+.history-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #9ca3af;
+}
+
 .history-load-more {
   padding: 0.75rem;
   border-top: 1px solid #e5e7eb;
@@ -587,19 +706,36 @@
   border-color: #3b82f6;
 }
 
-/* Scrollbar personalizado */
+/* ============================================ */
+/* ÁREA DE CONTENIDO PARA OTRAS VISTAS */
+/* ============================================ */
+
+.pos-content-area {
+  background: #f8fafc;
+  overflow-y: auto;
+  height: 100vh;
+  grid-column: 2 / 5;
+}
+
+/* ============================================ */
+/* SCROLLBAR PERSONALIZADO */
+/* ============================================ */
+
+.pos-sidebar::-webkit-scrollbar,
 .cart-items-section::-webkit-scrollbar,
 .products-grid-container::-webkit-scrollbar,
 .history-list::-webkit-scrollbar {
   width: 6px;
 }
 
+.pos-sidebar::-webkit-scrollbar-track,
 .cart-items-section::-webkit-scrollbar-track,
 .products-grid-container::-webkit-scrollbar-track,
 .history-list::-webkit-scrollbar-track {
   background: #f3f4f6;
 }
 
+.pos-sidebar::-webkit-scrollbar-thumb,
 .cart-items-section::-webkit-scrollbar-thumb,
 .products-grid-container::-webkit-scrollbar-thumb,
 .history-list::-webkit-scrollbar-thumb {
@@ -607,16 +743,26 @@
   border-radius: 3px;
 }
 
+.pos-sidebar::-webkit-scrollbar-thumb:hover,
 .cart-items-section::-webkit-scrollbar-thumb:hover,
 .products-grid-container::-webkit-scrollbar-thumb:hover,
 .history-list::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
 
-/* Responsive ajustes */
+/* ============================================ */
+/* RESPONSIVE */
+/* ============================================ */
+
+@media (max-width: 1600px) {
+  .pos-layout {
+    grid-template-columns: 180px 260px 1fr 280px;
+  }
+}
+
 @media (max-width: 1400px) {
   .pos-layout {
-    grid-template-columns: 260px 1fr 280px;
+    grid-template-columns: 180px 260px 1fr 280px;
   }
   
   .products-grid {
@@ -630,6 +776,25 @@
   }
   
   .pos-layout {
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 180px 260px 1fr;
+  }
+  
+  .pos-content-area {
+    grid-column: 2 / 4;
+  }
+}
+
+@media (max-width: 900px) {
+  .pos-sidebar {
+    width: 70px;
+  }
+  
+  .sidebar-title,
+  .nav-item span {
+    display: none;
+  }
+  
+  .pos-layout {
+    grid-template-columns: 70px 240px 1fr;
   }
 }
