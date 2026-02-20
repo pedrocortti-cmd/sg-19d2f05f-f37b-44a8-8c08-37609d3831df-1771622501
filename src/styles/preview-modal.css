@@ -1,19 +1,54 @@
 /* Preview Modal - Logo styles */
 
+.sale-preview-logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0;
+  margin-bottom: 10px;
+}
+
 .preview-ticket-logo {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   object-fit: contain;
-  margin: 0 auto 12px;
-  display: block;
+  border-radius: 8px;
+}
+
+.logo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  letter-spacing: 2px;
+}
+
+.logo-text-bold {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1f2937;
+  letter-spacing: 1px;
+}
+
+.preview-business-header {
+  text-align: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px dashed #e5e7eb;
 }
 
 .preview-business-name {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
-  text-align: center;
-  margin-bottom: 8px;
   color: #1f2937;
+  margin-bottom: 8px;
 }
 
 .preview-business-info {

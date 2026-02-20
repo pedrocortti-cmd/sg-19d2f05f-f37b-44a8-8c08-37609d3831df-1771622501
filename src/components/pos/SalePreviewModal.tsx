@@ -11,15 +11,6 @@ interface SalePreviewModalProps {
 }
 
 export function SalePreviewModal({ sale, products, onClose, onPrint, businessLogo }: SalePreviewModalProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-PY", {
-      style: "currency",
-      currency: "PYG",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const formatDate = (date: string | Date) => {
     const d = typeof date === "string" ? new Date(date) : date;
     return d.toLocaleDateString("es-PY", {
@@ -33,13 +24,7 @@ export function SalePreviewModal({ sale, products, onClose, onPrint, businessLog
     return sale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
-  const calculateIVA = () => {
-    const subtotal = calculateSubtotal();
-    return Math.round(subtotal * 0.1); // IVA 10%
-  };
-
   const subtotal = calculateSubtotal();
-  const iva = calculateIVA();
   const total = sale.total;
 
   return (
@@ -52,15 +37,31 @@ export function SalePreviewModal({ sale, products, onClose, onPrint, businessLog
         <div className="sale-preview-content">
           {/* Logo */}
           <div className="sale-preview-logo">
-            <div className="logo-placeholder">
-              <span className="logo-text">DE LA GRAN</span>
-              <span className="logo-text-bold">BURGER</span>
-            </div>
+            {businessLogo ? (
+              <img 
+                src={businessLogo} 
+                alt="Logo del negocio" 
+                className="preview-ticket-logo"
+              />
+            ) : (
+              <div className="logo-placeholder">
+                <span className="logo-text">DE LA GRAN</span>
+                <span className="logo-text-bold">BURGER</span>
+              </div>
+            )}
+          </div>
+
+          {/* Información del negocio */}
+          <div className="preview-business-header">
+            <p className="preview-business-name">De la Gran Burger</p>
+            <p className="preview-business-info">Av. Principal 123, Asunción</p>
+            <p className="preview-business-info">Tel: 021-1234567</p>
+            <p className="preview-business-info">RUC: 80012345-6</p>
           </div>
 
           {/* Encabezado */}
           <div className="sale-preview-header">
-            <h2 className="sale-preview-title">Venta #{sale.saleNumber}</h2>
+            <h2 className="sale-preview-title">Venta {sale.saleNumber}</h2>
             <p className="sale-preview-date">Creada El: {formatDate(sale.date)}</p>
           </div>
 

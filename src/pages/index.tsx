@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Head from "next/head";
 import { ShoppingCart, Package, BarChart3, Settings, LogOut, X, User as UserIcon, Trash2, Plus, Minus, ShoppingBag, TrendingUp, DollarSign, Users, Clock, Search, Printer, Check, Edit, Send, Eye, FileText, MessageSquare } from "lucide-react";
 import { PaymentModal } from "@/components/pos/PaymentModal";
@@ -179,7 +179,7 @@ export default function POS() {
   const [businessLogo, setBusinessLogo] = useState<string | null>(null);
 
   // Cargar logo desde localStorage al iniciar
-  useState(() => {
+  useEffect(() => {
     const savedLogo = localStorage.getItem("businessLogo");
     if (savedLogo) {
       setBusinessLogo(savedLogo);
