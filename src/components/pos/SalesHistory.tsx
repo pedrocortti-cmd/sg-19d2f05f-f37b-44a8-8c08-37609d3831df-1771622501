@@ -6,10 +6,11 @@ import { formatCurrency } from "@/lib/utils";
 interface SalesHistoryProps {
   sales: Sale[];
   onLoadSale: (sale: Sale) => void;
-  filter: "pending" | "all";
+  onCancelSale?: (saleId: number, reason: string) => void;
+  filter?: "pending" | "all";
 }
 
-export function SalesHistory({ sales, onLoadSale, filter }: SalesHistoryProps) {
+export function SalesHistory({ sales, onLoadSale, onCancelSale, filter = "all" }: SalesHistoryProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredSales = sales.filter((sale) => {
@@ -85,7 +86,7 @@ export function SalesHistory({ sales, onLoadSale, filter }: SalesHistoryProps) {
                 {sale.customerName || sale.customer?.name || "Cliente General"}
               </div>
               <div className="history-item-info">
-                {sale.orderType === "delivery" ? "🛵 Delivery" : "📦 Para Retirar"}
+                {sale.type === "delivery" ? "🛵 Delivery" : "📦 Para Retirar"}
               </div>
               <div className="history-item-footer">
                 <span className="history-item-total">{formatCurrency(sale.total)}</span>
