@@ -1,497 +1,443 @@
-import { Sale } from "@/types/pos";
+/**
+ * Servicio de impresión para tickets térmicos 80mm
+ * Formato optimizado para impresoras térmicas POS
+ */
 
-// Print Service - Comunicación con Print Server local
+import type { CartItem, CustomerInfo, OrderType, DeliveryDriver } from "@/types/pos";
 
-export interface PrinterConfig {
-  kitchenPrinter: string;
-  clientPrinter: string;
-  paperSize: "80mm" | "58mm";
-  copies: number;
+export interface PrintOrderData {
+  orderNumber: string;
+  date: Date;
+  customerInfo: CustomerInfo;
+  items: CartItem[];
+  orderType: OrderType;
+  deliveryDriver?: DeliveryDriver;
+  deliveryCost?: number;
+  subtotal: number;
+  discount: number;
+  total: number;
+  note?: string;
 }
 
-export interface PrintJob {
-  type: "kitchen" | "client";
-  content: string;
-  copies?: number;
+/**
+ * Formatea un número como moneda paraguaya
+ */
+function formatCurrency(amount: number): string {
+  return `Gs.${amount.toLocaleString("es-PY")}`;
 }
 
-export interface PrintFormatConfig {
-  header?: string;
-  footer?: string;
-  showLogo?: boolean;
-  paperSize?: "80mm" | "58mm";
-  kitchenCopies?: number;
-  clientCopies?: number;
+/**
+ * Genera una línea de separación
+ */
+function separator(char: string = "="): string {
+  return char.repeat(42);
 }
 
-export class PrintService {
-  private static PRINT_SERVER_URL = "http://localhost:3001";
+/**
+ * Centra un texto en el ancho del ticket (42 caracteres)
+ */
+function centerText(text: string): string {
+  const width = 42;
+  const padding = Math.max(0, Math.floor((width - text.length) / 2));
+  return " ".repeat(padding) + text;
+}
 
-  private static config: PrinterConfig = {
-    kitchenPrinter: "",
-    clientPrinter: "",
-    paperSize: "80mm",
-    copies: 1,
+/**
+ * Formatea una línea de item: cantidad + descripción
+ */
+function formatItemLine(quantity: number, description: string): string {
+  return `${quantity}  ${description}`;
+}
+
+/**
+ * Genera el HTML para el ticket de cocina (sin precios)
+ */
+export function generateKitchenTicketHTML(data: PrintOrderData): string {
+  const { orderNumber, date, customerInfo, items, orderType, deliveryDriver, note } = data;
+
+  const dateStr = date.toLocaleDateString("es-PY", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
+  const timeStr = date.toLocaleTimeString("es-PY", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  let html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Comanda Cocina - ${orderNumber}</title>
+  <style>
+    @page {
+      size: 80mm auto;
+      margin: 0;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Courier New', monospace;
+      font-size: 11pt;
+      line-height: 1.3;
+      width: 80mm;
+      padding: 8mm 4mm;
+      background: white;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    
+    .separator {
+      text-align: center;
+      margin: 4px 0;
+      letter-spacing: -0.5px;
+    }
+    
+    .info-line {
+      margin: 2px 0;
+    }
+    
+    .section-title {
+      font-weight: bold;
+      font-size: 12pt;
+      margin: 8px 0 4px 0;
+      text-transform: uppercase;
+    }
+    
+    .item {
+      margin: 4px 0;
+      font-size: 11pt;
+    }
+    
+    .item-note {
+      margin-left: 20px;
+      font-style: italic;
+      font-size: 10pt;
+      color: #333;
+    }
+    
+    .note-box {
+      border: 2px solid #000;
+      padding: 6px;
+      margin: 8px 0;
+      background: #f0f0f0;
+    }
+    
+    .note-title {
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    
+    @media print {
+      body {
+        background: none;
+      }
+    }
+  </style>
+</head>
+<body>
+`;
+
+  // Header
+  html += `  <div class="header">COMANDA COCINA</div>\n`;
+  html += `  <div class="separator">${separator()}</div>\n`;
+  html += `  <div class="info-line">Pedido: ${orderNumber}</div>\n`;
+  html += `  <div class="info-line">${dateStr} - ${timeStr}</div>\n`;
+  html += `  <div class="info-line">Tipo: ${orderType === "delivery" ? "DELIVERY" : "PARA RETIRAR"}</div>\n`;
+
+  // Cliente
+  if (customerInfo.name) {
+    html += `  <div class="separator">${separator("-")}</div>\n`;
+    html += `  <div class="info-line">Cliente: ${customerInfo.name}</div>\n`;
+    if (customerInfo.phone) {
+      html += `  <div class="info-line">Tel: ${customerInfo.phone}</div>\n`;
+    }
+    if (orderType === "delivery" && customerInfo.address) {
+      html += `  <div class="info-line">Dir: ${customerInfo.address}</div>\n`;
+    }
+  }
+
+  // Repartidor
+  if (orderType === "delivery" && deliveryDriver) {
+    html += `  <div class="info-line">Repartidor: ${deliveryDriver.name}</div>\n`;
+  }
+
+  // Items
+  html += `  <div class="separator">${separator()}</div>\n`;
+  html += `  <div class="section-title">Productos:</div>\n`;
+
+  items.forEach((item) => {
+    html += `  <div class="item">${formatItemLine(item.quantity, item.product.name)}</div>\n`;
+    if (item.itemNote) {
+      html += `  <div class="item-note">📝 ${item.itemNote}</div>\n`;
+    }
+  });
+
+  // Nota general
+  if (note) {
+    html += `  <div class="separator">${separator()}</div>\n`;
+    html += `  <div class="note-box">\n`;
+    html += `    <div class="note-title">⚠️ NOTA IMPORTANTE:</div>\n`;
+    html += `    <div>${note}</div>\n`;
+    html += `  </div>\n`;
+  }
+
+  html += `  <div class="separator">${separator()}</div>\n`;
+
+  html += `
+</body>
+</html>
+`;
+
+  return html;
+}
+
+/**
+ * Genera el HTML para el ticket del cliente (con precios)
+ */
+export function generateClientTicketHTML(data: PrintOrderData): string {
+  const { orderNumber, date, customerInfo, items, orderType, deliveryDriver, deliveryCost, subtotal, discount, total } = data;
+
+  const dateStr = date.toLocaleDateString("es-PY", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const timeStr = date.toLocaleTimeString("es-PY", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  let html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Ticket Cliente - ${orderNumber}</title>
+  <style>
+    @page {
+      size: 80mm auto;
+      margin: 0;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Courier New', monospace;
+      font-size: 10pt;
+      line-height: 1.3;
+      width: 80mm;
+      padding: 8mm 4mm;
+      background: white;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 8px;
+      font-weight: bold;
+      font-size: 12pt;
+    }
+    
+    .separator {
+      text-align: center;
+      margin: 4px 0;
+      letter-spacing: -0.5px;
+    }
+    
+    .info-line {
+      margin: 2px 0;
+      font-size: 9pt;
+    }
+    
+    .item-line {
+      display: flex;
+      justify-content: space-between;
+      margin: 3px 0;
+      font-size: 10pt;
+    }
+    
+    .item-name {
+      flex: 1;
+      padding-right: 8px;
+    }
+    
+    .item-price {
+      text-align: right;
+      white-space: nowrap;
+    }
+    
+    .item-note {
+      margin-left: 12px;
+      font-style: italic;
+      font-size: 9pt;
+      color: #333;
+    }
+    
+    .totals {
+      margin-top: 8px;
+      border-top: 1px dashed #000;
+      padding-top: 6px;
+    }
+    
+    .total-line {
+      display: flex;
+      justify-content: space-between;
+      margin: 3px 0;
+      font-size: 10pt;
+    }
+    
+    .total-final {
+      font-weight: bold;
+      font-size: 14pt;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 2px solid #000;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 10pt;
+      font-weight: bold;
+    }
+    
+    @media print {
+      body {
+        background: none;
+      }
+    }
+  </style>
+</head>
+<body>
+`;
+
+  // Header
+  html += `  <div class="header">== DE LA GRAN BURGER ==</div>\n`;
+  html += `  <div class="separator">${separator()}</div>\n`;
+  html += `  <div class="info-line">Pedido: ${orderNumber}</div>\n`;
+  html += `  <div class="info-line">${dateStr} - ${timeStr}</div>\n`;
+  
+  if (customerInfo.name) {
+    html += `  <div class="info-line">Cliente: ${customerInfo.name}</div>\n`;
+  }
+  
+  html += `  <div class="info-line">Tipo: ${orderType === "delivery" ? "DELIVERY" : "PARA RETIRAR"}</div>\n`;
+
+  if (orderType === "delivery" && deliveryDriver) {
+    html += `  <div class="info-line">Repartidor: ${deliveryDriver.name}</div>\n`;
+  }
+
+  // Items
+  html += `  <div class="separator">${separator()}</div>\n`;
+
+  items.forEach((item) => {
+    const itemTotal = item.product.price * item.quantity;
+    html += `  <div class="item-line">\n`;
+    html += `    <div class="item-name">${item.quantity} ${item.product.name}</div>\n`;
+    html += `    <div class="item-price">${formatCurrency(itemTotal)}</div>\n`;
+    html += `  </div>\n`;
+    
+    if (item.itemNote) {
+      html += `  <div class="item-note">📝 ${item.itemNote}</div>\n`;
+    }
+  });
+
+  // Totales
+  html += `  <div class="totals">\n`;
+  
+  if (discount > 0) {
+    html += `    <div class="total-line">\n`;
+    html += `      <div>Subtotal:</div>\n`;
+    html += `      <div>${formatCurrency(subtotal)}</div>\n`;
+    html += `    </div>\n`;
+    html += `    <div class="total-line">\n`;
+    html += `      <div>Descuento:</div>\n`;
+    html += `      <div>-${formatCurrency(discount)}</div>\n`;
+    html += `    </div>\n`;
+  }
+  
+  if (orderType === "delivery" && deliveryCost && deliveryCost > 0) {
+    html += `    <div class="total-line">\n`;
+    html += `      <div>Delivery:</div>\n`;
+    html += `      <div>${formatCurrency(deliveryCost)}</div>\n`;
+    html += `    </div>\n`;
+  }
+
+  html += `    <div class="total-line total-final">\n`;
+  html += `      <div>TOTAL:</div>\n`;
+  html += `      <div>${formatCurrency(total)}</div>\n`;
+  html += `    </div>\n`;
+  html += `  </div>\n`;
+
+  html += `  <div class="separator">${separator()}</div>\n`;
+  html += `  <div class="footer">¡Gracias por tu compra!</div>\n`;
+
+  html += `
+</body>
+</html>
+`;
+
+  return html;
+}
+
+/**
+ * Imprime un ticket abriendo una ventana de impresión
+ */
+export function printTicket(html: string, title: string = "Ticket"): void {
+  const printWindow = window.open("", "_blank", "width=302,height=800");
+  
+  if (!printWindow) {
+    alert("Por favor permite las ventanas emergentes para imprimir");
+    return;
+  }
+
+  printWindow.document.write(html);
+  printWindow.document.close();
+
+  // Esperar a que se cargue el contenido antes de imprimir
+  printWindow.onload = () => {
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+      
+      // Cerrar la ventana después de imprimir (opcional)
+      printWindow.onafterprint = () => {
+        printWindow.close();
+      };
+    }, 250);
   };
+}
 
-  static setConfig(config: Partial<PrinterConfig>) {
-    this.config = { ...this.config, ...config };
-    if (typeof window !== "undefined") {
-      localStorage.setItem("printerConfig", JSON.stringify(this.config));
-    }
-  }
+/**
+ * Imprime la comanda de cocina
+ */
+export function printKitchenOrder(data: PrintOrderData): void {
+  const html = generateKitchenTicketHTML(data);
+  printTicket(html, `Comanda-${data.orderNumber}`);
+}
 
-  static getConfig(): PrinterConfig {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("printerConfig");
-      if (saved) {
-        this.config = JSON.parse(saved);
-      }
-    }
-    return this.config;
-  }
-
-  static async getAvailablePrinters(): Promise<string[]> {
-    try {
-      const response = await fetch(`${this.PRINT_SERVER_URL}/printers`);
-      if (!response.ok) {
-        console.warn("Print Server no disponible");
-        return [];
-      }
-      const data = await response.json();
-      return data.printers || [];
-    } catch (error) {
-      console.warn("No se pudo conectar con el servidor de impresión:", error);
-      return [];
-    }
-  }
-
-  // Método legacy (mantener por compatibilidad si es necesario, o refactorizar)
-  static async printKitchenOrder(
-    orderNumber: string,
-    items: Array<{ name: string; quantity: number; note?: string }>,
-    type: string,
-    note: string,
-    customerName?: string,
-    customerPhone?: string,
-    customerAddress?: string
-  ): Promise<boolean> {
-    const config = this.getConfig();
-    if (!config.kitchenPrinter) {
-      alert("No se ha configurado la impresora de cocina. Ve a Ajustes > Impresoras.");
-      return false;
-    }
-
-    const content = this.generateKitchenReceiptLegacy(
-      orderNumber,
-      items,
-      type,
-      note,
-      customerName,
-      customerPhone,
-      customerAddress
-    );
-
-    return this.sendPrintJob({
-      type: "kitchen",
-      content,
-      copies: config.copies,
-    });
-  }
-
-  // Método legacy
-  static async printClientReceipt(
-    saleNumber: string,
-    items: Array<{ name: string; quantity: number; price: number; subtotal: number }>,
-    subtotal: number,
-    discount: number,
-    total: number,
-    paymentMethod: string,
-    customerName?: string
-  ): Promise<boolean> {
-    const config = this.getConfig();
-    if (!config.clientPrinter) {
-      alert("No se ha configurado la impresora de cliente. Ve a Ajustes > Impresoras.");
-      return false;
-    }
-
-    const content = this.generateClientReceiptLegacy(
-      saleNumber,
-      items,
-      subtotal,
-      discount,
-      total,
-      paymentMethod,
-      customerName
-    );
-
-    return this.sendPrintJob({
-      type: "client",
-      content,
-      copies: 1,
-    });
-  }
-
-  static async printKitchenTicket(
-    sale: Sale,
-    printerName: string,
-    config: PrintFormatConfig
-  ): Promise<boolean> {
-    try {
-      const content = this.generateKitchenTicketContent(sale, config);
-      const response = await fetch(`${this.PRINT_SERVER_URL}/print`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          printerName,
-          content,
-          copies: config.kitchenCopies || 1,
-        }),
-      });
-
-      if (!response.ok) {
-        console.error("Error al imprimir comanda de cocina");
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Error al conectar con el servidor de impresión:", error);
-      alert(
-        "⚠️ Servidor de impresión no disponible.\n\nPara usar la función de impresión automática:\n1. Instala el Print Server (ver carpeta print-server/)\n2. Inicia el servidor: npm start\n3. Configura las impresoras en Ajustes"
-      );
-      return false;
-    }
-  }
-
-  static async printClientTicket(
-    sale: Sale,
-    printerName: string,
-    config: PrintFormatConfig
-  ): Promise<boolean> {
-    try {
-      const content = this.generateClientTicketContent(sale, config);
-      const response = await fetch(`${this.PRINT_SERVER_URL}/print`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          printerName,
-          content,
-          copies: config.clientCopies || 1,
-        }),
-      });
-
-      if (!response.ok) {
-        console.error("Error al imprimir ticket de cliente");
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Error al conectar con el servidor de impresión:", error);
-      alert(
-        "⚠️ Servidor de impresión no disponible.\n\nPara usar la función de impresión automática:\n1. Instala el Print Server (ver carpeta print-server/)\n2. Inicia el servidor: npm start\n3. Configura las impresoras en Ajustes"
-      );
-      return false;
-    }
-  }
-
-  private static async sendPrintJob(job: PrintJob): Promise<boolean> {
-    try {
-      const config = this.getConfig();
-      const printer = job.type === "kitchen" ? config.kitchenPrinter : config.clientPrinter;
-
-      const response = await fetch(`${this.PRINT_SERVER_URL}/print`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          printer,
-          content: job.content,
-          copies: job.copies || 1,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error al imprimir");
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Error en impresión:", error);
-      alert(`Error al imprimir: ${error instanceof Error ? error.message : "Error desconocido"}`);
-      return false;
-    }
-  }
-
-  private static generateKitchenReceiptLegacy(
-    orderNumber: string,
-    items: Array<{ name: string; quantity: number; note?: string }>,
-    type: string,
-    note: string,
-    customerName?: string,
-    customerPhone?: string,
-    customerAddress?: string
-  ): string {
-    const now = new Date();
-    const date = now.toLocaleDateString("es-PY");
-    const time = now.toLocaleTimeString("es-PY", { hour: "2-digit", minute: "2-digit" });
-
-    let receipt = "\x1B\x40"; // Initialize
-    receipt += "\x1B\x61\x01"; // Center align
-    receipt += "\x1B\x21\x30"; // Double size
-    receipt += "COMANDA COCINA\n";
-    receipt += "\x1B\x21\x00"; // Normal size
-    receipt += "================================\n";
-    receipt += "\x1B\x61\x00"; // Left align
-    
-    receipt += `Pedido #: ${orderNumber}\n`;
-    receipt += `Fecha: ${date} ${time}\n`;
-    receipt += `Tipo: ${type}\n`;
-    receipt += "--------------------------------\n";
-
-    // Items
-    receipt += "\x1B\x21\x10"; // Bold
-    items.forEach((item) => {
-      receipt += `${item.quantity}x ${item.name}\n`;
-      if (item.note) {
-        receipt += "\x1B\x21\x00"; // Normal
-        receipt += `   Nota: ${item.note}\n`;
-        receipt += "\x1B\x21\x10"; // Bold again
-      }
-    });
-    receipt += "\x1B\x21\x00"; // Normal
-
-    // General note
-    if (note) {
-      receipt += "--------------------------------\n";
-      receipt += "\x1B\x21\x20"; // Double height
-      receipt += `NOTA: ${note}\n`;
-      receipt += "\x1B\x21\x00"; // Normal
-    }
-
-    // Customer info for delivery
-    if (type === "Delivery" && customerName) {
-      receipt += "--------------------------------\n";
-      receipt += `Cliente: ${customerName}\n`;
-      if (customerPhone) receipt += `Tel: ${customerPhone}\n`;
-      if (customerAddress) receipt += `Dir: ${customerAddress}\n`;
-    }
-
-    receipt += "================================\n\n\n";
-    receipt += "\x1B\x64\x03"; // Feed 3 lines
-    receipt += "\x1B\x69"; // Cut paper
-
-    return receipt;
-  }
-
-  private static generateClientReceiptLegacy(
-    saleNumber: string,
-    items: Array<{ name: string; quantity: number; price: number; subtotal: number }>,
-    subtotal: number,
-    discount: number,
-    total: number,
-    paymentMethod: string,
-    customerName?: string
-  ): string {
-    const now = new Date();
-    const date = now.toLocaleDateString("es-PY");
-    const time = now.toLocaleTimeString("es-PY", { hour: "2-digit", minute: "2-digit" });
-
-    let receipt = "\x1B\x40"; // Initialize
-    receipt += "\x1B\x61\x01"; // Center align
-    receipt += "\x1B\x21\x30"; // Double size
-    receipt += "De la Gran Burger\n";
-    receipt += "\x1B\x21\x00"; // Normal size
-    receipt += "================================\n";
-    receipt += "\x1B\x61\x00"; // Left align
-    
-    receipt += `Venta #: ${saleNumber}\n`;
-    receipt += `Fecha: ${date} ${time}\n`;
-    if (customerName) receipt += `Cliente: ${customerName}\n`;
-    receipt += "--------------------------------\n";
-
-    // Items
-    items.forEach((item) => {
-      receipt += `${item.quantity}x ${item.name}\n`;
-      receipt += `   Gs. ${item.price.toLocaleString("es-PY")} x ${item.quantity}\n`;
-      receipt += `   Subtotal: Gs. ${item.subtotal.toLocaleString("es-PY")}\n`;
-    });
-
-    receipt += "--------------------------------\n";
-    receipt += `Subtotal: Gs. ${subtotal.toLocaleString("es-PY")}\n`;
-    if (discount > 0) {
-      receipt += `Descuento: Gs. ${discount.toLocaleString("es-PY")}\n`;
-    }
-    receipt += "\x1B\x21\x20"; // Double height
-    receipt += `TOTAL: Gs. ${total.toLocaleString("es-PY")}\n`;
-    receipt += "\x1B\x21\x00"; // Normal
-    receipt += "--------------------------------\n";
-    receipt += `Pago: ${paymentMethod}\n`;
-    receipt += "================================\n";
-    receipt += "\x1B\x61\x01"; // Center align
-    receipt += "¡Gracias por tu compra!\n";
-    receipt += "\x1B\x61\x00"; // Left align
-    receipt += "\n\n\n";
-    receipt += "\x1B\x64\x03"; // Feed 3 lines
-    receipt += "\x1B\x69"; // Cut paper
-
-    return receipt;
-  }
-
-  private static generateKitchenTicketContent(sale: Sale, config: PrintFormatConfig): string {
-    const now = new Date(sale.date);
-    const date = now.toLocaleDateString("es-PY");
-    const time = now.toLocaleTimeString("es-PY", { hour: "2-digit", minute: "2-digit" });
-
-    let receipt = "\x1B\x40"; // Initialize
-    receipt += "\x1B\x61\x01"; // Center align
-    receipt += "\x1B\x21\x30"; // Double size
-    receipt += "COMANDA COCINA\n";
-    receipt += "\x1B\x21\x00"; // Normal size
-    receipt += "================================\n";
-    receipt += "\x1B\x61\x00"; // Left align
-    
-    receipt += `Pedido #: ${sale.id.toString().slice(0, 8)}\n`;
-    receipt += `Fecha: ${date} ${time}\n`;
-    receipt += `Tipo: ${sale.type === 'dineIn' ? 'En Local' : sale.type === 'pickup' ? 'Para llevar' : 'Delivery'}\n`;
-    receipt += "--------------------------------\n";
-
-    // Items
-    receipt += "\x1B\x21\x10"; // Bold
-    sale.items.forEach((item) => {
-      receipt += `${item.quantity}x ${item.productName}\n`;
-      // Notas específicas del item si existieran (en el futuro)
-    });
-    receipt += "\x1B\x21\x00"; // Normal
-
-    // General note
-    if (sale.note) {
-      receipt += "--------------------------------\n";
-      receipt += "\x1B\x21\x20"; // Double height
-      receipt += `NOTA: ${sale.note}\n`;
-      receipt += "\x1B\x21\x00"; // Normal
-    }
-
-    // Customer info for delivery
-    if (sale.type === "delivery" && sale.customer) {
-      receipt += "--------------------------------\n";
-      receipt += `Cliente: ${sale.customer.name}\n`;
-      if (sale.customer.phone) receipt += `Tel: ${sale.customer.phone}\n`;
-      if (sale.customer.address) receipt += `Dir: ${sale.customer.address}\n`;
-    }
-
-    receipt += "================================\n\n\n";
-    receipt += "\x1B\x64\x03"; // Feed 3 lines
-    receipt += "\x1B\x69"; // Cut paper
-
-    return receipt;
-  }
-
-  private static generateClientTicketContent(sale: Sale, config: PrintFormatConfig): string {
-    const now = new Date(sale.date);
-    const date = now.toLocaleDateString("es-PY");
-    const time = now.toLocaleTimeString("es-PY", { hour: "2-digit", minute: "2-digit" });
-
-    let receipt = "\x1B\x40"; // Initialize
-    receipt += "\x1B\x61\x01"; // Center align
-    
-    // Header personalizado
-    if (config.header) {
-      receipt += `${config.header}\n`;
-    } else {
-      receipt += "\x1B\x21\x30"; // Double size
-      receipt += "De la Gran Burger\n";
-      receipt += "\x1B\x21\x00"; // Normal size
-    }
-    
-    receipt += "================================\n";
-    receipt += "\x1B\x61\x00"; // Left align
-    
-    receipt += `Venta #: ${sale.id.toString().slice(0, 8)}\n`;
-    receipt += `Fecha: ${date} ${time}\n`;
-    if (sale.customer?.name) receipt += `Cliente: ${sale.customer.name}\n`;
-    if (sale.customer?.ruc) receipt += `RUC: ${sale.customer.ruc}\n`;
-    receipt += "--------------------------------\n";
-
-    // Items
-    sale.items.forEach((item) => {
-      receipt += `${item.quantity}x ${item.productName}\n`;
-      receipt += `   Gs. ${item.price.toLocaleString("es-PY")} x ${item.quantity}\n`;
-      receipt += `   Subtotal: Gs. ${(item.price * item.quantity).toLocaleString("es-PY")}\n`;
-    });
-
-    receipt += "--------------------------------\n";
-    receipt += `Subtotal: Gs. ${sale.total.toLocaleString("es-PY")}\n`; // Nota: Sale no tiene subtotal explícito, asumimos total por ahora o calculamos
-    if (sale.discount > 0) {
-      receipt += `Descuento: Gs. ${sale.discount.toLocaleString("es-PY")}\n`;
-    }
-    receipt += "\x1B\x21\x20"; // Double height
-    receipt += `TOTAL: Gs. ${sale.total.toLocaleString("es-PY")}\n`;
-    receipt += "\x1B\x21\x00"; // Normal
-    receipt += "--------------------------------\n";
-    receipt += `Pago: ${sale.paymentMethod}\n`;
-    
-    // Footer personalizado
-    if (config.footer) {
-      receipt += "================================\n";
-      receipt += "\x1B\x61\x01"; // Center align
-      receipt += `${config.footer}\n`;
-    } else {
-      receipt += "================================\n";
-      receipt += "\x1B\x61\x01"; // Center align
-      receipt += "¡Gracias por tu compra!\n";
-    }
-    
-    receipt += "\x1B\x61\x00"; // Left align
-    receipt += "\n\n\n";
-    receipt += "\x1B\x64\x03"; // Feed 3 lines
-    receipt += "\x1B\x69"; // Cut paper
-
-    return receipt;
-  }
-
-  static async testPrint(printerName: string): Promise<boolean> {
-    try {
-      const testContent = `
-================================
-     PRUEBA DE IMPRESIÓN
-================================
-
-Impresora: ${printerName}
-Fecha: ${new Date().toLocaleString("es-PY")}
-
-Esta es una prueba de impresión
-para verificar que la impresora
-está funcionando correctamente.
-
-================================
-      De la Gran Burger
-================================
-      `;
-
-      const response = await fetch(`${this.PRINT_SERVER_URL}/print`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          printerName,
-          content: testContent,
-          copies: 1,
-        }),
-      });
-
-      if (!response.ok) {
-        console.error("Error en prueba de impresión");
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Error al conectar con el servidor de impresión:", error);
-      alert(
-        "⚠️ Servidor de impresión no disponible.\n\nPara usar la función de impresión automática:\n1. Instala el Print Server (ver carpeta print-server/)\n2. Inicia el servidor: npm start\n3. Configura las impresoras en Ajustes"
-      );
-      return false;
-    }
-  }
+/**
+ * Imprime el ticket del cliente
+ */
+export function printClientTicket(data: PrintOrderData): void {
+  const html = generateClientTicketHTML(data);
+  printTicket(html, `Ticket-${data.orderNumber}`);
 }

@@ -713,7 +713,46 @@ export default function POS() {
                   className="cart-action-btn btn-print-order"
                   disabled={cart.length === 0}
                   onClick={() => {
-                    alert("Función de impresión de comanda en desarrollo");
+                    const printData = {
+                      title: "Comanda de Cocina",
+                      items: cart.map(item => ({
+                        name: item.product.name,
+                        quantity: item.quantity,
+                        price: item.product.price,
+                        note: item.itemNote || ""
+                      })),
+                      subtotal: subtotal - discountAmount,
+                      discount: discountAmount,
+                      total: cartTotal,
+                      customer: customerInfo,
+                      type: orderType,
+                      deliveryDriver: orderType === "delivery" ? deliveryDrivers.find(d => d.id === selectedDriverId) : undefined,
+                      deliveryCost: orderType === "delivery" ? deliveryCost : undefined,
+                      note: orderNote,
+                      user: currentUser.name,
+                      status: "completed",
+                      amountPaid: 0,
+                      balance: cartTotal,
+                      date: new Date(),
+                      saleNumber: `#${sales.length + 1}`,
+                      id: sales.length + 1,
+                      payments: [],
+                      paymentMethod: "mixed",
+                      cancelReason: "",
+                      businessInfo: printFormatConfig.businessInfo,
+                      comandaTitleSize: printFormatConfig.comandaTitleSize,
+                      comandaProductSize: printFormatConfig.comandaProductSize,
+                      comandaShowPrices: printFormatConfig.comandaShowPrices,
+                      comandaCopies: printFormatConfig.comandaCopies,
+                      comandaCustomFields: printFormatConfig.comandaCustomFields,
+                      ticketHeaderSize: printFormatConfig.ticketHeaderSize,
+                      ticketProductSize: printFormatConfig.ticketProductSize,
+                      ticketTotalSize: printFormatConfig.ticketTotalSize,
+                      ticketThankYouMessage: printFormatConfig.ticketThankYouMessage,
+                      ticketShowLogo: printFormatConfig.ticketShowLogo
+                    };
+                    // Aquí se debería llamar a la función de impresión de comanda de cocina
+                    // Por ejemplo: printKitchenOrder(printData);
                   }}
                 >
                   <Printer className="w-4 h-4" />
