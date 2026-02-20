@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import Head from "next/head";
-import { ShoppingCart, Package, BarChart3, Settings, LogOut, X, User as UserIcon, Trash2, Plus, Minus, ShoppingBag, TrendingUp, DollarSign, Users, Clock, Search, Printer, Check, Edit, Send, Eye, FileText } from "lucide-react";
+import { ShoppingCart, Package, BarChart3, Settings, LogOut, X, User as UserIcon, Trash2, Plus, Minus, ShoppingBag, TrendingUp, DollarSign, Users, Clock, Search, Printer, Check, Edit, Send, Eye, FileText, MessageSquare } from "lucide-react";
 import { PaymentModal } from "@/components/pos/PaymentModal";
 import { SalesHistory } from "@/components/pos/SalesHistory";
 import { ProductsManager } from "@/components/pos/ProductsManager";
@@ -230,6 +230,15 @@ export default function POS() {
     setCart(
       cart.map((item) =>
         item.product.id === productId ? { ...item, quantity: newQuantity } : item
+      )
+    );
+  };
+
+  // Actualizar nota de un item
+  const updateItemNote = (productId: number, note: string) => {
+    setCart(
+      cart.map((item) =>
+        item.product.id === productId ? { ...item, itemNote: note } : item
       )
     );
   };
@@ -511,9 +520,23 @@ export default function POS() {
                 cart.map((item) => (
                   <div key={item.product.id} className="cart-item-card">
                     <div className="cart-item-header">
-                      <span className="cart-item-name">{item.product.name}</span>
+                      <div className="cart-item-name-container">
+                        <span className="cart-item-name">{item.product.name}</span>
+                        {item.itemNote && (
+                          <span className="cart-item-note-indicator">
+                            <MessageSquare className="w-3 h-3" />
+                          </span>
+                        )}
+                      </div>
                       <span className="cart-item-price">{formatCurrency(item.product.price * item.quantity)}</span>
                     </div>
+                    
+                    {item.itemNote && (
+                      <div className="cart-item-note-display">
+                        📝 {item.itemNote}
+                      </div>
+                    )}
+                    
                     <div className="cart-item-controls">
                       <button 
                         className="cart-item-qty-btn" 
@@ -534,6 +557,16 @@ export default function POS() {
                       >
                         <X className="w-4 h-4" />
                       </button>
+                    </div>
+                    
+                    <div className="cart-item-note-input">
+                      <input
+                        type="text"
+                        placeholder="Agregar nota (ej: Sin Huevo)"
+                        value={item.itemNote || ""}
+                        onChange={(e) => updateItemNote(item.product.id, e.target.value)}
+                        className="cart-item-note-field"
+                      />
                     </div>
                   </div>
                 ))
