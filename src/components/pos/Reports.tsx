@@ -240,23 +240,102 @@ export function Reports({ sales, products }: ReportsProps) {
   const exportToExcel = () => {
     const workbook = XLSX.utils.book_new();
     
-    // Hoja 1: Resumen
-    const summaryData = [
-      ["REPORTE DE VENTAS - DE LA GRAN BURGER"],
-      [],
-      ["Período:", getDateFilterLabel()],
-      [],
-      ["RESUMEN GENERAL"],
-      ["Ventas Totales", formatCurrency(metrics.totalSales)],
-      ["Cantidad de Ventas", metrics.salesCount],
-      ["Valor Promedio de Pedido", formatCurrency(metrics.averageOrderValue)],
-      ["Facturas Pendientes", metrics.pendingInvoices],
-      ["Monto Total a Cobrar", formatCurrency(metrics.totalPending)],
+    // Preparar datos detallados por producto
+    const detailedData: any[] = [];
+    
+    // Encabezados
+    detailedData.push([
+      "ID",
+      "Fecha",
+      "Nombre del Cliente",
+      "Total",
+      "Repartidor",
+      "Monto Delivery",
+      "Pago",
+      "Saldo",
+      "Método de Pago",
+      "Monto Pagado",
+      "Nombre del Producto",
+      "Cantidad",
+      "Precio Unitario",
+      "Total del Producto"
+    ]);
+    
+    // Recorrer ventas filtradas
+    filteredSales.forEach((sale) => {
+      const customerName = sale.customer?.name || "";
+      const deliveryDriver = sale.deliveryDriver || "";
+      const deliveryCost = sale.deliveryCost || 0;
+      const status = sale.status === "completed" ? "Pagado" : "Pendiente";
+      const balance = sale.status === "completed" ? 0 : sale.total;
+      const paymentMethod = sale.payments && sale.payments.length > 0 
+        ? sale.payments.map(p => p.method).join(", ") 
+        : "";
+      const amountPaid = sale.status === "completed" ? sale.total : 0;
+      
+      // Agregar una fila por cada producto
+      sale.items.forEach((item, index) => {
+        detailedData.push([
+          index === 0 ? sale.saleNumber : "", // ID solo en la primera fila
+          index === 0 ? format(new Date(sale.date), "dd/MM/yyyy HH:mm") : "", // Fecha solo en la primera fila
+          index === 0 ? customerName : "",
+          index === 0 ? sale.total : "",
+          index === 0 ? deliveryDriver : "",
+          index === 0 ? deliveryCost : "",
+          index === 0 ? status : "",
+          index === 0 ? balance : "",
+          index === 0 ? paymentMethod : "",
+          index === 0 ? amountPaid : "",
+          item.productName,
+          item.quantity,
+          item.price,
+          item.price * item.quantity
+        ]);
+      });
+      
+      // Si la venta tiene delivery cost como item separado, agregar fila adicional
+      if (deliveryCost > 0 && sale.items.length > 0) {
+        detailedData.push([
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          `Delivery ${deliveryCost}`,
+          1,
+          deliveryCost,
+          deliveryCost
+        ]);
+      }
+    });
+    
+    const worksheet = XLSX.utils.aoa_to_sheet(detailedData);
+    
+    // Ajustar ancho de columnas
+    worksheet["!cols"] = [
+      { wch: 8 },  // ID
+      { wch: 16 }, // Fecha
+      { wch: 20 }, // Nombre del Cliente
+      { wch: 10 }, // Total
+      { wch: 15 }, // Repartidor
+      { wch: 12 }, // Monto Delivery
+      { wch: 10 }, // Pago
+      { wch: 10 }, // Saldo
+      { wch: 15 }, // Método de Pago
+      { wch: 12 }, // Monto Pagado
+      { wch: 30 }, // Nombre del Producto
+      { wch: 10 }, // Cantidad
+      { wch: 12 }, // Precio Unitario
+      { wch: 15 }  // Total del Producto
     ];
     
-    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(workbook, summarySheet, "Resumen");
-    XLSX.writeFile(workbook, `reporte-general-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Ventas Detalladas");
+    XLSX.writeFile(workbook, `ventas-detalladas-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
   };
 
   // Exportar solo Ventas por Cliente
