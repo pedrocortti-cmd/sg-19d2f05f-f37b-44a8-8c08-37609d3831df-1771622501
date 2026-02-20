@@ -506,46 +506,87 @@
 
 /* Botones de Acción */
 .cart-actions {
-  display: flex;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
-.cart-actions button {
-  flex: 1;
-  padding: 0.875rem 1.25rem;
-  border: none;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.2s;
+.btn-clear-cart,
+.btn-print-ticket,
+.btn-print-kitchen,
+.btn-confirm-payment {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 6px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
 }
 
-.btn-clear {
+.btn-clear-cart {
   background: #fee2e2;
-  color: #dc2626;
+  color: #991b1b;
+  border: 1px solid #fecaca;
 }
 
-.btn-clear:hover {
+.btn-clear-cart:hover:not(:disabled) {
   background: #fecaca;
-}
-
-.btn-confirm {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.btn-confirm:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.btn-confirm:disabled {
+.btn-print-ticket {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.btn-print-ticket:hover:not(:disabled) {
+  background: #bfdbfe;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-print-kitchen {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.btn-print-kitchen:hover:not(:disabled) {
+  background: #fde68a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-confirm-payment {
+  background: #10b981;
+  color: white;
+  border: 1px solid #059669;
+  grid-column: 1 / -1;
+  padding: 16px;
+  font-size: 16px;
+}
+
+.btn-confirm-payment:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.btn-clear-cart:disabled,
+.btn-print-ticket:disabled,
+.btn-print-kitchen:disabled,
+.btn-confirm-payment:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;

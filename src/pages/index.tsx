@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import Head from "next/head";
-import { ShoppingCart, Package, BarChart3, Settings, LogOut, X, User as UserIcon, Trash2, Plus, Minus, ShoppingBag, TrendingUp, DollarSign, Users, Clock, Search } from "lucide-react";
+import { ShoppingCart, Package, BarChart3, Settings, LogOut, X, User as UserIcon, Trash2, Plus, Minus, ShoppingBag, TrendingUp, DollarSign, Users, Clock, Search, Printer, Check } from "lucide-react";
 import { PaymentModal } from "@/components/pos/PaymentModal";
 import { SalesHistory } from "@/components/pos/SalesHistory";
 import { ProductsManager } from "@/components/pos/ProductsManager";
@@ -519,36 +519,53 @@ export default function POS() {
           </button>
         </div>
 
-        {/* Total y Botones */}
-        <div className="cart-footer">
-          <div className="cart-totals">
-            <div className="cart-total-row">
-              <span>Subtotal:</span>
-              <span>{formatCurrency(subtotal)}</span>
-            </div>
-            {discountAmount > 0 && (
-              <div className="cart-total-row discount-row">
-                <span>Descuento:</span>
-                <span>-{formatCurrency(discountAmount)}</span>
-              </div>
-            )}
-            <div className="cart-total-row total-row">
-              <span>TOTAL:</span>
-              <span>{formatCurrency(cartTotal)}</span>
-            </div>
-          </div>
-          <div className="cart-actions">
-            <button onClick={clearCart} className="btn-clear">
-              🗑️ Vaciar
-            </button>
-            <button
-              onClick={() => setShowPaymentModal(true)}
-              className="btn-confirm"
-              disabled={cart.length === 0}
-            >
-              ✅ Confirmar Pago
-            </button>
-          </div>
+        {/* Botones de acción */}
+        <div className="cart-actions">
+          <button
+            className="btn-clear-cart"
+            onClick={clearCart}
+            disabled={cart.length === 0}
+            title="Vaciar carrito"
+          >
+            <Trash2 className="w-4 h-4" />
+            Vaciar
+          </button>
+          
+          <button
+            className="btn-print-ticket"
+            onClick={() => {
+              // TODO: Implementar impresión de ticket
+              alert("Función de impresión de ticket en desarrollo");
+            }}
+            disabled={cart.length === 0}
+            title="Imprimir ticket para cliente"
+          >
+            <Printer className="w-4 h-4" />
+            Ticket
+          </button>
+
+          <button
+            className="btn-print-kitchen"
+            onClick={() => {
+              // TODO: Implementar impresión de comanda
+              alert("Función de impresión de comanda en desarrollo");
+            }}
+            disabled={cart.length === 0}
+            title="Imprimir comanda para cocina"
+          >
+            <Printer className="w-4 h-4" />
+            Comanda
+          </button>
+          
+          <button
+            className="btn-confirm-payment"
+            onClick={() => setShowPaymentModal(true)}
+            disabled={cart.length === 0}
+            title="Procesar pago"
+          >
+            <Check className="w-4 h-4" />
+            Cobrar
+          </button>
         </div>
       </div>
 
