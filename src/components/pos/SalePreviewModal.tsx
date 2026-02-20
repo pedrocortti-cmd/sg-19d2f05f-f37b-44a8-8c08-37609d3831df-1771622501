@@ -108,14 +108,6 @@ export function SalePreviewModal({ sale, products, onClose, onPrint }: SalePrevi
 
           {/* Resumen de totales */}
           <div className="sale-preview-summary">
-            <div className="summary-row">
-              <span>Subtotal</span>
-              <span>{formatCurrency(subtotal)}</span>
-            </div>
-            <div className="summary-row">
-              <span>IVA 10%</span>
-              <span>{formatCurrency(iva)}</span>
-            </div>
             <div className="summary-row summary-total">
               <span>Total</span>
               <span>{formatCurrency(total)}</span>
