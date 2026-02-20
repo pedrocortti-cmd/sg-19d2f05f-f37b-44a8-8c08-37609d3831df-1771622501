@@ -29,11 +29,11 @@ export function SalesHistory({ sales, onLoadSale }: SalesHistoryProps) {
   const getStatusText = (status: string) => {
     switch (status) {
       case "pending":
-        return "Pendiente";
+        return "⏳ Pendiente Pago";
       case "completed":
-        return "Completado";
+        return "✅ Pagado";
       case "cancelled":
-        return "Cancelado";
+        return "❌ Cancelado";
       default:
         return status;
     }

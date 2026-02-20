@@ -282,31 +282,23 @@ export default function POS() {
       setDiscountValue(0);
       setSelectedDriverId(null);
       setDeliveryCost(0);
+      setLoadedSaleId(null);
     }
   };
 
-  // Confirmar pago y generar venta
-  const handleConfirmPayment = (payments: Payment[], note: string) => {
+  // Confirmar pedido sin pago (para cocina)
+  const handleConfirmOrder = () => {
     if (cart.length === 0) {
       alert("El carrito está vacío");
       return;
     }
 
+    if (loadedSaleId) {
+      alert("Este pedido ya fue confirmado. Use 'Recibir Pago' para cobrarlo.");
+      return;
+    }
+
     const saleNumber = sales.length + 1;
-
-    // Descontar stock
-    const updatedProducts = products.map(product => {
-      const cartItem = cart.find(item => item.product.id === product.id);
-      if (cartItem && product.stock !== undefined) {
-        return {
-          ...product,
-          stock: Math.max(0, product.stock - cartItem.quantity)
-        };
-      }
-      return product;
-    });
-
-    const amountPaid = payments.reduce((sum, p) => sum + p.amount, 0);
     const selectedDriver = deliveryDrivers.find(d => d.id === selectedDriverId);
 
     const newSale: Sale = {
@@ -327,17 +319,34 @@ export default function POS() {
       type: orderType,
       deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
       deliveryDriverName: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
-      payments,
-      paymentMethod: payments.length > 0 ? payments[0].method : 'mixed',
-      note: note || orderNote,
+      payments: [],
+      paymentMethod: "pending",
+      note: orderNote,
       user: currentUser.name,
-      status: "completed",
-      amountPaid: amountPaid,
-      balance: Math.max(0, cartTotal - amountPaid)
+      status: "pending",
+      amountPaid: 0,
+      balance: cartTotal
     };
 
-    setProducts(updatedProducts);
     setSales([newSale, ...sales]);
+    
+    // Imprimir comanda para cocina
+    const printData = {
+      orderNumber: newSale.saleNumber,
+      date: new Date(),
+      customerInfo,
+      items: cart,
+      orderType,
+      deliveryDriver: orderType === "delivery" ? selectedDriver : undefined,
+      deliveryCost,
+      subtotal,
+      discount: discountAmount,
+      total: cartTotal,
+      note: orderNote
+    };
+    printKitchenOrder(printData);
+
+    // Limpiar carrito
     setCart([]);
     setCustomerInfo({
       name: "",
@@ -352,9 +361,118 @@ export default function POS() {
     setDiscountValue(0);
     setSelectedDriverId(null);
     setDeliveryCost(0);
-    setShowPaymentModal(false);
 
-    alert(`✅ Venta ${newSale.saleNumber} confirmada exitosamente\n\n🔄 Stock actualizado automáticamente`);
+    alert(`✅ Pedido ${newSale.saleNumber} confirmado\n\n🖨️ Comanda enviada a cocina\n⏳ Pendiente de pago`);
+  };
+
+  // Confirmar pago y generar venta
+  const handleConfirmPayment = (payments: Payment[], note: string) => {
+    if (cart.length === 0) {
+      alert("El carrito está vacío");
+      return;
+    }
+
+    const amountPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+    const selectedDriver = deliveryDrivers.find(d => d.id === selectedDriverId);
+
+    if (loadedSaleId) {
+      // Actualizar pedido existente con pago
+      setSales(sales.map(s => {
+        if (s.id === loadedSaleId) {
+          return {
+            ...s,
+            payments,
+            paymentMethod: payments.length > 0 ? payments[0].method : 'mixed',
+            note: note || s.note,
+            status: "completed",
+            amountPaid: amountPaid,
+            balance: Math.max(0, s.total - amountPaid)
+          };
+        }
+        return s;
+      }));
+
+      setCart([]);
+      setCustomerInfo({
+        name: "",
+        phone: "",
+        address: "",
+        ruc: "",
+        businessName: "",
+        isExempt: false,
+        exempt: false
+      });
+      setOrderNote("");
+      setDiscountValue(0);
+      setSelectedDriverId(null);
+      setDeliveryCost(0);
+      setLoadedSaleId(null);
+      setShowPaymentModal(false);
+
+      alert(`✅ Pago registrado exitosamente\n\n💰 Pedido completado`);
+    } else {
+      // Crear nueva venta directa (sin confirmar pedido previo)
+      const saleNumber = sales.length + 1;
+
+      // Descontar stock
+      const updatedProducts = products.map(product => {
+        const cartItem = cart.find(item => item.product.id === product.id);
+        if (cartItem && product.stock !== undefined) {
+          return {
+            ...product,
+            stock: Math.max(0, product.stock - cartItem.quantity)
+          };
+        }
+        return product;
+      });
+
+      const newSale: Sale = {
+        id: saleNumber,
+        saleNumber: `#${saleNumber.toString().padStart(4, "0")}`,
+        date: new Date(),
+        items: cart.map(item => ({
+          productId: item.product.id,
+          productName: item.product.name,
+          quantity: item.quantity,
+          price: item.product.price
+        })),
+        subtotal,
+        discount: discountAmount,
+        deliveryCost: orderType === "delivery" ? deliveryCost : undefined,
+        total: cartTotal,
+        customer: customerInfo,
+        type: orderType,
+        deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
+        deliveryDriverName: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
+        payments,
+        paymentMethod: payments.length > 0 ? payments[0].method : 'mixed',
+        note: note || orderNote,
+        user: currentUser.name,
+        status: "completed",
+        amountPaid: amountPaid,
+        balance: Math.max(0, cartTotal - amountPaid)
+      };
+
+      setProducts(updatedProducts);
+      setSales([newSale, ...sales]);
+      setCart([]);
+      setCustomerInfo({
+        name: "",
+        phone: "",
+        address: "",
+        ruc: "",
+        businessName: "",
+        isExempt: false,
+        exempt: false
+      });
+      setOrderNote("");
+      setDiscountValue(0);
+      setSelectedDriverId(null);
+      setDeliveryCost(0);
+      setShowPaymentModal(false);
+
+      alert(`✅ Venta ${newSale.saleNumber} confirmada exitosamente\n\n🔄 Stock actualizado automáticamente`);
+    }
   };
 
   const handleCancelSale = (saleId: number, reason: string) => {
@@ -389,6 +507,12 @@ export default function POS() {
   };
 
   const handleLoadSale = (sale: Sale) => {
+    // Solo cargar pedidos pendientes
+    if (sale.status !== "pending") {
+      alert("Solo se pueden cargar pedidos pendientes de pago");
+      return;
+    }
+
     // Cargar venta en el carrito
     const cartItems: CartItem[] = sale.items.map(item => {
       const product = products.find(p => p.id === item.productId);
@@ -411,9 +535,19 @@ export default function POS() {
     });
     setOrderType(sale.type);
     setOrderNote(sale.note || "");
+    setLoadedSaleId(sale.id);
+    
+    if (sale.deliveryDriverId) {
+      setSelectedDriverId(sale.deliveryDriverId);
+    }
+    if (sale.deliveryCost) {
+      setDeliveryCost(sale.deliveryCost);
+    }
     
     // Scroll al top para ver el carrito
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    alert(`📋 Pedido ${sale.saleNumber} cargado\n\n💰 Listo para cobrar`);
   };
 
   const renderContent = () => {
@@ -693,14 +827,12 @@ export default function POS() {
               {/* Botones de acción */}
               <div className="cart-action-buttons">
                 <button
-                  className="cart-action-btn btn-edit-sale"
-                  disabled={cart.length === 0}
-                  onClick={() => {
-                    alert("Función de edición en desarrollo");
-                  }}
+                  className="cart-action-btn btn-confirm-order"
+                  disabled={cart.length === 0 || loadedSaleId !== null}
+                  onClick={handleConfirmOrder}
                 >
-                  <Edit className="w-4 h-4" />
-                  Editar Venta
+                  <Check className="w-4 h-4" />
+                  Confirmar Pedido
                 </button>
 
                 <button
@@ -717,7 +849,7 @@ export default function POS() {
                   disabled={cart.length === 0}
                   onClick={() => {
                     const printData = {
-                      orderNumber: `#${sales.length + 1}`,
+                      orderNumber: loadedSaleId ? sales.find(s => s.id === loadedSaleId)?.saleNumber || `#${sales.length + 1}` : `#${sales.length + 1}`,
                       date: new Date(),
                       customerInfo,
                       items: cart,
