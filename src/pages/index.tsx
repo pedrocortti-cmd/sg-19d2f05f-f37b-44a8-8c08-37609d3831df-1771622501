@@ -422,251 +422,6 @@ export default function POS() {
     { id: "settings", label: "Ajustes", icon: "⚙️" },
   ];
 
-  // Render POS principal
-  const renderPOS = () => (
-    <>
-      {/* Panel Izquierdo: Carrito */}
-      <div className="pos-cart-panel">
-        {/* Header del carrito */}
-        <div className="cart-panel-header">
-          <ShoppingCart className="w-5 h-5" />
-          <span>CARRITO</span>
-        </div>
-
-        {/* Información del cliente compacta */}
-        <div className="customer-compact">
-          <div className="customer-compact-field">
-            <label className="customer-compact-label">CLIENTE</label>
-            <input
-              type="text"
-              className="customer-compact-input"
-              placeholder="Nombre del cliente"
-              value={customerInfo.name}
-              onChange={(e) =>
-                setCustomerInfo({ ...customerInfo, name: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="customer-compact-field">
-            <label className="customer-compact-label">TELÉFONO</label>
-            <input
-              type="tel"
-              className="customer-compact-input"
-              placeholder="Teléfono"
-              value={customerInfo.phone}
-              onChange={(e) =>
-                setCustomerInfo({ ...customerInfo, phone: e.target.value })
-              }
-            />
-          </div>
-        </div>
-
-        {/* Items del carrito */}
-        <div className="cart-items-section">
-          {cart.length === 0 ? (
-            <div className="cart-empty-state">
-              <ShoppingCart className="cart-empty-icon" />
-              <p>No hay productos en el carrito</p>
-            </div>
-          ) : (
-            cart.map((item) => (
-              <div key={item.product.id} className="cart-item-card">
-                <div className="cart-item-header">
-                  <span className="cart-item-name">{item.product.name}</span>
-                  <span className="cart-item-price">{formatCurrency(item.product.price * item.quantity)}</span>
-                </div>
-                <div className="cart-item-controls">
-                  <button 
-                    className="cart-item-qty-btn" 
-                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                  >
-                    -
-                  </button>
-                  <span className="cart-item-quantity">{item.quantity}</span>
-                  <button 
-                    className="cart-item-qty-btn" 
-                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                  >
-                    +
-                  </button>
-                  <button 
-                    className="cart-item-remove" 
-                    onClick={() => removeFromCart(item.product.id)}
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Footer del carrito */}
-        <div className="cart-footer">
-          {/* Botones tipo pedido */}
-          <div className="order-type-buttons">
-            <button
-              className={`order-type-btn ${orderType === "delivery" ? "active" : ""}`}
-              onClick={() => setOrderType("delivery")}
-            >
-              Delivery
-            </button>
-            <button
-              className={`order-type-btn ${orderType === "pickup" ? "active" : ""}`}
-              onClick={() => setOrderType("pickup")}
-            >
-              Para Retirar
-            </button>
-          </div>
-
-          {/* Total */}
-          <div className="cart-total-display">
-            <div className="cart-total-label">TOTAL</div>
-            <div className="cart-total-amount">{formatCurrency(cartTotal)}</div>
-          </div>
-
-          {/* Botones de acción */}
-          <div className="cart-action-buttons">
-            <button
-              className="cart-action-btn btn-edit-sale"
-              disabled={cart.length === 0}
-              onClick={() => {
-                alert("Función de edición en desarrollo");
-              }}
-            >
-              <Edit className="w-4 h-4" />
-              Editar Venta
-            </button>
-
-            <button
-              className="cart-action-btn btn-receive-payment"
-              disabled={cart.length === 0}
-              onClick={() => setShowPaymentModal(true)}
-            >
-              <DollarSign className="w-4 h-4" />
-              Recibir Pago
-            </button>
-
-            <button
-              className="cart-action-btn btn-print-order"
-              disabled={cart.length === 0}
-              onClick={() => {
-                alert("Función de impresión de comanda en desarrollo");
-              }}
-            >
-              <Printer className="w-4 h-4" />
-              Imprimir Pedido
-            </button>
-
-            <button
-              className="cart-action-btn btn-print-invoice"
-              disabled={cart.length === 0}
-              onClick={() => {
-                alert("Función de impresión de factura en desarrollo");
-              }}
-            >
-              <FileText className="w-4 h-4" />
-              Imprimir Factura
-            </button>
-
-            <button
-              className="cart-action-btn btn-send-whatsapp"
-              disabled={cart.length === 0}
-              onClick={() => {
-                alert("Función de WhatsApp en desarrollo");
-              }}
-            >
-              <Send className="w-4 h-4" />
-              Enviar por WhatsApp
-            </button>
-
-            <button
-              className="cart-action-btn btn-preview"
-              disabled={cart.length === 0}
-              onClick={() => {
-                alert("Función de vista previa en desarrollo");
-              }}
-            >
-              <Eye className="w-4 h-4" />
-              Vista Previa
-            </button>
-
-            <button
-              className="cart-action-btn btn-delete-sale"
-              disabled={cart.length === 0}
-              onClick={clearCart}
-            >
-              <Trash2 className="w-4 h-4" />
-              Eliminar Venta
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Panel Central: Productos */}
-      <div className="pos-products-panel">
-        {/* Header de productos */}
-        <div className="products-panel-header">
-          {/* Buscador */}
-          <div className="products-search-bar">
-            <Search className="products-search-icon" />
-            <input
-              type="text"
-              className="products-search-input"
-              placeholder="Buscar productos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          {/* Tabs de categorías */}
-          <div className="products-tabs">
-            <button
-              className={`products-tab ${selectedCategory === "Todos" ? "active" : ""}`}
-              onClick={() => setSelectedCategory("Todos")}
-            >
-              Productos
-            </button>
-            {CATEGORIES.slice(1).map((cat) => (
-              <button
-                key={cat.id}
-                className={`products-tab ${selectedCategory === cat.name ? "active" : ""}`}
-                onClick={() => setSelectedCategory(cat.name)}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Grilla de productos */}
-        <div className="products-grid-container">
-          <div className="products-grid">
-            {filteredProducts.map((product) => (
-              <div
-                key={product.id}
-                className="product-card"
-                onClick={() => addToCart(product)}
-              >
-                <div className="product-card-name">{product.name}</div>
-                <div className="product-card-price">{formatCurrency(product.price)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Panel Derecho: Historial */}
-      <div className="history-panel">
-        <SalesHistory 
-          sales={sales.length > 0 ? sales : mockSales}
-          onLoadSale={handleLoadSale}
-        />
-      </div>
-    </>
-  );
-
   return (
     <div className="pos-layout">
       <Head>
@@ -705,9 +460,248 @@ export default function POS() {
         </div>
       </div>
 
+      {/* Contenido principal - Layout condicional basado en vista actual */}
       {currentView === "pos" ? (
         <>
-          {renderPOS()}
+          {/* Panel Izquierdo: Carrito */}
+          <div className="pos-cart-panel">
+            {/* Header del carrito */}
+            <div className="cart-panel-header">
+              <ShoppingCart className="w-5 h-5" />
+              <span>CARRITO</span>
+            </div>
+
+            {/* Información del cliente compacta */}
+            <div className="customer-compact">
+              <div className="customer-compact-field">
+                <label className="customer-compact-label">CLIENTE</label>
+                <input
+                  type="text"
+                  className="customer-compact-input"
+                  placeholder="Nombre del cliente"
+                  value={customerInfo.name}
+                  onChange={(e) =>
+                    setCustomerInfo({ ...customerInfo, name: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="customer-compact-field">
+                <label className="customer-compact-label">TELÉFONO</label>
+                <input
+                  type="tel"
+                  className="customer-compact-input"
+                  placeholder="Teléfono"
+                  value={customerInfo.phone}
+                  onChange={(e) =>
+                    setCustomerInfo({ ...customerInfo, phone: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Items del carrito */}
+            <div className="cart-items-section">
+              {cart.length === 0 ? (
+                <div className="cart-empty-state">
+                  <ShoppingCart className="cart-empty-icon" />
+                  <p>No hay productos en el carrito</p>
+                </div>
+              ) : (
+                cart.map((item) => (
+                  <div key={item.product.id} className="cart-item-card">
+                    <div className="cart-item-header">
+                      <span className="cart-item-name">{item.product.name}</span>
+                      <span className="cart-item-price">{formatCurrency(item.product.price * item.quantity)}</span>
+                    </div>
+                    <div className="cart-item-controls">
+                      <button 
+                        className="cart-item-qty-btn" 
+                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                      >
+                        -
+                      </button>
+                      <span className="cart-item-quantity">{item.quantity}</span>
+                      <button 
+                        className="cart-item-qty-btn" 
+                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                      >
+                        +
+                      </button>
+                      <button 
+                        className="cart-item-remove" 
+                        onClick={() => removeFromCart(item.product.id)}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer del carrito */}
+            <div className="cart-footer">
+              {/* Botones tipo pedido */}
+              <div className="order-type-buttons">
+                <button
+                  className={`order-type-btn ${orderType === "delivery" ? "active" : ""}`}
+                  onClick={() => setOrderType("delivery")}
+                >
+                  Delivery
+                </button>
+                <button
+                  className={`order-type-btn ${orderType === "pickup" ? "active" : ""}`}
+                  onClick={() => setOrderType("pickup")}
+                >
+                  Para Retirar
+                </button>
+              </div>
+
+              {/* Total */}
+              <div className="cart-total-display">
+                <div className="cart-total-label">TOTAL</div>
+                <div className="cart-total-amount">{formatCurrency(cartTotal)}</div>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="cart-action-buttons">
+                <button
+                  className="cart-action-btn btn-edit-sale"
+                  disabled={cart.length === 0}
+                  onClick={() => {
+                    alert("Función de edición en desarrollo");
+                  }}
+                >
+                  <Edit className="w-4 h-4" />
+                  Editar Venta
+                </button>
+
+                <button
+                  className="cart-action-btn btn-receive-payment"
+                  disabled={cart.length === 0}
+                  onClick={() => setShowPaymentModal(true)}
+                >
+                  <DollarSign className="w-4 h-4" />
+                  Recibir Pago
+                </button>
+
+                <button
+                  className="cart-action-btn btn-print-order"
+                  disabled={cart.length === 0}
+                  onClick={() => {
+                    alert("Función de impresión de comanda en desarrollo");
+                  }}
+                >
+                  <Printer className="w-4 h-4" />
+                  Imprimir Pedido
+                </button>
+
+                <button
+                  className="cart-action-btn btn-print-invoice"
+                  disabled={cart.length === 0}
+                  onClick={() => {
+                    alert("Función de impresión de factura en desarrollo");
+                  }}
+                >
+                  <FileText className="w-4 h-4" />
+                  Imprimir Factura
+                </button>
+
+                <button
+                  className="cart-action-btn btn-send-whatsapp"
+                  disabled={cart.length === 0}
+                  onClick={() => {
+                    alert("Función de WhatsApp en desarrollo");
+                  }}
+                >
+                  <Send className="w-4 h-4" />
+                  Enviar por WhatsApp
+                </button>
+
+                <button
+                  className="cart-action-btn btn-preview"
+                  disabled={cart.length === 0}
+                  onClick={() => {
+                    alert("Función de vista previa en desarrollo");
+                  }}
+                >
+                  <Eye className="w-4 h-4" />
+                  Vista Previa
+                </button>
+
+                <button
+                  className="cart-action-btn btn-delete-sale"
+                  disabled={cart.length === 0}
+                  onClick={clearCart}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Eliminar Venta
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Panel Central: Productos */}
+          <div className="pos-products-panel">
+            {/* Header de productos */}
+            <div className="products-panel-header">
+              {/* Buscador */}
+              <div className="products-search-bar">
+                <Search className="products-search-icon" />
+                <input
+                  type="text"
+                  className="products-search-input"
+                  placeholder="Buscar productos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              {/* Tabs de categorías */}
+              <div className="products-tabs">
+                <button
+                  className={`products-tab ${selectedCategory === "Todos" ? "active" : ""}`}
+                  onClick={() => setSelectedCategory("Todos")}
+                >
+                  Productos
+                </button>
+                {CATEGORIES.slice(1).map((cat) => (
+                  <button
+                    key={cat.id}
+                    className={`products-tab ${selectedCategory === cat.name ? "active" : ""}`}
+                    onClick={() => setSelectedCategory(cat.name)}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Grilla de productos */}
+            <div className="products-grid-container">
+              <div className="products-grid">
+                {filteredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="product-card"
+                    onClick={() => addToCart(product)}
+                  >
+                    <div className="product-card-name">{product.name}</div>
+                    <div className="product-card-price">{formatCurrency(product.price)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Panel Derecho: Historial */}
+          <div className="history-panel">
+            <SalesHistory 
+              sales={sales.length > 0 ? sales : mockSales}
+              onLoadSale={handleLoadSale}
+            />
+          </div>
         </>
       ) : (
         <div className="pos-content-area">
