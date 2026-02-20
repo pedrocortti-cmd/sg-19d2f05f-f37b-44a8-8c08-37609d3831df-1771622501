@@ -66,6 +66,9 @@ export default function POS() {
   const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
   const [deliveryCost, setDeliveryCost] = useState(0);
 
+  // Estado para controlar si estamos editando/cobrando una venta existente
+  const [loadedSaleId, setLoadedSaleId] = useState<number | null>(null);
+
   // Mock sales data para el historial
   const mockSales: Sale[] = [
     {
