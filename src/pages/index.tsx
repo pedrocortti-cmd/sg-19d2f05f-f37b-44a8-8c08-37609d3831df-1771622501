@@ -51,6 +51,56 @@ export default function POS() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // Mock sales data para el historial
+  const mockSales: Sale[] = [
+    {
+      id: 1,
+      saleNumber: "#2027",
+      date: new Date("2026-02-19T21:38:00"),
+      customerName: "Juan Pérez",
+      customer: { name: "Juan Pérez", phone: "0981123456", address: "Av. Principal 123" },
+      total: 9000,
+      subtotal: 9000,
+      discount: 0,
+      type: "delivery",
+      status: "completed",
+      items: [],
+      paymentMethod: "cash",
+      payments: []
+    },
+    {
+      id: 2,
+      saleNumber: "#2026",
+      date: new Date("2026-02-20T23:39:00"),
+      customerName: "María González",
+      customer: { name: "María González", phone: "0971654321", address: "Calle 2" },
+      total: 54000,
+      subtotal: 54000,
+      discount: 0,
+      type: "pickup",
+      status: "completed",
+      items: [],
+      paymentMethod: "card",
+      payments: []
+    },
+    {
+      id: 3,
+      saleNumber: "#2025",
+      date: new Date("2026-02-20T19:05:21"),
+      customerName: "Carlos Rodríguez",
+      customer: { name: "Carlos Rodríguez", phone: "0991112233", address: "" },
+      total: 42000,
+      subtotal: 42000,
+      discount: 0,
+      type: "dineIn",
+      status: "pending",
+      items: [],
+      paymentMethod: "mixed",
+      payments: []
+    },
+  ];
+
   const [historySearchTerm, setHistorySearchTerm] = useState("");
   const [displayedSalesCount, setDisplayedSalesCount] = useState(10);
 
@@ -340,6 +390,7 @@ export default function POS() {
       case "sales":
         return <SalesHistory 
           sales={sales} 
+          onLoadSale={handleLoadSale}
           onCancelSale={handleCancelSale} 
         />;
       case "informes":
@@ -631,51 +682,16 @@ export default function POS() {
           </div>
         </div>
 
-        {/* Lista de ventas */}
-        <div className="history-list">
-          {filteredSales.length === 0 ? (
-            <div className="history-empty">
-              <p>No hay ventas registradas</p>
-            </div>
-          ) : (
-            filteredSales.map((sale) => (
-              <div
-                key={sale.id}
-                className="history-item"
-                onClick={() => handleLoadSale(sale)}
-              >
-                <div className="history-item-header">
-                  <span className="history-item-number">Pedido {sale.saleNumber}</span>
-                  <span className="history-item-total">{formatCurrency(sale.total)}</span>
-                </div>
-                <div className="history-item-info">
-                  {sale.customer?.name || "Cliente no especificado"}
-                </div>
-                <div className="history-item-date">
-                  {new Date(sale.date).toLocaleString('es-PY', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+        {/* Lista de ventas - MOVIDO AL COMPONENTE SALES HISTORY */}
+        {/* El panel de historial ahora usa el componente SalesHistory en la columna derecha */}
+      </div>
 
-        {/* Botón cargar más */}
-        {sales.length > displayedSalesCount && (
-          <div className="history-load-more">
-            <button
-              className="btn-load-more"
-              onClick={() => setDisplayedSalesCount(prev => prev + 10)}
-            >
-              Cargar Más
-            </button>
-          </div>
-        )}
+      {/* Panel de historial de ventas (derecha) */}
+      <div className="pos-history-panel">
+        <SalesHistory 
+          sales={sales.length > 0 ? sales : mockSales}
+          onLoadSale={handleLoadSale}
+        />
       </div>
     </>
   );
