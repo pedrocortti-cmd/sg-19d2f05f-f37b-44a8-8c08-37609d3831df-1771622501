@@ -13,6 +13,7 @@ import { SEO } from "@/components/SEO";
 import { cn, formatCurrency } from "@/lib/utils";
 import { printKitchenOrder } from "@/lib/printService";
 import type { Product, CartItem, Sale, Category, PaymentMethod, DiscountType, OrderType, CustomerInfo, User, PrintFormatConfig, Payment, DeliveryDriver } from "@/types/pos";
+import { SalePreviewModal } from "@/components/pos/SalePreviewModal";
 
 // Datos de prueba iniciales
 const INITIAL_PRODUCTS: Product[] = [
@@ -54,6 +55,7 @@ export default function POS() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // Estado de repartidores
   const [deliveryDrivers, setDeliveryDrivers] = useState<DeliveryDriver[]>([
@@ -736,33 +738,9 @@ export default function POS() {
                 </button>
 
                 <button
-                  className="cart-action-btn btn-print-invoice"
-                  disabled={cart.length === 0}
-                  onClick={() => {
-                    alert("Función de impresión de factura en desarrollo");
-                  }}
-                >
-                  <FileText className="w-4 h-4" />
-                  Imprimir Factura
-                </button>
-
-                <button
-                  className="cart-action-btn btn-send-whatsapp"
-                  disabled={cart.length === 0}
-                  onClick={() => {
-                    alert("Función de WhatsApp en desarrollo");
-                  }}
-                >
-                  <Send className="w-4 h-4" />
-                  Enviar por WhatsApp
-                </button>
-
-                <button
                   className="cart-action-btn btn-preview"
                   disabled={cart.length === 0}
-                  onClick={() => {
-                    alert("Función de vista previa en desarrollo");
-                  }}
+                  onClick={() => setShowPreviewModal(true)}
                 >
                   <Eye className="w-4 h-4" />
                   Vista Previa
@@ -852,6 +830,51 @@ export default function POS() {
           total={cartTotal}
           onClose={() => setShowPaymentModal(false)}
           onConfirm={handleConfirmPayment}
+        />
+      )}
+
+      {showPreviewModal && (
+        <SalePreviewModal
+          sale={{
+            id: sales.length + 1,
+            saleNumber: `#${(sales.length + 1).toString().padStart(4, "0")}`,
+            date: new Date(),
+            items: cart.map(item => ({
+              productId: item.product.id,
+              productName: item.product.name,
+              quantity: item.quantity,
+              price: item.product.price
+            })),
+            subtotal,
+            discount: discountAmount,
+            total: cartTotal,
+            customer: customerInfo,
+            customerName: customerInfo.name,
+            type: orderType,
+            status: "pending",
+            paymentMethod: "cash",
+            payments: []
+          }}
+          products={products}
+          onClose={() => setShowPreviewModal(false)}
+          onPrint={() => {
+            const printData = {
+              orderNumber: `#${sales.length + 1}`,
+              date: new Date(),
+              customerInfo,
+              items: cart,
+              orderType,
+              deliveryDriver: orderType === "delivery" ? deliveryDrivers.find(d => d.id === selectedDriverId) : undefined,
+              deliveryCost,
+              subtotal,
+              discount: discountAmount,
+              total: cartTotal,
+              note: orderNote
+            };
+            
+            printKitchenOrder(printData);
+            setShowPreviewModal(false);
+          }}
         />
       )}
     </div>
