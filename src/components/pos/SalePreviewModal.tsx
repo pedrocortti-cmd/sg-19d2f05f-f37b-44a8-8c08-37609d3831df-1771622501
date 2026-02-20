@@ -51,14 +51,6 @@ export function SalePreviewModal({ sale, products, onClose, onPrint, businessLog
             )}
           </div>
 
-          {/* Información del negocio */}
-          <div className="preview-business-header">
-            <p className="preview-business-name">De la Gran Burger</p>
-            <p className="preview-business-info">Av. Principal 123, Asunción</p>
-            <p className="preview-business-info">Tel: 021-1234567</p>
-            <p className="preview-business-info">RUC: 80012345-6</p>
-          </div>
-
           {/* Encabezado */}
           <div className="sale-preview-header">
             <h2 className="sale-preview-title">Venta {sale.saleNumber}</h2>
