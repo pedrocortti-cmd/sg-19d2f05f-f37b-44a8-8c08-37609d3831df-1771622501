@@ -674,19 +674,6 @@ export default function POS() {
                 />
               </div>
 
-              <div className="customer-compact-field">
-                <label className="customer-compact-label">TELÉFONO</label>
-                <input
-                  type="tel"
-                  className="customer-compact-input"
-                  placeholder="Teléfono"
-                  value={customerInfo.phone}
-                  onChange={(e) =>
-                    setCustomerInfo({ ...customerInfo, phone: e.target.value })
-                  }
-                />
-              </div>
-
               {orderType === "delivery" && (
                 <>
                   <div className="customer-compact-field">
