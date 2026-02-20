@@ -532,7 +532,6 @@ export default function POS() {
               className="cart-action-btn btn-edit-sale"
               disabled={cart.length === 0}
               onClick={() => {
-                // TODO: Implementar edición de venta
                 alert("Función de edición en desarrollo");
               }}
             >
@@ -553,7 +552,6 @@ export default function POS() {
               className="cart-action-btn btn-print-order"
               disabled={cart.length === 0}
               onClick={() => {
-                // TODO: Implementar impresión de comanda
                 alert("Función de impresión de comanda en desarrollo");
               }}
             >
@@ -565,7 +563,6 @@ export default function POS() {
               className="cart-action-btn btn-print-invoice"
               disabled={cart.length === 0}
               onClick={() => {
-                // TODO: Implementar impresión de factura
                 alert("Función de impresión de factura en desarrollo");
               }}
             >
@@ -577,7 +574,6 @@ export default function POS() {
               className="cart-action-btn btn-send-whatsapp"
               disabled={cart.length === 0}
               onClick={() => {
-                // TODO: Implementar envío por WhatsApp
                 alert("Función de WhatsApp en desarrollo");
               }}
             >
@@ -589,7 +585,6 @@ export default function POS() {
               className="cart-action-btn btn-preview"
               disabled={cart.length === 0}
               onClick={() => {
-                // TODO: Implementar vista previa
                 alert("Función de vista previa en desarrollo");
               }}
             >
@@ -711,7 +706,9 @@ export default function POS() {
       </div>
 
       {currentView === "pos" ? (
-        renderPOS()
+        <>
+          {renderPOS()}
+        </>
       ) : (
         <div className="pos-content-area">
           {renderContent()}
