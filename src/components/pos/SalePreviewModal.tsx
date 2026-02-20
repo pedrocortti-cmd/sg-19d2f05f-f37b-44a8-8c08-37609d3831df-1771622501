@@ -68,12 +68,6 @@ export function SalePreviewModal({ sale, products, onClose, onPrint }: SalePrevi
             <div className="client-name">{sale.customerName || "Cliente General"}</div>
           </div>
 
-          {/* Total destacado */}
-          <div className="sale-preview-total-box">
-            <div className="total-label">Total</div>
-            <div className="total-amount">{formatCurrency(total)}</div>
-          </div>
-
           {/* Tabla de productos */}
           <div className="sale-preview-table">
             <table>
