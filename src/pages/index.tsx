@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import Head from "next/head";
-import { ShoppingCart, Package, BarChart3, Settings, LogOut, X, User as UserIcon, Trash2, Plus, Minus, ShoppingBag, TrendingUp, DollarSign, Users, Clock, Search, Printer, Check } from "lucide-react";
+import { ShoppingCart, Package, BarChart3, Settings, LogOut, X, User as UserIcon, Trash2, Plus, Minus, ShoppingBag, TrendingUp, DollarSign, Users, Clock, Search, Printer, Check, Edit, Send, Eye, FileText } from "lucide-react";
 import { PaymentModal } from "@/components/pos/PaymentModal";
 import { SalesHistory } from "@/components/pos/SalesHistory";
 import { ProductsManager } from "@/components/pos/ProductsManager";
@@ -51,6 +51,8 @@ export default function POS() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [historySearchTerm, setHistorySearchTerm] = useState("");
+  const [displayedSalesCount, setDisplayedSalesCount] = useState(10);
 
   // Estado del cliente
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
@@ -128,6 +130,19 @@ export default function POS() {
       return matchesSearch && matchesCategory && isActive;
     });
   }, [products, searchTerm, selectedCategory]);
+
+  // Filtrar historial de ventas
+  const filteredSales = useMemo(() => {
+    return sales
+      .filter((sale) => {
+        const matchesSearch = 
+          sale.saleNumber.toLowerCase().includes(historySearchTerm.toLowerCase()) ||
+          sale.customer?.name?.toLowerCase().includes(historySearchTerm.toLowerCase()) ||
+          "";
+        return matchesSearch;
+      })
+      .slice(0, displayedSalesCount);
+  }, [sales, historySearchTerm, displayedSalesCount]);
 
   // Agregar al carrito
   const addToCart = (product: Product) => {
@@ -279,6 +294,34 @@ export default function POS() {
     }
   };
 
+  const handleLoadSale = (sale: Sale) => {
+    // Cargar venta en el carrito
+    const cartItems: CartItem[] = sale.items.map(item => {
+      const product = products.find(p => p.id === item.productId);
+      if (!product) return null;
+      return {
+        product,
+        quantity: item.quantity
+      };
+    }).filter(Boolean) as CartItem[];
+
+    setCart(cartItems);
+    setCustomerInfo(sale.customer || {
+      name: "",
+      phone: "",
+      address: "",
+      ruc: "",
+      businessName: "",
+      isExempt: false,
+      exempt: false
+    });
+    setOrderType(sale.type);
+    setOrderNote(sale.note || "");
+    
+    // Scroll al top para ver el carrito
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const renderContent = () => {
     switch (currentView) {
       case "products":
@@ -331,298 +374,308 @@ export default function POS() {
   // Render POS principal
   const renderPOS = () => (
     <>
-      {/* Panel Izquierdo: Cliente + Carrito */}
-      <div className="pos-customer-panel">
-        {/* Información del Cliente */}
-        <div className="customer-info-section">
-          <div className="customer-info-header">
-            <UserIcon className="w-5 h-5" />
-            <h3>INFORMACIÓN DEL CLIENTE</h3>
-          </div>
-
-          <div className="customer-info-content">
-            <div className="customer-form">
-              <div className="form-group">
-                <label>CLIENTE</label>
-                <input
-                  type="text"
-                  placeholder="Nombre del cliente"
-                  value={customerInfo.name}
-                  onChange={(e) =>
-                    setCustomerInfo({ ...customerInfo, name: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="form-group">
-                <label>TELÉFONO</label>
-                <input
-                  type="tel"
-                  placeholder="Teléfono"
-                  value={customerInfo.phone}
-                  onChange={(e) =>
-                    setCustomerInfo({ ...customerInfo, phone: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="form-group">
-                <label>DIRECCIÓN</label>
-                <input
-                  type="text"
-                  id="direccion"
-                  value={customerInfo.address}
-                  onChange={(e) =>
-                    setCustomerInfo({ ...customerInfo, address: e.target.value })
-                  }
-                  placeholder="Dirección de entrega"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="ruc">RUC (OPCIONAL)</label>
-                <input
-                  type="text"
-                  id="ruc"
-                  value={customerInfo.ruc}
-                  onChange={(e) =>
-                    setCustomerInfo({ ...customerInfo, ruc: e.target.value })
-                  }
-                  placeholder="RUC"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="razon-social">RAZÓN SOCIAL (OPCIONAL)</label>
-                <input
-                  type="text"
-                  id="razon-social"
-                  value={customerInfo.businessName}
-                  onChange={(e) =>
-                    setCustomerInfo({ ...customerInfo, businessName: e.target.value })
-                  }
-                  placeholder="Razón Social"
-                />
-              </div>
-
-              <div className="form-group-checkbox">
-                <input
-                  type="checkbox"
-                  id="exento"
-                  checked={customerInfo.isExempt}
-                  onChange={(e) =>
-                    setCustomerInfo({ ...customerInfo, isExempt: e.target.checked })
-                  }
-                />
-                <label htmlFor="exento">Exento</label>
-              </div>
-            </div>
-          </div>
+      {/* Panel Izquierdo: Carrito */}
+      <div className="pos-cart-panel">
+        {/* Header del carrito */}
+        <div className="cart-panel-header">
+          <ShoppingCart className="w-5 h-5" />
+          <span>CARRITO</span>
         </div>
 
-        {/* Carrito */}
-        <div className="cart-section">
-          <div className="cart-header">
-            <ShoppingCart className="w-5 h-5" />
-            <h3>ORDEN ACTUAL</h3>
-          </div>
-          {cart.length === 0 ? (
-            <div className="cart-empty">
-              <ShoppingCart className="w-16 h-16 text-gray-300" />
-              <p>No hay productos en el carrito</p>
-            </div>
-          ) : (
-            <div className="cart-items">
-              {cart.map((item) => (
-                <div key={item.product.id} className="cart-item">
-                  <div className="cart-item-info">
-                    <span className="cart-item-name">{item.product.name}</span>
-                    <span className="cart-item-price">{formatCurrency(item.product.price * item.quantity)}</span>
-                  </div>
-                  <div className="cart-item-actions">
-                    <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="cart-item-quantity">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>
-                      <Plus className="w-4 h-4" />
-                    </button>
-                    <button className="remove-btn" onClick={() => removeFromCart(item.product.id)}>
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Descuento */}
-        <div className="discount-section">
-          <label>💰 Descuento</label>
-          <div className="discount-controls">
-            <div className="discount-type-buttons">
-              <button
-                className={discountType === "percentage" ? "active" : ""}
-                onClick={() => setDiscountType("percentage")}
-              >
-                %
-              </button>
-              <button
-                className={discountType === "amount" ? "active" : ""}
-                onClick={() => setDiscountType("amount")}
-              >
-                Gs.
-              </button>
-            </div>
+        {/* Información del cliente compacta */}
+        <div className="customer-compact">
+          <div className="customer-compact-field">
+            <label className="customer-compact-label">CLIENTE</label>
             <input
-              type="number"
-              placeholder="0"
-              value={discountValue}
-              onChange={(e) => setDiscountValue(Number(e.target.value))}
-              className="discount-input"
+              type="text"
+              className="customer-compact-input"
+              placeholder="Nombre del cliente"
+              value={customerInfo.name}
+              onChange={(e) =>
+                setCustomerInfo({ ...customerInfo, name: e.target.value })
+              }
+            />
+          </div>
+
+          <div className="customer-compact-field">
+            <label className="customer-compact-label">TELÉFONO</label>
+            <input
+              type="tel"
+              className="customer-compact-input"
+              placeholder="Teléfono"
+              value={customerInfo.phone}
+              onChange={(e) =>
+                setCustomerInfo({ ...customerInfo, phone: e.target.value })
+              }
             />
           </div>
         </div>
 
-        {/* Nota */}
-        <div className="note-section">
-          <label>📝 Nota</label>
-          <textarea
-            placeholder="Agregar nota del pedido..."
-            value={orderNote}
-            onChange={(e) => setOrderNote(e.target.value)}
-            rows={3}
-            className="note-input"
-          />
+        {/* Items del carrito */}
+        <div className="cart-items-section">
+          {cart.length === 0 ? (
+            <div className="cart-empty-state">
+              <ShoppingCart className="cart-empty-icon" />
+              <p>No hay productos en el carrito</p>
+            </div>
+          ) : (
+            cart.map((item) => (
+              <div key={item.product.id} className="cart-item-card">
+                <div className="cart-item-header">
+                  <span className="cart-item-name">{item.product.name}</span>
+                  <span className="cart-item-price">{formatCurrency(item.product.price * item.quantity)}</span>
+                </div>
+                <div className="cart-item-controls">
+                  <button 
+                    className="cart-item-qty-btn" 
+                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                  >
+                    -
+                  </button>
+                  <span className="cart-item-quantity">{item.quantity}</span>
+                  <button 
+                    className="cart-item-qty-btn" 
+                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                  >
+                    +
+                  </button>
+                  <button 
+                    className="cart-item-remove" 
+                    onClick={() => removeFromCart(item.product.id)}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
-        {/* Tipo de Pedido */}
-        <div className="order-type-section">
-          <button
-            className={orderType === "delivery" ? "active" : ""}
-            onClick={() => setOrderType("delivery")}
-          >
-            🛵 Delivery
-          </button>
-          <button
-            className={orderType === "pickup" ? "active" : ""}
-            onClick={() => setOrderType("pickup")}
-          >
-            🚶 Para Retirar
-          </button>
-          <button
-            className={orderType === "dineIn" ? "active" : ""}
-            onClick={() => setOrderType("dineIn")}
-          >
-            🍽️ En Local
-          </button>
-        </div>
+        {/* Footer del carrito */}
+        <div className="cart-footer">
+          {/* Botones tipo pedido */}
+          <div className="order-type-buttons">
+            <button
+              className={`order-type-btn ${orderType === "delivery" ? "active" : ""}`}
+              onClick={() => setOrderType("delivery")}
+            >
+              Delivery
+            </button>
+            <button
+              className={`order-type-btn ${orderType === "pickup" ? "active" : ""}`}
+              onClick={() => setOrderType("pickup")}
+            >
+              Para Retirar
+            </button>
+          </div>
 
-        {/* Botones de acción */}
-        <div className="cart-actions">
-          <button
-            className="btn-clear-cart"
-            onClick={clearCart}
-            disabled={cart.length === 0}
-            title="Vaciar carrito"
-          >
-            <Trash2 className="w-4 h-4" />
-            Vaciar
-          </button>
-          
-          <button
-            className="btn-print-ticket"
-            onClick={() => {
-              // TODO: Implementar impresión de ticket
-              alert("Función de impresión de ticket en desarrollo");
-            }}
-            disabled={cart.length === 0}
-            title="Imprimir ticket para cliente"
-          >
-            <Printer className="w-4 h-4" />
-            Ticket
-          </button>
+          {/* Total */}
+          <div className="cart-total-display">
+            <div className="cart-total-label">TOTAL</div>
+            <div className="cart-total-amount">{formatCurrency(cartTotal)}</div>
+          </div>
 
-          <button
-            className="btn-print-kitchen"
-            onClick={() => {
-              // TODO: Implementar impresión de comanda
-              alert("Función de impresión de comanda en desarrollo");
-            }}
-            disabled={cart.length === 0}
-            title="Imprimir comanda para cocina"
-          >
-            <Printer className="w-4 h-4" />
-            Comanda
-          </button>
-          
-          <button
-            className="btn-confirm-payment"
-            onClick={() => setShowPaymentModal(true)}
-            disabled={cart.length === 0}
-            title="Procesar pago"
-          >
-            <Check className="w-4 h-4" />
-            Cobrar
-          </button>
+          {/* Botones de acción */}
+          <div className="cart-action-buttons">
+            <button
+              className="cart-action-btn btn-edit-sale"
+              disabled={cart.length === 0}
+              onClick={() => {
+                // TODO: Implementar edición de venta
+                alert("Función de edición en desarrollo");
+              }}
+            >
+              <Edit className="w-4 h-4" />
+              Editar Venta
+            </button>
+
+            <button
+              className="cart-action-btn btn-receive-payment"
+              disabled={cart.length === 0}
+              onClick={() => setShowPaymentModal(true)}
+            >
+              <DollarSign className="w-4 h-4" />
+              Recibir Pago
+            </button>
+
+            <button
+              className="cart-action-btn btn-print-order"
+              disabled={cart.length === 0}
+              onClick={() => {
+                // TODO: Implementar impresión de comanda
+                alert("Función de impresión de comanda en desarrollo");
+              }}
+            >
+              <Printer className="w-4 h-4" />
+              Imprimir Pedido
+            </button>
+
+            <button
+              className="cart-action-btn btn-print-invoice"
+              disabled={cart.length === 0}
+              onClick={() => {
+                // TODO: Implementar impresión de factura
+                alert("Función de impresión de factura en desarrollo");
+              }}
+            >
+              <FileText className="w-4 h-4" />
+              Imprimir Factura
+            </button>
+
+            <button
+              className="cart-action-btn btn-send-whatsapp"
+              disabled={cart.length === 0}
+              onClick={() => {
+                // TODO: Implementar envío por WhatsApp
+                alert("Función de WhatsApp en desarrollo");
+              }}
+            >
+              <Send className="w-4 h-4" />
+              Enviar por WhatsApp
+            </button>
+
+            <button
+              className="cart-action-btn btn-preview"
+              disabled={cart.length === 0}
+              onClick={() => {
+                // TODO: Implementar vista previa
+                alert("Función de vista previa en desarrollo");
+              }}
+            >
+              <Eye className="w-4 h-4" />
+              Vista Previa
+            </button>
+
+            <button
+              className="cart-action-btn btn-delete-sale"
+              disabled={cart.length === 0}
+              onClick={clearCart}
+            >
+              <Trash2 className="w-4 h-4" />
+              Eliminar Venta
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Panel Derecho: Productos */}
+      {/* Panel Central: Productos */}
       <div className="pos-products-panel">
-        {/* Buscador */}
-        <div className="products-search">
-          <Search className="search-icon" />
-          <input
-            type="text"
-            placeholder="Buscar productos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        {/* Header de productos */}
+        <div className="products-panel-header">
+          {/* Buscador */}
+          <div className="products-search-bar">
+            <Search className="products-search-icon" />
+            <input
+              type="text"
+              className="products-search-input"
+              placeholder="Buscar productos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-        {/* Filtros de Categoría */}
-        <div className="category-filters">
-          <button
-            className={`category-btn ${
-              selectedCategory === "Todos" ? "active" : ""
-            }`}
-            onClick={() => setSelectedCategory("Todos")}
-          >
-            🍔 Todos
-          </button>
-          {CATEGORIES.slice(1).map((cat) => (
+          {/* Tabs de categorías */}
+          <div className="products-tabs">
             <button
-              key={cat.id}
-              className={`category-btn ${
-                selectedCategory === cat.name ? "active" : ""
-              }`}
-              onClick={() => setSelectedCategory(cat.name)}
+              className={`products-tab ${selectedCategory === "Todos" ? "active" : ""}`}
+              onClick={() => setSelectedCategory("Todos")}
             >
-              {cat.icon} {cat.name}
+              Productos
             </button>
-          ))}
+            {CATEGORIES.slice(1).map((cat) => (
+              <button
+                key={cat.id}
+                className={`products-tab ${selectedCategory === cat.name ? "active" : ""}`}
+                onClick={() => setSelectedCategory(cat.name)}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Grilla de Productos */}
-        <div className="products-grid">
-          {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className="product-card"
-              onClick={() => addToCart(product)}
-            >
-              <div className="product-info">
-                <h4>{product.name}</h4>
-                <p className="product-price">{formatCurrency(product.price)}</p>
-                <p className="product-stock">
-                  {product.stock > 0 ? `✓ ${product.stock} disponibles` : "Sin stock"}
-                </p>
+        {/* Grilla de productos */}
+        <div className="products-grid-container">
+          <div className="products-grid">
+            {filteredProducts.map((product) => (
+              <div
+                key={product.id}
+                className="product-card"
+                onClick={() => addToCart(product)}
+              >
+                <div className="product-card-name">{product.name}</div>
+                <div className="product-card-price">{formatCurrency(product.price)}</div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+      </div>
+
+      {/* Panel Derecho: Historial */}
+      <div className="pos-history-panel">
+        {/* Header del historial */}
+        <div className="history-panel-header">
+          <h3 className="history-title">
+            <Clock className="w-4 h-4" />
+            Todos los Registros
+          </h3>
+          <div className="history-search">
+            <Search className="history-search-icon" />
+            <input
+              type="text"
+              className="history-search-input"
+              placeholder="Buscar..."
+              value={historySearchTerm}
+              onChange={(e) => setHistorySearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Lista de ventas */}
+        <div className="history-list">
+          {filteredSales.length === 0 ? (
+            <div className="history-empty">
+              <p>No hay ventas registradas</p>
+            </div>
+          ) : (
+            filteredSales.map((sale) => (
+              <div
+                key={sale.id}
+                className="history-item"
+                onClick={() => handleLoadSale(sale)}
+              >
+                <div className="history-item-header">
+                  <span className="history-item-number">Pedido {sale.saleNumber}</span>
+                  <span className="history-item-total">{formatCurrency(sale.total)}</span>
+                </div>
+                <div className="history-item-info">
+                  {sale.customer?.name || "Cliente no especificado"}
+                </div>
+                <div className="history-item-date">
+                  {new Date(sale.date).toLocaleString('es-PY', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Botón cargar más */}
+        {sales.length > displayedSalesCount && (
+          <div className="history-load-more">
+            <button
+              className="btn-load-more"
+              onClick={() => setDisplayedSalesCount(prev => prev + 10)}
+            >
+              Cargar Más
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
@@ -637,38 +690,10 @@ export default function POS() {
         />
       </Head>
 
-      {/* Sidebar - SIEMPRE visible */}
-      <div className="pos-sidebar">
-        <div className="pos-sidebar-header">
-          <div className="pos-sidebar-logo">DG</div>
-          <h1 className="pos-sidebar-title">De la Gran Burger</h1>
-        </div>
-
-        <nav className="pos-sidebar-nav">
-          {navigationItems.map((item) => (
-            <button
-              key={item.id}
-              className={`pos-nav-item ${currentView === item.id ? "active" : ""}`}
-              onClick={() => setCurrentView(item.id as typeof currentView)}
-            >
-              <span className="pos-nav-icon">{item.icon}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        <div className="pos-sidebar-footer">
-          <button className="pos-nav-item" onClick={() => alert("Cerrar sesión")}>
-            <span className="pos-nav-icon">👤</span>
-            <span>Cerrar sesión</span>
-          </button>
-        </div>
-      </div>
-
       {currentView === "pos" ? (
         renderPOS()
       ) : (
-        <div className="pos-content-area" style={{ gridColumn: '2 / 4' }}>
+        <div className="pos-content-area" style={{ gridColumn: '1 / 4' }}>
           {renderContent()}
         </div>
       )}
