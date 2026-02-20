@@ -57,7 +57,6 @@ export default function POS() {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [historyPanelCollapsed, setHistoryPanelCollapsed] = useState(false);
   const [historyFilter, setHistoryFilter] = useState<"pending" | "all">("pending");
 
   // Estado de repartidores
@@ -933,45 +932,34 @@ export default function POS() {
             </div>
           </div>
 
-          {/* Panel Derecho: Historial Colapsable */}
-          <div className={`history-panel ${historyPanelCollapsed ? "collapsed" : ""}`}>
-            {/* Botón Toggle */}
-            <button 
-              className="history-toggle-btn"
-              onClick={() => setHistoryPanelCollapsed(!historyPanelCollapsed)}
-              title={historyPanelCollapsed ? "Mostrar historial" : "Ocultar historial"}
-            >
-              {historyPanelCollapsed ? "◀" : "▶"}
-            </button>
-
-            {!historyPanelCollapsed && (
-              <div className="history-content">
-                {/* Header con pestañas */}
-                <div className="history-header">
-                  <div className="history-tabs">
-                    <button
-                      className={`history-tab ${historyFilter === "pending" ? "active" : ""}`}
-                      onClick={() => setHistoryFilter("pending")}
-                    >
-                      🔴 Pendientes de Pago
-                    </button>
-                    <button
-                      className={`history-tab ${historyFilter === "all" ? "active" : ""}`}
-                      onClick={() => setHistoryFilter("all")}
-                    >
-                      📋 Todos los Registros
-                    </button>
-                  </div>
+          {/* Panel Derecho: Historial */}
+          <div className="history-panel">
+            <div className="history-content">
+              {/* Header con pestañas */}
+              <div className="history-header">
+                <div className="history-tabs">
+                  <button
+                    className={`history-tab ${historyFilter === "pending" ? "active" : ""}`}
+                    onClick={() => setHistoryFilter("pending")}
+                  >
+                    🔴 Pendientes
+                  </button>
+                  <button
+                    className={`history-tab ${historyFilter === "all" ? "active" : ""}`}
+                    onClick={() => setHistoryFilter("all")}
+                  >
+                    📋 Todos
+                  </button>
                 </div>
-
-                {/* Contenido del historial */}
-                <SalesHistory 
-                  sales={sales.length > 0 ? sales : mockSales}
-                  onLoadSale={handleLoadSale}
-                  filter={historyFilter}
-                />
               </div>
-            )}
+
+              {/* Contenido del historial */}
+              <SalesHistory 
+                sales={sales.length > 0 ? sales : mockSales}
+                onLoadSale={handleLoadSale}
+                filter={historyFilter}
+              />
+            </div>
           </div>
         </>
       ) : (
