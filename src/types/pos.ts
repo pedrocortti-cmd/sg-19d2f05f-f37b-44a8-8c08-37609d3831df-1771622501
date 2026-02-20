@@ -18,6 +18,7 @@ export interface Category {
   name: string;
   active: boolean;
   order?: number;
+  icon?: string;
 }
 
 export interface DeliveryDriver {

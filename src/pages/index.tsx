@@ -27,7 +27,7 @@ const INITIAL_PRODUCTS: Product[] = [
   { id: 8, name: "Nuggets de Pollo", price: 18000, categoryId: 3, category: "Acompañamientos", active: true, stock: 60 },
 ];
 
-const CATEGORIES = [
+const INITIAL_CATEGORIES: Category[] = [
   { id: 1, name: "Todos", icon: "🍔", active: true },
   { id: 2, name: "Hamburguesas", icon: "🍔", active: true },
   { id: 3, name: "Acompañamientos", icon: "🍟", active: true },
@@ -50,6 +50,7 @@ export default function POS() {
 
   // Estados del POS
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -542,11 +543,28 @@ export default function POS() {
       case "products":
         return <ProductsManager 
           products={products} 
-          categories={CATEGORIES}
+          categories={categories}
           onSaveProduct={handleSaveProduct}
           onDeleteProduct={(id) => {
             if (confirm("¿Estás seguro de que deseas eliminar este producto?")) {
               setProducts(products.filter(p => p.id !== id));
+            }
+          }}
+          onSaveCategory={(category) => {
+            if (categories.find(c => c.id === category.id)) {
+              setCategories(categories.map(c => c.id === category.id ? category : c));
+            } else {
+              const newId = Math.max(...categories.map(c => c.id), 0) + 1;
+              setCategories([...categories, { ...category, id: newId }]);
+            }
+          }}
+          onDeleteCategory={(id) => {
+            if (id === 1) {
+              alert('No puedes eliminar la categoría "Todos"');
+              return;
+            }
+            if (confirm("¿Estás seguro de que deseas eliminar esta categoría?")) {
+              setCategories(categories.filter(c => c.id !== id));
             }
           }}
         />;
@@ -882,18 +900,13 @@ export default function POS() {
 
               {/* Tabs de categorías */}
               <div className="products-tabs">
-                <button
-                  className={`products-tab ${selectedCategory === "Todos" ? "active" : ""}`}
-                  onClick={() => setSelectedCategory("Todos")}
-                >
-                  Productos
-                </button>
-                {CATEGORIES.slice(1).map((cat) => (
+                {categories.filter(c => c.active).map((cat) => (
                   <button
                     key={cat.id}
                     className={`products-tab ${selectedCategory === cat.name ? "active" : ""}`}
                     onClick={() => setSelectedCategory(cat.name)}
                   >
+                    {cat.icon && <span className="mr-1">{cat.icon}</span>}
                     {cat.name}
                   </button>
                 ))}
