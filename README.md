@@ -1,241 +1,429 @@
-# De la Gran Burger - Sistema POS
+# 🍔 De la Gran Burger - Sistema POS
 
-Sistema de Punto de Venta completo para hamburguesería con impresión térmica automática.
+Sistema de Punto de Venta (POS) completo para hamburguesería, con impresión térmica automática, gestión de inventario, y reportes en tiempo real.
 
-## 🚀 Características Principales
+[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Enabled-green)](https://supabase.com/)
 
-### Punto de Venta (POS)
-- ✅ Interfaz intuitiva con 3 paneles (menú, cliente/carrito, productos)
-- ✅ Carrito de compras con control de cantidades
-- ✅ Gestión de información del cliente (nombre, teléfono, dirección, RUC)
+---
+
+## ✨ Características Principales
+
+### 🛒 Punto de Venta Intuitivo
+- ✅ Interfaz rápida y fácil de usar
+- ✅ Carrito de compras dinámico
+- ✅ Gestión de clientes (nombre, teléfono, dirección, RUC)
+- ✅ Descuentos por monto o porcentaje
+- ✅ Notas de pedido
 - ✅ Tipos de pedido: Delivery / Para Retirar
-- ✅ Sistema de descuentos (porcentaje)
-- ✅ Notas en pedidos
-- ✅ Búsqueda y filtrado por categorías
+- ✅ Numeración diaria que se reinicia automáticamente (##0001, ##0002...)
 
-### Gestión de Productos
-- ✅ CRUD completo de productos (nombre, precio, categoría)
-- ✅ CRUD de categorías
-- ✅ Activar/Desactivar productos
-- ✅ Organización por categorías
+### 🖨️ Impresión Térmica Automática
+- ✅ Impresión USB directa (80mm)
+- ✅ Comandas para cocina (sin precios)
+- ✅ Tickets para cliente (completos)
+- ✅ Print Server local con ESC/POS
+- ✅ Configuración de múltiples impresoras
+- ✅ Impresión silenciosa (sin diálogo del navegador)
 
-### Sistema de Impresión Térmica USB (80mm)
-- ✅ **Print Server local** con detección automática de impresoras USB
-- ✅ **Comanda de cocina** (sin precios, enfocada en preparación)
-- ✅ **Ticket de cliente** (con precios y totales)
-- ✅ Impresión automática al confirmar venta
-- ✅ Configuración de impresoras independientes (cocina/cliente)
-- ✅ Control de copias de comandas
-- ✅ Comandos ESC/POS para impresoras térmicas
+### 📦 Gestión de Productos
+- ✅ CRUD completo de productos
+- ✅ Categorías personalizables
+- ✅ Gestión de precios
+- ✅ Control de estado (activo/inactivo)
+- ✅ Búsqueda rápida
+- ✅ Filtros por categoría
 
-### Historial de Ventas
-- ✅ Listado completo de ventas
-- ✅ Filtros por fecha
-- ✅ Detalle de cada venta
-- ✅ Anulación de ventas
+### 📊 Inventario
+- ✅ Control de stock en tiempo real
+- ✅ Alertas de stock mínimo
+- ✅ Historial de movimientos
+- ✅ Ajustes manuales de inventario
 
-### Configuración
-- ✅ Configuración de impresoras térmicas
-- ✅ Detección automática de impresoras USB
-- ✅ Prueba de impresión
-- ✅ Guardado de preferencias
+### 💰 Reportes y Análisis
+- ✅ Ventas diarias/mensuales/anuales
+- ✅ Productos más vendidos
+- ✅ Comparación de periodos
+- ✅ Gráficos interactivos
+- ✅ Exportación de datos
 
-## 📋 Requisitos
+### 🚚 Gestión de Delivery
+- ✅ Asignación de pedidos a conductores
+- ✅ Seguimiento de entregas
+- ✅ Historial por conductor
+- ✅ Métricas de rendimiento
 
-### Software
-- Node.js v18 o superior
-- PostgreSQL v14 o superior (opcional, usa localStorage por ahora)
+### 👥 Gestión de Usuarios
+- ✅ Roles: Admin, Caja, Cocina
+- ✅ Permisos personalizables
+- ✅ Auditoría de acciones
+
+### 🎨 Personalización
+- ✅ Logo personalizado del negocio
+- ✅ Configuración de impresoras
+- ✅ Formato de tickets customizable
+
+---
+
+## 🚀 Instalación Rápida
+
+### Requisitos
 - Windows 10/11
+- Node.js 18+
+- Impresora térmica USB 80mm (opcional)
 
-### Hardware
-- PC con Windows
-- 2 Impresoras térmicas USB (80mm):
-  - Una para cocina (comandas)
-  - Una para cliente (tickets)
-
-## 🔧 Instalación
-
-### 1. Clonar el proyecto
+### 5 Pasos Simples
 
 ```bash
-git clone [URL_DEL_REPOSITORIO]
+# 1. Instalar Node.js (si no lo tienes)
+# Descargar de: https://nodejs.org/
+
+# 2. Clonar el repositorio
+git clone [URL_DEL_REPO] delagranburguer-pos
 cd delagranburguer-pos
-```
 
-### 2. Instalar dependencias
-
-**Aplicación principal:**
-```bash
+# 3. Instalar dependencias
 npm install
-```
 
-**Print Server:**
-```bash
+# 4. Iniciar aplicación web
+npm run dev
+
+# 5. (Opcional) Iniciar Print Server para impresoras
 cd print-server
 npm install
-cd ..
-```
-
-### 3. Configurar variables de entorno
-
-Crea un archivo `.env.local` en la raíz:
-
-```env
-NEXT_PUBLIC_APP_NAME=De la Gran Burger
-NEXT_PUBLIC_PRINT_SERVER_URL=http://localhost:3001
-```
-
-### 4. Conectar impresoras USB
-
-1. Conecta ambas impresoras térmicas USB a la PC
-2. Espera a que Windows instale los drivers
-3. Verifica en "Dispositivos e impresoras"
-
-### 5. Iniciar el sistema
-
-**Terminal 1 - Print Server:**
-```bash
-cd print-server
 npm start
 ```
 
-Deberías ver:
-```
-🖨️  Print Server corriendo en http://localhost:3001
-🔍 Impresoras detectadas: 2
-```
+✅ **¡Listo!** Abre tu navegador en **http://localhost:3000**
 
-**Terminal 2 - Aplicación Web:**
-```bash
-npm run dev
-```
+**Credenciales iniciales:**
+- Usuario: `admin`
+- Contraseña: `admin123`
 
-Abre tu navegador en: `http://localhost:3000`
+---
 
-### 6. Configurar impresoras
+## 📖 Documentación Completa
 
-1. Ve a **Ajustes** en el menú lateral
-2. Verifica que las impresoras se detecten
-3. Selecciona:
-   - **Impresora de Cocina** (comandas)
-   - **Impresora de Cliente** (tickets)
-4. Configura las **Copias de Comanda**
-5. Haz clic en **"Probar"** para verificar
-6. **Guarda la configuración**
+Para instrucciones detalladas de instalación, configuración y uso:
 
-## 📖 Uso del Sistema
+📘 **[Ver Guía de Instalación Completa](INSTALACION.md)**
 
-### Realizar una Venta
+Incluye:
+- Instalación paso a paso
+- Configuración de impresoras
+- Configuración de producción
+- Solución de problemas
+- Backup y mantenimiento
 
-1. **Seleccionar productos**: Haz clic en los productos de la grilla
-2. **Ajustar cantidades**: Usa los botones +/- en el carrito
-3. **Información del cliente** (opcional):
-   - Nombre, teléfono, dirección
-   - RUC y razón social para facturas
-4. **Tipo de pedido**: Delivery o Para Retirar
-5. **Agregar descuento** (opcional)
-6. **Nota del pedido** (opcional)
-7. **Confirmar Venta**: Se imprimen automáticamente:
-   - ✅ Comanda en cocina (sin precios)
-   - ✅ Ticket para cliente (con precios)
+---
 
-### Gestionar Productos
+## 🖼️ Capturas de Pantalla
 
-1. Ve a **Productos y Servicios**
-2. **Agregar producto**: Botón "Agregar Producto"
-3. **Editar**: Click en el icono de lápiz
-4. **Activar/Desactivar**: Toggle en cada producto
-5. **Categorías**: Gestiona las categorías de productos
+### Punto de Venta
+![POS](docs/screenshots/pos.png)
+*Interfaz principal del POS con carrito y catálogo de productos*
 
-### Ver Historial de Ventas
+### Gestión de Productos
+![Productos](docs/screenshots/products.png)
+*CRUD completo de productos con categorías*
 
-1. Ve a **Ventas**
-2. Filtra por fecha
-3. Abre el detalle de cualquier venta
-4. Puedes anular ventas si es necesario
+### Reportes
+![Reportes](docs/screenshots/reports.png)
+*Análisis de ventas con gráficos interactivos*
 
-## 🖨️ Sistema de Impresión
+### Configuración de Impresoras
+![Impresoras](docs/screenshots/printers.png)
+*Configuración sencilla de impresoras térmicas*
 
-### Comanda de Cocina (80mm)
-- Título destacado "COMANDA COCINA"
-- Número de pedido
-- Fecha y hora
-- Tipo de pedido (DELIVERY/PARA RETIRAR)
-- Lista de productos con cantidades
-- **Sin precios** (enfocado en preparación)
-- Nota del pedido (muy visible)
-- Datos del cliente si es delivery
+---
 
-### Ticket de Cliente (80mm)
-- Nombre del negocio
-- Número de venta
-- Fecha y hora
-- Items con precios
-- Subtotal, descuento, total
-- Método de pago
-- Datos del cliente
-- Mensaje de agradecimiento
+## 🛠️ Tecnologías
 
-## 🛠️ Solución de Problemas
+### Frontend
+- **Next.js 15** - Framework React con SSR
+- **React 18** - Biblioteca UI
+- **TypeScript** - Tipado estático
+- **Tailwind CSS** - Estilos utility-first
+- **shadcn/ui** - Componentes UI
 
-### Impresoras no se detectan
-1. Verifica que estén conectadas y encendidas
-2. Reinicia el Print Server
-3. Verifica drivers en "Dispositivos e impresoras"
-4. Prueba otro puerto USB
+### Backend
+- **Supabase** - Base de datos PostgreSQL en la nube
+- **Next.js API Routes** - Endpoints REST
 
-### Error al imprimir
-1. Verifica que el Print Server esté corriendo
-2. Revisa la consola del Print Server para errores
-3. Verifica que las impresoras tengan papel
-4. Prueba desde "Ajustes" > "Probar"
+### Impresión
+- **Print Server (Node.js + Express)** - Servidor local de impresión
+- **escpos** - Librería ESC/POS para impresoras térmicas
+- **usb** - Comunicación USB directa
 
-### La app no inicia
-1. Verifica Node.js: `node --version`
-2. Reinstala dependencias: `rm -rf node_modules && npm install`
-3. Verifica que el puerto 3000 no esté ocupado
+### DevOps
+- **PM2** - Process manager para producción
+- **Vercel** - Deployment (opcional)
 
-## 📂 Estructura del Proyecto
+---
+
+## 📁 Estructura del Proyecto
 
 ```
 delagranburguer-pos/
 ├── src/
-│   ├── components/
-│   │   └── pos/
-│   │       ├── ProductsManager.tsx
-│   │       ├── SalesHistory.tsx
-│   │       └── PrinterSettings.tsx
-│   ├── pages/
-│   │   └── index.tsx
-│   ├── styles/
-│   │   └── pos.css
-│   └── types/
-│       └── pos.ts
-├── print-server/
-│   ├── server.js
-│   ├── package.json
-│   └── README.md
-├── database/
-│   └── schema.sql
-└── INSTALACION.md
+│   ├── components/          # Componentes React
+│   │   ├── pos/            # Componentes del POS
+│   │   └── ui/             # Componentes UI (shadcn)
+│   ├── pages/              # Rutas Next.js
+│   │   ├── index.tsx       # Página principal (POS)
+│   │   └── api/            # API Routes
+│   ├── styles/             # Estilos CSS
+│   ├── types/              # Tipos TypeScript
+│   ├── lib/                # Utilidades
+│   ├── contexts/           # Context API
+│   └── integrations/       # Integraciones (Supabase)
+│       └── supabase/
+├── print-server/           # Servidor de impresión
+│   ├── server.js          # Express server
+│   └── package.json
+├── database/              # Scripts SQL
+│   └── schema.sql        # Schema de base de datos
+├── public/               # Archivos estáticos
+├── INSTALACION.md       # Guía de instalación completa
+└── README.md            # Este archivo
 ```
 
-## 🔐 Próximas Funcionalidades
+---
 
-- [ ] Sistema de usuarios y permisos
-- [ ] Backend con PostgreSQL
-- [ ] Módulo de inventario
-- [ ] Módulo de gastos
-- [ ] Reportes e informes
-- [ ] Integración con medios de pago (QR, tarjetas)
-- [ ] App móvil para cocina
+## 🔧 Configuración
 
-## 📞 Soporte
+### Variables de Entorno
 
-Para problemas o consultas:
-- Email: soporte@delagranburguer.com
-- WhatsApp: [NÚMERO]
+Crear archivo `.env.local` con:
+
+```env
+# Supabase (ya configurado)
+NEXT_PUBLIC_SUPABASE_URL=https://[proyecto].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[tu-clave]
+```
+
+### Print Server
+
+El Print Server se ejecuta por defecto en `http://localhost:3001`
+
+**Configurar impresoras:**
+1. Conectar impresoras USB
+2. Ir a Ajustes → Impresoras
+3. Seleccionar impresoras de cocina y cliente
+4. Probar impresión
+
+---
+
+## 🎯 Uso del Sistema
+
+### Flujo de Venta
+
+1. **Agregar productos** al carrito
+2. **Ingresar datos del cliente** (opcional)
+3. **Aplicar descuento** (opcional)
+4. **Agregar nota** del pedido (opcional)
+5. **Seleccionar tipo**: Delivery / Para Retirar
+6. **Procesar pago**: Efectivo / Tarjeta / QR / Transferencia
+7. **Confirmar** → Impresión automática
+
+### Numeración de Pedidos
+
+El sistema genera números de pedido que **se reinician automáticamente cada día**:
+
+```
+HOY (20/02/2026):     ##0001, ##0002, ##0003, ... ##0060
+MAÑANA (21/02/2026):  ##0001, ##0002, ##0003, ...
+```
+
+Esto facilita:
+- ✅ Control diario de pedidos
+- ✅ Comunicación clara con cocina
+- ✅ Números cortos y manejables
+
+---
+
+## 🖨️ Sistema de Impresión
+
+### Impresoras Soportadas
+
+✅ Epson TM-T20 / TM-T88  
+✅ Star TSP143 / TSP654  
+✅ Bixolon SRP-330 / SRP-350  
+✅ Cualquier impresora térmica USB con ESC/POS  
+
+### Tipos de Tickets
+
+**1. Comanda de Cocina (sin precios)**
+```
+═══════════════════════════
+      COMANDA COCINA
+═══════════════════════════
+Pedido: ##0023
+Fecha: 20/02/2026 14:30
+Tipo: Delivery
+───────────────────────────
+1x Carnívora
+2x Papas Fritas
+1x Coca Cola 1.5L
+───────────────────────────
+NOTA: Sin cebolla
+───────────────────────────
+Cliente: Juan Pérez
+Tel: 0981-123456
+Dirección: Av. España 123
+═══════════════════════════
+```
+
+**2. Ticket de Cliente (con precios)**
+```
+═══════════════════════════
+    DE LA GRAN BURGER
+═══════════════════════════
+Venta: ##0023
+Fecha: 20/02/2026 14:30
+───────────────────────────
+Carnívora        Gs. 22.000
+Papas Fritas x2  Gs. 30.000
+Coca Cola 1.5L   Gs. 10.000
+───────────────────────────
+Subtotal         Gs. 62.000
+Descuento        Gs. -2.000
+───────────────────────────
+TOTAL            Gs. 60.000
+───────────────────────────
+Pago: Efectivo
+═══════════════════════════
+   ¡Gracias por tu compra!
+═══════════════════════════
+```
+
+---
+
+## 📊 Base de Datos
+
+### Tablas Principales
+
+- **products** - Productos del menú
+- **categories** - Categorías de productos
+- **sales** - Ventas realizadas
+- **sale_items** - Items de cada venta
+- **users** - Usuarios del sistema
+- **drivers** - Conductores de delivery
+- **inventory_movements** - Movimientos de inventario
+
+### Schema
+
+Ver archivo completo: [`database/schema.sql`](database/schema.sql)
+
+La base de datos está alojada en **Supabase** (PostgreSQL en la nube).
+
+---
+
+## 🚀 Deployment
+
+### Opción 1: Servidor Local (Recomendado)
+
+Ideal para un solo local:
+
+```bash
+# Instalar PM2
+npm install -g pm2 pm2-windows-startup
+
+# Configurar inicio automático
+pm2-startup install
+
+# Iniciar aplicación
+pm2 start npm --name "pos-web" -- run dev
+pm2 start print-server/server.js --name "print-server"
+
+# Guardar
+pm2 save
+```
+
+### Opción 2: Cloud + Print Server Local
+
+Ideal para múltiples locales:
+
+1. **Deploy web app** en Vercel:
+   ```bash
+   vercel deploy --prod
+   ```
+
+2. **Print Server** se mantiene local en cada local
+
+---
+
+## 🔍 Solución de Problemas
+
+### La aplicación no inicia
+
+```bash
+# Verificar instalación de Node.js
+node --version
+
+# Reinstalar dependencias
+rm -rf node_modules package-lock.json
+npm install
+
+# Verificar puerto 3000
+netstat -ano | findstr :3000
+```
+
+### Impresoras no detectadas
+
+```bash
+# Verificar Print Server
+pm2 status print-server
+
+# Ver logs
+pm2 logs print-server
+
+# Reiniciar
+pm2 restart print-server
+```
+
+### Error de conexión a Supabase
+
+1. Verificar internet
+2. Verificar credenciales en `.env.local`
+3. Contactar soporte
+
+Para más problemas: **[Ver Guía Completa](INSTALACION.md#solución-de-problemas)**
+
+---
+
+## 🤝 Contribuir
+
+Este es un proyecto privado para **De la Gran Burger**.
+
+Para reportar bugs o sugerir mejoras:
+- 📧 Email: soporte@delagranburguer.com
+- 📱 WhatsApp: +595 XXX XXXXXX
+
+---
 
 ## 📄 Licencia
 
 © 2026 De la Gran Burger. Todos los derechos reservados.
+
+Este software es propiedad privada de De la Gran Burger y está protegido por leyes de derechos de autor.
+
+---
+
+## 👥 Equipo
+
+Desarrollado con ❤️ por el equipo de De la Gran Burger
+
+**Contacto:**
+- 🌐 Web: [Próximamente]
+- 📧 Email: soporte@delagranburguer.com
+- 📱 WhatsApp: +595 XXX XXXXXX
+
+---
+
+## 🎉 ¡Gracias por usar nuestro sistema!
+
+Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos.
+
+**¡Buen provecho!** 🍔🍟🥤
