@@ -333,22 +333,6 @@ export default function POS() {
 
     setSales([newSale, ...sales]);
     
-    // Imprimir comanda para cocina
-    const printData = {
-      orderNumber: newSale.saleNumber,
-      date: new Date(),
-      customerInfo,
-      items: cart,
-      orderType,
-      deliveryDriver: orderType === "delivery" ? selectedDriver : undefined,
-      deliveryCost,
-      subtotal,
-      discount: discountAmount,
-      total: cartTotal,
-      note: orderNote
-    };
-    printKitchenOrder(printData);
-
     // Limpiar carrito
     setCart([]);
     setCustomerInfo({
