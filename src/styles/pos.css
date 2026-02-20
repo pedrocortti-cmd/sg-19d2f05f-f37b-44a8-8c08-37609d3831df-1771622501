@@ -184,6 +184,10 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.customer-compact-input select {
+  cursor: pointer;
+}
+
 /* Items del carrito - SIN SCROLL INTERNO, TODO ESTÁTICO */
 .cart-items-section {
   flex: 1;
@@ -384,6 +388,22 @@
   padding: 0.875rem;
   text-align: center;
   margin-bottom: 1rem;
+}
+
+.cart-subtotal-row,
+.cart-delivery-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.cart-delivery-row {
+  color: #3b82f6;
+  font-weight: 600;
 }
 
 .cart-total-label {

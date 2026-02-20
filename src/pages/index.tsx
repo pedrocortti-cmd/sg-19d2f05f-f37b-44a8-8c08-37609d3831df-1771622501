@@ -8,9 +8,10 @@ import { Inventory } from "@/components/pos/Inventory";
 import { Reports } from "@/components/pos/Reports";
 import { PrinterSettings } from "@/components/pos/PrinterSettings";
 import { PrintFormatSettings } from "@/components/pos/PrintFormatSettings";
+import { DeliveryDrivers } from "@/components/pos/DeliveryDrivers";
 import { SEO } from "@/components/SEO";
 import { cn, formatCurrency } from "@/lib/utils";
-import type { Product, CartItem, Sale, Category, PaymentMethod, DiscountType, OrderType, CustomerInfo, User, PrintFormatConfig, Payment } from "@/types/pos";
+import type { Product, CartItem, Sale, Category, PaymentMethod, DiscountType, OrderType, CustomerInfo, User, PrintFormatConfig, Payment, DeliveryDriver } from "@/types/pos";
 
 // Datos de prueba iniciales
 const INITIAL_PRODUCTS: Product[] = [
@@ -42,6 +43,7 @@ export default function POS() {
     | "inventory"
     | "informes"
     | "settings"
+    | "drivers"
   >("pos");
 
   // Estados del POS
@@ -51,6 +53,15 @@ export default function POS() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // Estado de repartidores
+  const [deliveryDrivers, setDeliveryDrivers] = useState<DeliveryDriver[]>([
+    { id: 1, name: "Carlos Méndez", phone: "0981123456", active: true },
+    { id: 2, name: "Luis Gómez", phone: "0971234567", active: true },
+    { id: 3, name: "Pedro Ramírez", phone: "0991345678", active: true },
+  ]);
+  const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
+  const [deliveryCost, setDeliveryCost] = useState(0);
 
   // Mock sales data para el historial
   const mockSales: Sale[] = [
@@ -168,8 +179,9 @@ export default function POS() {
   }, [subtotal, discountType, discountValue]);
 
   const cartTotal = useMemo(() => {
-    return Math.max(0, subtotal - discountAmount);
-  }, [subtotal, discountAmount]);
+    const baseTotal = Math.max(0, subtotal - discountAmount);
+    return orderType === "delivery" ? baseTotal + deliveryCost : baseTotal;
+  }, [subtotal, discountAmount, orderType, deliveryCost]);
 
   // Filtrar productos
   const filteredProducts = useMemo(() => {
@@ -265,6 +277,8 @@ export default function POS() {
       });
       setOrderNote("");
       setDiscountValue(0);
+      setSelectedDriverId(null);
+      setDeliveryCost(0);
     }
   };
 
@@ -290,6 +304,7 @@ export default function POS() {
     });
 
     const amountPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+    const selectedDriver = deliveryDrivers.find(d => d.id === selectedDriverId);
 
     const newSale: Sale = {
       id: saleNumber,
@@ -303,9 +318,12 @@ export default function POS() {
       })),
       subtotal,
       discount: discountAmount,
+      deliveryCost: orderType === "delivery" ? deliveryCost : undefined,
       total: cartTotal,
       customer: customerInfo,
       type: orderType,
+      deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
+      deliveryDriverName: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
       payments,
       paymentMethod: payments.length > 0 ? payments[0].method : 'mixed',
       note: note || orderNote,
@@ -329,6 +347,8 @@ export default function POS() {
     });
     setOrderNote("");
     setDiscountValue(0);
+    setSelectedDriverId(null);
+    setDeliveryCost(0);
     setShowPaymentModal(false);
 
     alert(`✅ Venta ${newSale.saleNumber} confirmada exitosamente\n\n🔄 Stock actualizado automáticamente`);
@@ -351,6 +371,18 @@ export default function POS() {
       const newProduct = { ...product, id: products.length + 1 };
       setProducts([...products, newProduct]);
     }
+  };
+
+  const handleSaveDriver = (driver: DeliveryDriver) => {
+    if (deliveryDrivers.find(d => d.id === driver.id)) {
+      setDeliveryDrivers(deliveryDrivers.map(d => d.id === driver.id ? driver : d));
+    } else {
+      setDeliveryDrivers([...deliveryDrivers, driver]);
+    }
+  };
+
+  const handleDeleteDriver = (id: number) => {
+    setDeliveryDrivers(deliveryDrivers.filter(d => d.id !== id));
   };
 
   const handleLoadSale = (sale: Sale) => {
@@ -402,6 +434,12 @@ export default function POS() {
           onLoadSale={handleLoadSale}
           onCancelSale={handleCancelSale} 
         />;
+      case "drivers":
+        return <DeliveryDrivers 
+          drivers={deliveryDrivers}
+          onSaveDriver={handleSaveDriver}
+          onDeleteDriver={handleDeleteDriver}
+        />;
       case "informes":
         return <Reports sales={sales} products={products} />;
       case "settings":
@@ -427,6 +465,7 @@ export default function POS() {
     { id: "sales", label: "Ventas", icon: "📋" },
     { id: "products", label: "Productos y Servicios", icon: "🎯" },
     { id: "inventory", label: "Inventario", icon: "📦" },
+    { id: "drivers", label: "Repartidores", icon: "🛵" },
     { id: "informes", label: "Informes", icon: "📊" },
     { id: "settings", label: "Ajustes", icon: "⚙️" },
   ];
@@ -507,6 +546,38 @@ export default function POS() {
                   }
                 />
               </div>
+
+              {orderType === "delivery" && (
+                <>
+                  <div className="customer-compact-field">
+                    <label className="customer-compact-label">REPARTIDOR</label>
+                    <select
+                      className="customer-compact-input"
+                      value={selectedDriverId || ""}
+                      onChange={(e) => setSelectedDriverId(e.target.value ? Number(e.target.value) : null)}
+                    >
+                      <option value="">Seleccionar repartidor</option>
+                      {deliveryDrivers.filter(d => d.active).map(driver => (
+                        <option key={driver.id} value={driver.id}>
+                          🛵 {driver.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="customer-compact-field">
+                    <label className="customer-compact-label">COSTO DELIVERY</label>
+                    <input
+                      type="number"
+                      className="customer-compact-input"
+                      placeholder="0"
+                      value={deliveryCost || ""}
+                      onChange={(e) => setDeliveryCost(Math.max(0, Number(e.target.value) || 0))}
+                      min="0"
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Items del carrito */}
@@ -579,20 +650,39 @@ export default function POS() {
               <div className="order-type-buttons">
                 <button
                   className={`order-type-btn ${orderType === "delivery" ? "active" : ""}`}
-                  onClick={() => setOrderType("delivery")}
+                  onClick={() => {
+                    setOrderType("delivery");
+                    if (deliveryCost === 0) setDeliveryCost(0);
+                  }}
                 >
                   Delivery
                 </button>
                 <button
                   className={`order-type-btn ${orderType === "pickup" ? "active" : ""}`}
-                  onClick={() => setOrderType("pickup")}
+                  onClick={() => {
+                    setOrderType("pickup");
+                    setDeliveryCost(0);
+                    setSelectedDriverId(null);
+                  }}
                 >
                   Para Retirar
                 </button>
               </div>
 
-              {/* Total */}
+              {/* Total con desglose */}
               <div className="cart-total-display">
+                {orderType === "delivery" && deliveryCost > 0 && (
+                  <>
+                    <div className="cart-subtotal-row">
+                      <span>Subtotal:</span>
+                      <span>{formatCurrency(subtotal - discountAmount)}</span>
+                    </div>
+                    <div className="cart-delivery-row">
+                      <span>🛵 Delivery:</span>
+                      <span>{formatCurrency(deliveryCost)}</span>
+                    </div>
+                  </>
+                )}
                 <div className="cart-total-label">TOTAL</div>
                 <div className="cart-total-amount">{formatCurrency(cartTotal)}</div>
               </div>

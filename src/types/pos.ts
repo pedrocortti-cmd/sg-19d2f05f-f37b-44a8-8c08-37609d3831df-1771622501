@@ -98,12 +98,6 @@ export interface Sale {
   
   deliveryDriverId?: number;
   deliveryDriverName?: string;
-  
-  // Propiedades para compatibilidad con reportes y exportación
-  deliveryPerson?: string;
-  paymentStatus?: string;
-  balance?: number;
-  amountPaid?: number;
 }
 
 export type UserRole = "admin" | "cashier" | "kitchen";

@@ -2,6 +2,7 @@ import "@/styles/globals.css";
 import "@/styles/pos.css";
 import "@/styles/reports.css";
 import "@/styles/inventory.css";
+import "@/styles/drivers.css";
 import type { AppProps } from "next/app";
 import { ThemeProvider } from "@/contexts/ThemeProvider";
 
