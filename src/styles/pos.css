@@ -6,8 +6,17 @@
   grid-template-columns: 200px 280px 1fr 320px;
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
   background: #f8fafc;
+}
+
+/* Permitir scroll en columna del carrito */
+.pos-cart-panel {
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #d1d5db;
+  overflow-y: auto;
+  height: 100vh;
 }
 
 /* ============================================ */
@@ -121,15 +130,6 @@
 /* PANEL DE CARRITO (COLUMNA 2) */
 /* ============================================ */
 
-.pos-cart-panel {
-  background: #f9fafb;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  border-right: 1px solid #d1d5db;
-  overflow: hidden;
-}
-
 .cart-panel-header {
   background: #1f2937;
   color: white;
@@ -184,14 +184,11 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Items del carrito - SCROLL INTERNO */
+/* Items del carrito - SIN SCROLL INTERNO, TODO ESTÁTICO */
 .cart-items-section {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
   padding: 0.75rem;
   background: #f9fafb;
-  min-height: 0;
 }
 
 .cart-item-card {
