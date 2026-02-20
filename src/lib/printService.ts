@@ -149,7 +149,6 @@ export function generateKitchenTicketHTML(data: PrintOrderData): string {
   <div class="separator">${separator("-")}</div>
 
   ${customerInfo.name ? `<div class="info-line"><strong>Cliente:</strong> ${customerInfo.name}</div>` : ''}
-  ${customerInfo.phone ? `<div class="info-line"><strong>Tel:</strong> ${customerInfo.phone}</div>` : ''}
   
   ${orderType === "delivery" && deliveryDriver ? 
     `<div class="info-line"><strong>Repartidor:</strong> 🛵 ${deliveryDriver.name}</div>` : ''}
