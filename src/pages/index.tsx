@@ -11,6 +11,7 @@ import { PrintFormatSettings } from "@/components/pos/PrintFormatSettings";
 import { DeliveryDrivers } from "@/components/pos/DeliveryDrivers";
 import { SEO } from "@/components/SEO";
 import { cn, formatCurrency } from "@/lib/utils";
+import { printKitchenOrder } from "@/lib/printService";
 import type { Product, CartItem, Sale, Category, PaymentMethod, DiscountType, OrderType, CustomerInfo, User, PrintFormatConfig, Payment, DeliveryDriver } from "@/types/pos";
 
 // Datos de prueba iniciales
@@ -714,45 +715,20 @@ export default function POS() {
                   disabled={cart.length === 0}
                   onClick={() => {
                     const printData = {
-                      title: "Comanda de Cocina",
-                      items: cart.map(item => ({
-                        name: item.product.name,
-                        quantity: item.quantity,
-                        price: item.product.price,
-                        note: item.itemNote || ""
-                      })),
-                      subtotal: subtotal - discountAmount,
+                      orderNumber: `#${sales.length + 1}`,
+                      date: new Date(),
+                      customerInfo,
+                      items: cart,
+                      orderType,
+                      deliveryDriver: orderType === "delivery" ? deliveryDrivers.find(d => d.id === selectedDriverId) : undefined,
+                      deliveryCost,
+                      subtotal,
                       discount: discountAmount,
                       total: cartTotal,
-                      customer: customerInfo,
-                      type: orderType,
-                      deliveryDriver: orderType === "delivery" ? deliveryDrivers.find(d => d.id === selectedDriverId) : undefined,
-                      deliveryCost: orderType === "delivery" ? deliveryCost : undefined,
-                      note: orderNote,
-                      user: currentUser.name,
-                      status: "completed",
-                      amountPaid: 0,
-                      balance: cartTotal,
-                      date: new Date(),
-                      saleNumber: `#${sales.length + 1}`,
-                      id: sales.length + 1,
-                      payments: [],
-                      paymentMethod: "mixed",
-                      cancelReason: "",
-                      businessInfo: printFormatConfig.businessInfo,
-                      comandaTitleSize: printFormatConfig.comandaTitleSize,
-                      comandaProductSize: printFormatConfig.comandaProductSize,
-                      comandaShowPrices: printFormatConfig.comandaShowPrices,
-                      comandaCopies: printFormatConfig.comandaCopies,
-                      comandaCustomFields: printFormatConfig.comandaCustomFields,
-                      ticketHeaderSize: printFormatConfig.ticketHeaderSize,
-                      ticketProductSize: printFormatConfig.ticketProductSize,
-                      ticketTotalSize: printFormatConfig.ticketTotalSize,
-                      ticketThankYouMessage: printFormatConfig.ticketThankYouMessage,
-                      ticketShowLogo: printFormatConfig.ticketShowLogo
+                      note: orderNote
                     };
-                    // Aquí se debería llamar a la función de impresión de comanda de cocina
-                    // Por ejemplo: printKitchenOrder(printData);
+                    
+                    printKitchenOrder(printData);
                   }}
                 >
                   <Printer className="w-4 h-4" />
