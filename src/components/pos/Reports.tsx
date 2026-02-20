@@ -264,7 +264,7 @@ export function Reports({ sales, products }: ReportsProps) {
     // Recorrer ventas filtradas
     filteredSales.forEach((sale) => {
       const customerName = sale.customer?.name || "";
-      const deliveryDriver = sale.deliveryDriver || "";
+      const deliveryDriver = sale.deliveryDriverName || "";
       const deliveryCost = sale.deliveryCost || 0;
       const status = sale.status === "completed" ? "Pagado" : "Pendiente";
       const balance = sale.status === "completed" ? 0 : sale.total;

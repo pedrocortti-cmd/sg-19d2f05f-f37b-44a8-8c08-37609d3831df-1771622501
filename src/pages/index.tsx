@@ -588,10 +588,28 @@ export default function POS() {
   };
 
   const handleSaveProduct = (product: Product) => {
-    if (product.id) {
-      setProducts(products.map(p => p.id === product.id ? product : p));
+    if (product.id && products.find(p => p.id === product.id)) {
+      // Editar producto existente
+      setProducts(products.map(p => {
+        if (p.id === product.id) {
+          // Actualizar categoría al editar
+          const category = categories.find(c => c.id === product.categoryId);
+          return {
+            ...product,
+            category: category?.name || product.category || "Sin categoría"
+          };
+        }
+        return p;
+      }));
     } else {
-      const newProduct = { ...product, id: products.length + 1 };
+      // Crear nuevo producto
+      const newId = Math.max(...products.map(p => p.id), 0) + 1;
+      const category = categories.find(c => c.id === product.categoryId);
+      const newProduct = {
+        ...product,
+        id: newId,
+        category: category?.name || "Sin categoría"
+      };
       setProducts([...products, newProduct]);
     }
   };
