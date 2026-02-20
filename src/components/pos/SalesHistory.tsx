@@ -1,21 +1,26 @@
 import { useState } from "react";
-import { Clock, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Sale } from "@/types/pos";
 import { formatCurrency } from "@/lib/utils";
 
 interface SalesHistoryProps {
   sales: Sale[];
   onLoadSale: (sale: Sale) => void;
-  onCancelSale?: (saleId: number, reason: string) => void;
+  filter: "pending" | "all";
 }
 
-export function SalesHistory({ sales, onLoadSale }: SalesHistoryProps) {
+export function SalesHistory({ sales, onLoadSale, filter }: SalesHistoryProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredSales = sales.filter((sale) =>
-    sale.saleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (sale.customerName || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSales = sales.filter((sale) => {
+    const matchesSearch = 
+      sale.saleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (sale.customerName || "").toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesFilter = filter === "all" || sale.status === "pending";
+    
+    return matchesSearch && matchesFilter;
+  });
 
   const formatDate = (dateInput: string | Date) => {
     const date = new Date(dateInput);
@@ -29,7 +34,7 @@ export function SalesHistory({ sales, onLoadSale }: SalesHistoryProps) {
   const getStatusText = (status: string) => {
     switch (status) {
       case "pending":
-        return "⏳ Pendiente Pago";
+        return "⏳ Pendiente";
       case "completed":
         return "✅ Pagado";
       case "cancelled":
@@ -39,16 +44,12 @@ export function SalesHistory({ sales, onLoadSale }: SalesHistoryProps) {
     }
   };
 
-  return (
-    <div className="history-container">
-      {/* Header */}
-      <div className="history-header">
-        <div className="history-title">
-          <Clock className="w-5 h-5" />
-          <h2>Todos los Registros</h2>
-        </div>
-      </div>
+  const emptyMessage = filter === "pending" 
+    ? "No hay pedidos pendientes de pago" 
+    : "No hay ventas registradas";
 
+  return (
+    <>
       {/* Buscador */}
       <div className="history-search">
         <Search className="search-icon" />
@@ -65,7 +66,7 @@ export function SalesHistory({ sales, onLoadSale }: SalesHistoryProps) {
       <div className="history-list">
         {filteredSales.length === 0 ? (
           <div className="history-empty">
-            <p>No hay ventas registradas</p>
+            <p>{emptyMessage}</p>
           </div>
         ) : (
           filteredSales.map((sale) => (
@@ -75,13 +76,16 @@ export function SalesHistory({ sales, onLoadSale }: SalesHistoryProps) {
               onClick={() => onLoadSale(sale)}
             >
               <div className="history-item-header">
-                <span className="history-item-order">Pedido {sale.saleNumber}</span>
+                <span className="history-item-number">#{sale.saleNumber}</span>
                 <span className={`history-item-status status-${sale.status}`}>
                   {getStatusText(sale.status)}
                 </span>
               </div>
-              <div className="history-item-customer">
+              <div className="history-item-info">
                 {sale.customerName || sale.customer?.name || "Cliente General"}
+              </div>
+              <div className="history-item-info">
+                {sale.orderType === "delivery" ? "🛵 Delivery" : "📦 Para Retirar"}
               </div>
               <div className="history-item-footer">
                 <span className="history-item-total">{formatCurrency(sale.total)}</span>
@@ -94,12 +98,12 @@ export function SalesHistory({ sales, onLoadSale }: SalesHistoryProps) {
 
       {/* Botón cargar más */}
       {filteredSales.length > 0 && (
-        <div className="history-footer">
-          <button className="history-load-more">
+        <div className="history-load-more">
+          <button className="btn-load-more">
             Cargar Más
           </button>
         </div>
       )}
-    </div>
+    </>
   );
 }

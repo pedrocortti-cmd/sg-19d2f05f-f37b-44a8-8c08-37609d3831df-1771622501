@@ -57,6 +57,8 @@ export default function POS() {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [historyPanelCollapsed, setHistoryPanelCollapsed] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState<"pending" | "all">("pending");
 
   // Estado de repartidores
   const [deliveryDrivers, setDeliveryDrivers] = useState<DeliveryDriver[]>([
@@ -208,10 +210,11 @@ export default function POS() {
           sale.saleNumber.toLowerCase().includes(historySearchTerm.toLowerCase()) ||
           sale.customer?.name?.toLowerCase().includes(historySearchTerm.toLowerCase()) ||
           "";
-        return matchesSearch;
+        const matchesStatus = historyFilter === "all" || sale.status === "pending";
+        return matchesSearch && matchesStatus;
       })
       .slice(0, displayedSalesCount);
-  }, [sales, historySearchTerm, displayedSalesCount]);
+  }, [sales, historySearchTerm, displayedSalesCount, historyFilter]);
 
   // Agregar al carrito
   const addToCart = (product: Product) => {
@@ -930,12 +933,45 @@ export default function POS() {
             </div>
           </div>
 
-          {/* Panel Derecho: Historial */}
-          <div className="history-panel">
-            <SalesHistory 
-              sales={sales.length > 0 ? sales : mockSales}
-              onLoadSale={handleLoadSale}
-            />
+          {/* Panel Derecho: Historial Colapsable */}
+          <div className={`history-panel ${historyPanelCollapsed ? "collapsed" : ""}`}>
+            {/* Botón Toggle */}
+            <button 
+              className="history-toggle-btn"
+              onClick={() => setHistoryPanelCollapsed(!historyPanelCollapsed)}
+              title={historyPanelCollapsed ? "Mostrar historial" : "Ocultar historial"}
+            >
+              {historyPanelCollapsed ? "◀" : "▶"}
+            </button>
+
+            {!historyPanelCollapsed && (
+              <div className="history-content">
+                {/* Header con pestañas */}
+                <div className="history-header">
+                  <div className="history-tabs">
+                    <button
+                      className={`history-tab ${historyFilter === "pending" ? "active" : ""}`}
+                      onClick={() => setHistoryFilter("pending")}
+                    >
+                      🔴 Pendientes de Pago
+                    </button>
+                    <button
+                      className={`history-tab ${historyFilter === "all" ? "active" : ""}`}
+                      onClick={() => setHistoryFilter("all")}
+                    >
+                      📋 Todos los Registros
+                    </button>
+                  </div>
+                </div>
+
+                {/* Contenido del historial */}
+                <SalesHistory 
+                  sales={sales.length > 0 ? sales : mockSales}
+                  onLoadSale={handleLoadSale}
+                  filter={historyFilter}
+                />
+              </div>
+            )}
           </div>
         </>
       ) : (
