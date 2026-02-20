@@ -663,31 +663,7 @@ export default function POS() {
       </div>
 
       {/* Panel Derecho: Historial */}
-      <div className="pos-history-panel">
-        {/* Header del historial */}
-        <div className="history-panel-header">
-          <h3 className="history-title">
-            <Clock className="w-4 h-4" />
-            Todos los Registros
-          </h3>
-          <div className="history-search">
-            <Search className="history-search-icon" />
-            <input
-              type="text"
-              className="history-search-input"
-              placeholder="Buscar..."
-              value={historySearchTerm}
-              onChange={(e) => setHistorySearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Lista de ventas - MOVIDO AL COMPONENTE SALES HISTORY */}
-        {/* El panel de historial ahora usa el componente SalesHistory en la columna derecha */}
-      </div>
-
-      {/* Panel de historial de ventas (derecha) */}
-      <div className="pos-history-panel">
+      <div className="history-panel">
         <SalesHistory 
           sales={sales.length > 0 ? sales : mockSales}
           onLoadSale={handleLoadSale}
