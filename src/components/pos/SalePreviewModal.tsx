@@ -94,6 +94,20 @@ export function SalePreviewModal({ sale, products, onClose, onPrint }: SalePrevi
                     <td className="text-right font-semibold">{formatCurrency(item.price * item.quantity)}</td>
                   </tr>
                 ))}
+                {/* Delivery como item adicional */}
+                {sale.type === "delivery" && sale.deliveryCost && sale.deliveryCost > 0 && (
+                  <tr className="delivery-item-row">
+                    <td className="product-name">
+                      🛵 Delivery
+                      {sale.deliveryDriverName && (
+                        <span className="delivery-driver-name"> ({sale.deliveryDriverName})</span>
+                      )}
+                    </td>
+                    <td className="text-center">1</td>
+                    <td className="text-right">{formatCurrency(sale.deliveryCost)}</td>
+                    <td className="text-right font-semibold">{formatCurrency(sale.deliveryCost)}</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
