@@ -141,6 +141,7 @@
   font-weight: 700;
   font-size: 1rem;
   border-bottom: 3px solid #3b82f6;
+  flex-shrink: 0;
 }
 
 /* Información del cliente compacta */
@@ -148,6 +149,7 @@
   padding: 1rem;
   background: white;
   border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
 .customer-compact-field {
@@ -182,12 +184,14 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Items del carrito */
+/* Items del carrito - SCROLL INTERNO */
 .cart-items-section {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 0.75rem;
   background: #f9fafb;
+  min-height: 0;
 }
 
 .cart-item-card {
@@ -288,11 +292,12 @@
   opacity: 0.3;
 }
 
-/* Footer del carrito */
+/* Footer del carrito - SIEMPRE FIJO EN EL BOTTOM */
 .cart-footer {
   background: white;
   border-top: 2px solid #e5e7eb;
   padding: 1rem;
+  flex-shrink: 0;
 }
 
 .order-type-buttons {
