@@ -98,6 +98,9 @@ export interface Sale {
   
   deliveryDriverId?: number;
   deliveryDriverName?: string;
+  
+  amountPaid?: number;
+  balance?: number;
 }
 
 export type UserRole = "admin" | "cashier" | "kitchen";
