@@ -72,55 +72,6 @@ export default function POS() {
   // Estado para controlar si estamos editando/cobrando una venta existente
   const [loadedSaleId, setLoadedSaleId] = useState<number | null>(null);
 
-  // Mock sales data para el historial
-  const mockSales: Sale[] = [
-    {
-      id: 1,
-      saleNumber: "#2027",
-      date: new Date("2026-02-19T21:38:00"),
-      customerName: "Juan Pérez",
-      customer: { name: "Juan Pérez", phone: "0981123456", address: "Av. Principal 123" },
-      total: 9000,
-      subtotal: 9000,
-      discount: 0,
-      type: "delivery",
-      status: "completed",
-      items: [],
-      paymentMethod: "cash",
-      payments: []
-    },
-    {
-      id: 2,
-      saleNumber: "#2026",
-      date: new Date("2026-02-20T23:39:00"),
-      customerName: "María González",
-      customer: { name: "María González", phone: "0971654321", address: "Calle 2" },
-      total: 54000,
-      subtotal: 54000,
-      discount: 0,
-      type: "pickup",
-      status: "completed",
-      items: [],
-      paymentMethod: "card",
-      payments: []
-    },
-    {
-      id: 3,
-      saleNumber: "#2025",
-      date: new Date("2026-02-20T19:05:21"),
-      customerName: "Carlos Rodríguez",
-      customer: { name: "Carlos Rodríguez", phone: "0991112233", address: "" },
-      total: 42000,
-      subtotal: 42000,
-      discount: 0,
-      type: "dineIn",
-      status: "pending",
-      items: [],
-      paymentMethod: "mixed",
-      payments: []
-    },
-  ];
-
   const [historySearchTerm, setHistorySearchTerm] = useState("");
   const [displayedSalesCount, setDisplayedSalesCount] = useState(10);
 
@@ -188,6 +139,34 @@ export default function POS() {
 
   const handleLogoChange = (logoUrl: string | null) => {
     setBusinessLogo(logoUrl);
+  };
+
+  // Función para obtener el número de pedido del día (se reinicia diariamente)
+  const getDailySaleNumber = (): string => {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const savedData = localStorage.getItem('dailySaleCounter');
+    
+    let dailyCounter = 1;
+    
+    if (savedData) {
+      const { date, counter } = JSON.parse(savedData);
+      
+      if (date === today) {
+        // Mismo día, incrementar contador
+        dailyCounter = counter + 1;
+      } else {
+        // Nuevo día, reiniciar a 1
+        dailyCounter = 1;
+      }
+    }
+    
+    // Guardar el nuevo contador con la fecha actual
+    localStorage.setItem('dailySaleCounter', JSON.stringify({
+      date: today,
+      counter: dailyCounter
+    }));
+    
+    return `##${dailyCounter.toString().padStart(4, '0')}`;
   };
 
   // Cálculos del carrito
@@ -417,10 +396,11 @@ export default function POS() {
 
     // MODO NUEVO: Crear nuevo pedido
     const saleNumber = sales.length + 1;
+    const dailySaleNumber = getDailySaleNumber();
 
     const newSale: Sale = {
       id: saleNumber,
-      saleNumber: `#${saleNumber.toString().padStart(4, "0")}`,
+      saleNumber: dailySaleNumber,
       date: new Date(),
       items: cart.map(item => ({
         productId: item.product.id,
@@ -531,6 +511,7 @@ export default function POS() {
     } else {
       // MODO NUEVO: Crear nueva venta directa (sin confirmar pedido previo)
       const saleNumber = sales.length + 1;
+      const dailySaleNumber = getDailySaleNumber();
 
       // Descontar stock
       const updatedProducts = products.map(product => {
@@ -546,7 +527,7 @@ export default function POS() {
 
       const newSale: Sale = {
         id: saleNumber,
-        saleNumber: `#${saleNumber.toString().padStart(4, "0")}`,
+        saleNumber: dailySaleNumber,
         date: new Date(),
         items: cart.map(item => ({
           productId: item.product.id,
@@ -717,7 +698,7 @@ export default function POS() {
         return <Inventory products={products} onUpdateProduct={handleSaveProduct} />;
       case "sales":
         return <SalesHistory 
-          sales={sales.length > 0 ? sales : mockSales}
+          sales={sales}
           onLoadSale={handleLoadSale}
         />;
       case "drivers":
@@ -997,7 +978,7 @@ export default function POS() {
                   disabled={cart.length === 0}
                   onClick={() => {
                     const printData = {
-                      orderNumber: loadedSaleId ? sales.find(s => s.id === loadedSaleId)?.saleNumber || `#${sales.length + 1}` : `#${sales.length + 1}`,
+                      orderNumber: loadedSaleId ? sales.find(s => s.id === loadedSaleId)?.saleNumber || getDailySaleNumber() : getDailySaleNumber(),
                       date: new Date(),
                       customerInfo,
                       items: cart,
@@ -1109,7 +1090,7 @@ export default function POS() {
 
               {/* Contenido del historial */}
               <SalesHistory 
-                sales={sales.length > 0 ? sales : mockSales}
+                sales={sales}
                 onLoadSale={handleLoadSale}
               />
             </div>
@@ -1133,7 +1114,7 @@ export default function POS() {
         <SalePreviewModal
           sale={{
             id: sales.length + 1,
-            saleNumber: `#${(sales.length + 1).toString().padStart(4, "0")}`,
+            saleNumber: getDailySaleNumber(),
             date: new Date(),
             items: cart.map(item => ({
               productId: item.product.id,
@@ -1157,7 +1138,7 @@ export default function POS() {
           onClose={() => setShowPreviewModal(false)}
           onPrint={() => {
             const printData = {
-              orderNumber: `#${sales.length + 1}`,
+              orderNumber: getDailySaleNumber(),
               date: new Date(),
               customerInfo,
               items: cart,
