@@ -19,6 +19,7 @@ import { productService } from "@/services/productService";
 import { categoryService } from "@/services/categoryService";
 import { saleService } from "@/services/saleService";
 import { driverService } from "@/services/driverService";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function POS() {
   // Estado para la vista actual
@@ -629,7 +630,26 @@ export default function POS() {
         }
 
         console.log('Creando venta en Supabase...', newSale);
-        await saleService.create(newSale, saleItems);
+        const { data: saleData, error: saleError } = await supabase
+          .from("sales")
+          .insert({
+            sale_number: saleNumber,
+            total: newSale.total,
+            subtotal: newSale.subtotal,
+            discount: newSale.discount_amount,
+            delivery_cost: newSale.delivery_cost,
+            order_type: newSale.order_type,
+            payment_method: newSale.payment_method,
+            customer_name: newSale.customer_name,
+            customer_phone: newSale.customer_phone,
+            customer_address: newSale.customer_address,
+            customer_ruc: newSale.customer_ruc,
+            customer_business_name: newSale.customer_business_name,
+            tax_exempt: newSale.tax_exempt,
+            notes: newSale.notes,
+            status: newSale.status,
+            items_count: newSale.items_count,
+          });
 
         console.log('Recargando datos...');
         await loadAllData();
@@ -649,6 +669,7 @@ export default function POS() {
         setDiscountValue(0);
         setSelectedDriverId(null);
         setDeliveryCost(0);
+        setLoadedSaleId(null);
         setShowPaymentModal(false);
 
         console.log('Venta completada exitosamente');
@@ -737,7 +758,7 @@ export default function POS() {
 
   const handleLoadSale = (sale: Sale) => {
     const cartItems: CartItem[] = sale.items.map(item => {
-      const product = products.find(p => p.id === item.productId);
+      const product = products.find(p => p.id === item.product.id);
       if (!product) return null;
       return {
         product,
@@ -755,13 +776,10 @@ export default function POS() {
       isExempt: false,
       exempt: false
     });
-    setOrderType(sale.type);
+    setOrderType(sale.orderType);
     setOrderNote(sale.note || "");
     setLoadedSaleId(sale.id);
     
-    if (sale.deliveryDriverId) {
-      setSelectedDriverId(sale.deliveryDriverId);
-    }
     if (sale.deliveryCost) {
       setDeliveryCost(sale.deliveryCost);
     }
@@ -1235,28 +1253,21 @@ export default function POS() {
       {showPreviewModal && (
         <SalePreviewModal
           sale={{
-            id: loadedSaleId || 0,
+            id: loadedSaleId || undefined,
             saleNumber: loadedSaleId 
               ? sales.find(s => s.id === loadedSaleId)?.saleNumber || nextSaleNumber
               : nextSaleNumber,
-            date: new Date(),
-            items: cart.map(item => ({
-              productId: item.product.id,
-              productName: item.product.name,
-              quantity: item.quantity,
-              price: item.product.price
-            })),
-            subtotal,
+            date: new Date().toISOString(),
+            items: cart,
+            subtotal: subtotal,
             discount: discountAmount,
+            deliveryCost: orderType === "delivery" ? deliveryCost : undefined,
             total: cartTotal,
-            customer: customerInfo,
-            customerName: customerInfo.name,
-            type: orderType,
-            status: "pending",
-            paymentMethod: "cash",
-            payments: [],
-            deliveryCost,
-            deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined
+            paymentMethod: "Efectivo",
+            orderType: orderType === "dineIn" ? "local" : orderType,
+            customer: customerInfo.name ? customerInfo : undefined,
+            status: "completed",
+            note: orderNote,
           }}
           businessLogo={businessLogo}
           onClose={() => setShowPreviewModal(false)}

@@ -66,7 +66,7 @@ export function SalePreviewModal({ sale, onClose, onPrint, businessLogo }: SaleP
         <div className="preview-customer-section">
           <div className="preview-customer-label">CLIENTE</div>
           <div className="preview-customer-value">
-            {sale.customerName || sale.customer?.name || "Cliente Final"}
+            {sale.customer?.name || "Cliente Final"}
           </div>
         </div>
 
@@ -84,20 +84,44 @@ export function SalePreviewModal({ sale, onClose, onPrint, businessLogo }: SaleP
             <tbody>
               {sale.items.map((item, idx) => (
                 <tr key={idx}>
-                  <td>{item.productName}</td>
+                  <td>{item.product.name}</td>
                   <td>{item.quantity}</td>
-                  <td>Gs. {item.price.toLocaleString()}</td>
-                  <td>Gs. {(item.price * item.quantity).toLocaleString()}</td>
+                  <td>Gs. {item.product.price.toLocaleString()}</td>
+                  <td>Gs. {(item.product.price * item.quantity).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
+        {/* Descuento */}
+        {sale.discount > 0 && (
+          <div className="preview-summary-row">
+            <span>Descuento:</span>
+            <span className="preview-discount">
+              - Gs. {sale.discount.toLocaleString("es-PY")}
+            </span>
+          </div>
+        )}
+
+        {/* Delivery */}
+        {sale.deliveryCost && sale.deliveryCost > 0 && (
+          <div className="preview-summary-row">
+            <span>Delivery:</span>
+            <span className="preview-delivery">
+              + Gs. {sale.deliveryCost.toLocaleString("es-PY")}
+            </span>
+          </div>
+        )}
+
         {/* Total */}
         <div className="preview-total-section">
-          <div className="preview-total-label">Total</div>
-          <div className="preview-total-amount">Gs. {sale.total.toLocaleString()}</div>
+          <div className="preview-total-row">
+            <span className="preview-total-label">Total</span>
+            <span className="preview-total-amount">
+              Gs. {sale.total.toLocaleString("es-PY")}
+            </span>
+          </div>
         </div>
 
         {/* Botón Imprimir */}

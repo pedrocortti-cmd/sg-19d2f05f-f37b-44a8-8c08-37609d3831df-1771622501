@@ -201,6 +201,17 @@
 }
 
 /* Sección de total */
+.preview-discount {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.preview-delivery {
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* Total */
 .preview-total-section {
   display: flex;
   justify-content: space-between;

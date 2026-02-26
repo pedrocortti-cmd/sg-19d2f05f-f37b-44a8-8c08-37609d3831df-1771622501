@@ -66,42 +66,19 @@ export interface Payment {
 }
 
 export interface Sale {
-  id: number;
+  id?: number;
   saleNumber: string;
-  date: string | Date;
-  
-  customerName?: string;
-  customerPhone?: string;
-  customerAddress?: string;
-  
-  customer?: CustomerInfo;
-
-  type: OrderType;
-  
-  items: SaleItem[];
-
+  date: string;
+  items: CartItem[];
   subtotal: number;
   discount: number;
   deliveryCost?: number;
   total: number;
-  
   paymentMethod: string;
-  payments?: Payment[];
-  
+  orderType: "delivery" | "pickup" | "local";
+  customer?: CustomerInfo;
+  status: "pending" | "completed" | "cancelled";
   note?: string;
-  user?: string;
-
-  status: "pending" | "partial" | "completed" | "cancelled" | "pending_payment";
-  
-  createdBy?: string;
-  cancelledBy?: string;
-  cancelReason?: string;
-  
-  deliveryDriverId?: number;
-  deliveryDriverName?: string;
-  
-  amountPaid?: number;
-  balance?: number;
 }
 
 export type UserRole = "admin" | "cashier" | "kitchen";
