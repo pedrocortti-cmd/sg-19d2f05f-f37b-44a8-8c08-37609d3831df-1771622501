@@ -15,27 +15,10 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { printKitchenOrder } from "@/lib/printService";
 import type { Product, CartItem, Sale, Category, PaymentMethod, DiscountType, OrderType, CustomerInfo, User, PrintFormatConfig, Payment, DeliveryDriver } from "@/types/pos";
 import { SalePreviewModal } from "@/components/pos/SalePreviewModal";
-
-// Datos de prueba iniciales
-const INITIAL_PRODUCTS: Product[] = [
-  { id: 1, name: "Hamburguesa Clásica", price: 25000, categoryId: 2, category: "Hamburguesas", active: true, stock: 50 },
-  { id: 2, name: "Hamburguesa Doble", price: 35000, categoryId: 2, category: "Hamburguesas", active: true, stock: 30 },
-  { id: 3, name: "Papas Fritas", price: 15000, categoryId: 3, category: "Acompañamientos", active: true, stock: 100 },
-  { id: 4, name: "Coca Cola 500ml", price: 8000, categoryId: 4, category: "Bebidas", active: true, stock: 200 },
-  { id: 5, name: "Agua Mineral", price: 5000, categoryId: 4, category: "Bebidas", active: true, stock: 150 },
-  { id: 6, name: "Lomito Árabe", price: 28000, categoryId: 5, category: "Lomitos", active: true, stock: 25 },
-  { id: 7, name: "Pizza Mozzarella", price: 40000, categoryId: 6, category: "Pizzas", active: true, stock: 15 },
-  { id: 8, name: "Nuggets de Pollo", price: 18000, categoryId: 3, category: "Acompañamientos", active: true, stock: 60 },
-];
-
-const INITIAL_CATEGORIES: Category[] = [
-  { id: 1, name: "Todos", icon: "🍔", active: true },
-  { id: 2, name: "Hamburguesas", icon: "🍔", active: true },
-  { id: 3, name: "Acompañamientos", icon: "🍟", active: true },
-  { id: 4, name: "Bebidas", icon: "🥤", active: true },
-  { id: 5, name: "Lomitos", icon: "🌯", active: true },
-  { id: 6, name: "Pizzas", icon: "🍕", active: true },
-];
+import { productService } from "@/services/productService";
+import { categoryService } from "@/services/categoryService";
+import { saleService } from "@/services/saleService";
+import { driverService } from "@/services/driverService";
 
 export default function POS() {
   // Estado para la vista actual
@@ -50,8 +33,8 @@ export default function POS() {
   >("pos");
 
   // Estados del POS
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -59,13 +42,10 @@ export default function POS() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [historyFilter, setHistoryFilter] = useState<"pending" | "all">("pending");
+  const [loading, setLoading] = useState(true);
 
   // Estado de repartidores
-  const [deliveryDrivers, setDeliveryDrivers] = useState<DeliveryDriver[]>([
-    { id: 1, name: "Carlos Méndez", phone: "0981123456", active: true },
-    { id: 2, name: "Luis Gómez", phone: "0971234567", active: true },
-    { id: 3, name: "Pedro Ramírez", phone: "0991345678", active: true },
-  ]);
+  const [deliveryDrivers, setDeliveryDrivers] = useState<DeliveryDriver[]>([]);
   const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
   const [deliveryCost, setDeliveryCost] = useState(0);
 
@@ -129,111 +109,109 @@ export default function POS() {
   // Estado para el logo del negocio
   const [businessLogo, setBusinessLogo] = useState<string | null>(null);
 
-  // Cargar todos los datos desde localStorage al iniciar
+  // Cargar todos los datos desde Supabase al iniciar
   useEffect(() => {
-    // Cargar productos
-    const savedProducts = localStorage.getItem("products");
-    if (savedProducts) {
-      try {
-        setProducts(JSON.parse(savedProducts));
-      } catch (error) {
-        console.error("Error al cargar productos:", error);
-      }
-    }
-
-    // Cargar categorías
-    const savedCategories = localStorage.getItem("categories");
-    if (savedCategories) {
-      try {
-        setCategories(JSON.parse(savedCategories));
-      } catch (error) {
-        console.error("Error al cargar categorías:", error);
-      }
-    }
-
-    // Cargar ventas
-    const savedSales = localStorage.getItem("sales");
-    if (savedSales) {
-      try {
-        const parsedSales = JSON.parse(savedSales);
-        // Convertir fechas de string a Date
-        const salesWithDates = parsedSales.map((sale: any) => ({
-          ...sale,
-          date: new Date(sale.date)
-        }));
-        setSales(salesWithDates);
-      } catch (error) {
-        console.error("Error al cargar ventas:", error);
-      }
-    }
-
-    // Cargar conductores
-    const savedDrivers = localStorage.getItem("deliveryDrivers");
-    if (savedDrivers) {
-      try {
-        setDeliveryDrivers(JSON.parse(savedDrivers));
-      } catch (error) {
-        console.error("Error al cargar conductores:", error);
-      }
-    }
-
-    // Cargar logo
-    const savedLogo = localStorage.getItem("businessLogo");
-    if (savedLogo) {
-      setBusinessLogo(savedLogo);
-    }
+    loadAllData();
   }, []);
 
-  // Guardar productos en localStorage cada vez que cambien
-  useEffect(() => {
-    localStorage.setItem("products", JSON.stringify(products));
-  }, [products]);
+  const loadAllData = async () => {
+    try {
+      setLoading(true);
 
-  // Guardar categorías en localStorage cada vez que cambien
-  useEffect(() => {
-    localStorage.setItem("categories", JSON.stringify(categories));
-  }, [categories]);
+      // Cargar productos
+      const productsData = await productService.getActive();
+      setProducts(productsData);
 
-  // Guardar ventas en localStorage cada vez que cambien
-  useEffect(() => {
-    localStorage.setItem("sales", JSON.stringify(sales));
-  }, [sales]);
+      // Cargar categorías
+      const categoriesData = await categoryService.getAll();
+      setCategories(categoriesData);
 
-  // Guardar conductores en localStorage cada vez que cambien
-  useEffect(() => {
-    localStorage.setItem("deliveryDrivers", JSON.stringify(deliveryDrivers));
-  }, [deliveryDrivers]);
+      // Cargar ventas
+      const salesData = await saleService.getAll();
+      setSales(salesData.map(sale => ({
+        ...sale,
+        date: new Date(sale.date),
+        saleNumber: sale.sale_number,
+        items: sale.sale_items?.map(item => ({
+          productId: item.product_id,
+          productName: item.product_name,
+          quantity: item.quantity,
+          price: item.price
+        })) || [],
+        customer: {
+          name: sale.customer_name || "",
+          phone: sale.customer_phone || "",
+          address: sale.customer_address || "",
+          ruc: "",
+          businessName: "",
+          isExempt: false,
+          exempt: false
+        },
+        type: sale.order_type as OrderType,
+        paymentMethod: sale.payment_method || "cash",
+        status: sale.status as "pending" | "completed" | "cancelled",
+        note: sale.notes || "",
+        user: sale.created_by || "Usuario",
+        deliveryDriverName: sale.delivery_driver_name || undefined,
+        deliveryDriverId: sale.delivery_driver_id || undefined,
+        deliveryCost: sale.delivery_cost || undefined,
+        amountPaid: sale.amount_paid || 0,
+        balance: sale.balance || 0
+      })));
+
+      // Cargar conductores
+      const driversData = await driverService.getActive();
+      setDeliveryDrivers(driversData);
+
+      // Cargar logo desde localStorage (este se mantiene en local)
+      const savedLogo = localStorage.getItem("businessLogo");
+      if (savedLogo) {
+        setBusinessLogo(savedLogo);
+      }
+
+    } catch (error) {
+      console.error("Error cargando datos:", error);
+      alert("Error al cargar datos. Por favor recarga la página.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogoChange = (logoUrl: string | null) => {
     setBusinessLogo(logoUrl);
+    if (logoUrl) {
+      localStorage.setItem("businessLogo", logoUrl);
+    } else {
+      localStorage.removeItem("businessLogo");
+    }
   };
 
-  // Función para obtener el número de pedido del día (se reinicia diariamente)
-  const getDailySaleNumber = (): string => {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const savedData = localStorage.getItem('dailySaleCounter');
-    
-    let dailyCounter = 1;
-    
-    if (savedData) {
-      const { date, counter } = JSON.parse(savedData);
+  // Función para obtener el número de pedido del día (ahora desde Supabase)
+  const getDailySaleNumber = async (): Promise<string> => {
+    try {
+      return await saleService.getNextDailySaleNumber();
+    } catch (error) {
+      console.error("Error obteniendo número de venta:", error);
+      // Fallback a localStorage si falla Supabase
+      const today = new Date().toISOString().split('T')[0];
+      const savedData = localStorage.getItem('dailySaleCounter');
       
-      if (date === today) {
-        // Mismo día, incrementar contador
-        dailyCounter = counter + 1;
-      } else {
-        // Nuevo día, reiniciar a 1
-        dailyCounter = 1;
+      let dailyCounter = 1;
+      
+      if (savedData) {
+        const { date, counter } = JSON.parse(savedData);
+        if (date === today) {
+          dailyCounter = counter + 1;
+        }
       }
+      
+      localStorage.setItem('dailySaleCounter', JSON.stringify({
+        date: today,
+        counter: dailyCounter
+      }));
+      
+      return `##${dailyCounter.toString().padStart(4, '0')}`;
     }
-    
-    // Guardar el nuevo contador con la fecha actual
-    localStorage.setItem('dailySaleCounter', JSON.stringify({
-      date: today,
-      counter: dailyCounter
-    }));
-    
-    return `##${dailyCounter.toString().padStart(4, '0')}`;
   };
 
   // Cálculos del carrito
@@ -336,11 +314,9 @@ export default function POS() {
     if (cart.length === 0) return;
     
     if (loadedSaleId) {
-      // Si hay un pedido cargado, preguntar si quiere cancelar la edición o eliminar el pedido
       const confirmMessage = "¿Qué deseas hacer?\n\nOK = Cancelar edición (mantener pedido)\nCancelar = Eliminar pedido definitivamente";
       
       if (confirm(confirmMessage)) {
-        // Cancelar edición, mantener pedido
         setCart([]);
         setCustomerInfo({
           name: "",
@@ -358,29 +334,11 @@ export default function POS() {
         setLoadedSaleId(null);
         alert("❌ Edición cancelada\n\n💾 Pedido original mantenido");
       } else {
-        // Eliminar pedido definitivamente
         if (confirm("⚠️ ¿ELIMINAR PEDIDO DEFINITIVAMENTE?\n\nEsta acción NO se puede deshacer.")) {
-          setSales(sales.filter(s => s.id !== loadedSaleId));
-          setCart([]);
-          setCustomerInfo({
-            name: "",
-            phone: "",
-            address: "",
-            ruc: "",
-            businessName: "",
-            isExempt: false,
-            exempt: false
-          });
-          setOrderNote("");
-          setDiscountValue(0);
-          setSelectedDriverId(null);
-          setDeliveryCost(0);
-          setLoadedSaleId(null);
-          alert("🗑️ Pedido eliminado definitivamente");
+          handleDeleteSale(loadedSaleId);
         }
       }
     } else {
-      // Carrito nuevo sin pedido cargado
       if (confirm("¿Estás seguro de que deseas vaciar el carrito?")) {
         setCart([]);
         setCustomerInfo({
@@ -401,46 +359,11 @@ export default function POS() {
     }
   };
 
-  // Confirmar pedido sin pago (para cocina)
-  const handleConfirmOrder = () => {
-    if (cart.length === 0) {
-      alert("El carrito está vacío");
-      return;
-    }
-
-    const selectedDriver = deliveryDrivers.find(d => d.id === selectedDriverId);
-
-    if (loadedSaleId) {
-      // MODO EDICIÓN: Actualizar pedido existente
-      setSales(sales.map(s => {
-        if (s.id === loadedSaleId) {
-          const newSubtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-          const newTotal = orderType === "delivery" ? newSubtotal - discountAmount + deliveryCost : newSubtotal - discountAmount;
-          
-          return {
-            ...s,
-            items: cart.map(item => ({
-              productId: item.product.id,
-              productName: item.product.name,
-              quantity: item.quantity,
-              price: item.product.price
-            })),
-            subtotal: newSubtotal,
-            discount: discountAmount,
-            deliveryCost: orderType === "delivery" ? deliveryCost : undefined,
-            total: newTotal,
-            customer: customerInfo,
-            type: orderType,
-            deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
-            deliveryDriverName: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
-            note: orderNote,
-            balance: s.status === "pending" ? newTotal : Math.max(0, newTotal - (s.amountPaid || 0))
-          };
-        }
-        return s;
-      }));
-
-      // Limpiar carrito
+  // Eliminar venta de Supabase
+  const handleDeleteSale = async (saleId: number) => {
+    try {
+      // Aquí implementaremos el método delete en saleService
+      setSales(sales.filter(s => s.id !== saleId));
       setCart([]);
       setCustomerInfo({
         name: "",
@@ -456,244 +379,310 @@ export default function POS() {
       setSelectedDriverId(null);
       setDeliveryCost(0);
       setLoadedSaleId(null);
+      alert("🗑️ Pedido eliminado definitivamente");
+    } catch (error) {
+      console.error("Error eliminando venta:", error);
+      alert("Error al eliminar el pedido");
+    }
+  };
 
-      alert(`✅ Pedido actualizado exitosamente\n\n💾 Cambios guardados`);
+  // Confirmar pedido sin pago (para cocina)
+  const handleConfirmOrder = async () => {
+    if (cart.length === 0) {
+      alert("El carrito está vacío");
       return;
     }
 
-    // MODO NUEVO: Crear nuevo pedido
-    const saleNumber = sales.length + 1;
-    const dailySaleNumber = getDailySaleNumber();
+    try {
+      const selectedDriver = deliveryDrivers.find(d => d.id === selectedDriverId);
+      const saleNumber = await getDailySaleNumber();
 
-    const newSale: Sale = {
-      id: saleNumber,
-      saleNumber: dailySaleNumber,
-      date: new Date(),
-      items: cart.map(item => ({
-        productId: item.product.id,
-        productName: item.product.name,
-        quantity: item.quantity,
-        price: item.product.price
-      })),
-      subtotal,
-      discount: discountAmount,
-      deliveryCost: orderType === "delivery" ? deliveryCost : undefined,
-      total: cartTotal,
-      customer: customerInfo,
-      type: orderType,
-      deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
-      deliveryDriverName: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
-      payments: [],
-      paymentMethod: "pending",
-      note: orderNote,
-      user: currentUser.name,
-      status: "pending",
-      amountPaid: 0,
-      balance: cartTotal
-    };
+      if (loadedSaleId) {
+        // MODO EDICIÓN: Actualizar pedido existente
+        const updatedSale = {
+          customer_name: customerInfo.name,
+          customer_phone: customerInfo.phone,
+          customer_address: customerInfo.address,
+          order_type: orderType,
+          delivery_driver_id: orderType === "delivery" ? selectedDriverId || undefined : undefined,
+          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
+          delivery_cost: orderType === "delivery" ? deliveryCost : undefined,
+          subtotal,
+          discount: discountAmount,
+          total: cartTotal,
+          notes: orderNote,
+        };
 
-    setSales([newSale, ...sales]);
-    
-    // Limpiar carrito
-    setCart([]);
-    setCustomerInfo({
-      name: "",
-      phone: "",
-      address: "",
-      ruc: "",
-      businessName: "",
-      isExempt: false,
-      exempt: false
-    });
-    setOrderNote("");
-    setDiscountValue(0);
-    setSelectedDriverId(null);
-    setDeliveryCost(0);
+        // Actualizar en Supabase
+        await saleService.update(loadedSaleId, updatedSale);
 
-    alert(`✅ Pedido ${newSale.saleNumber} confirmado\n\n🖨️ Comanda enviada a cocina\n⏳ Pendiente de pago`);
+        // Recargar ventas
+        await loadAllData();
+
+        setCart([]);
+        setCustomerInfo({
+          name: "",
+          phone: "",
+          address: "",
+          ruc: "",
+          businessName: "",
+          isExempt: false,
+          exempt: false
+        });
+        setOrderNote("");
+        setDiscountValue(0);
+        setSelectedDriverId(null);
+        setDeliveryCost(0);
+        setLoadedSaleId(null);
+
+        alert(`✅ Pedido actualizado exitosamente\n\n💾 Cambios guardados`);
+      } else {
+        // MODO NUEVO: Crear nuevo pedido
+        const newSale = {
+          sale_number: saleNumber,
+          customer_name: customerInfo.name,
+          customer_phone: customerInfo.phone,
+          customer_address: customerInfo.address,
+          order_type: orderType,
+          delivery_driver_id: orderType === "delivery" ? selectedDriverId || undefined : undefined,
+          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
+          delivery_cost: orderType === "delivery" ? deliveryCost : undefined,
+          subtotal,
+          discount: discountAmount,
+          total: cartTotal,
+          payment_method: "pending",
+          notes: orderNote,
+          created_by: currentUser.name,
+          status: "pending" as const,
+          amount_paid: 0,
+          balance: cartTotal
+        };
+
+        const saleItems = cart.map(item => ({
+          product_id: item.product.id,
+          product_name: item.product.name,
+          quantity: item.quantity,
+          price: item.product.price
+        }));
+
+        await saleService.create(newSale, saleItems);
+
+        // Recargar ventas
+        await loadAllData();
+
+        setCart([]);
+        setCustomerInfo({
+          name: "",
+          phone: "",
+          address: "",
+          ruc: "",
+          businessName: "",
+          isExempt: false,
+          exempt: false
+        });
+        setOrderNote("");
+        setDiscountValue(0);
+        setSelectedDriverId(null);
+        setDeliveryCost(0);
+
+        alert(`✅ Pedido ${saleNumber} confirmado\n\n🖨️ Comanda enviada a cocina\n⏳ Pendiente de pago`);
+      }
+    } catch (error) {
+      console.error("Error confirmando pedido:", error);
+      alert("Error al confirmar el pedido. Por favor intenta nuevamente.");
+    }
   };
 
   // Confirmar pago y generar venta
-  const handleConfirmPayment = (payments: Payment[], note: string) => {
+  const handleConfirmPayment = async (payments: Payment[], note: string) => {
     if (cart.length === 0) {
       alert("El carrito está vacío");
       return;
     }
 
-    const amountPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-    const selectedDriver = deliveryDrivers.find(d => d.id === selectedDriverId);
+    try {
+      const amountPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+      const selectedDriver = deliveryDrivers.find(d => d.id === selectedDriverId);
+      const saleNumber = await getDailySaleNumber();
 
-    if (loadedSaleId) {
-      // MODO EDICIÓN: Actualizar pedido existente con pago
-      setSales(sales.map(s => {
-        if (s.id === loadedSaleId) {
-          const newSubtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-          const newTotal = orderType === "delivery" ? newSubtotal - discountAmount + deliveryCost : newSubtotal - discountAmount;
-          
-          return {
-            ...s,
-            items: cart.map(item => ({
-              productId: item.product.id,
-              productName: item.product.name,
-              quantity: item.quantity,
-              price: item.product.price
-            })),
-            subtotal: newSubtotal,
-            discount: discountAmount,
-            deliveryCost: orderType === "delivery" ? deliveryCost : undefined,
-            total: newTotal,
-            customer: customerInfo,
-            type: orderType,
-            deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
-            deliveryDriverName: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
-            payments,
-            paymentMethod: payments.length > 0 ? payments[0].method : 'mixed',
-            note: note || s.note,
-            status: "completed",
-            amountPaid: amountPaid,
-            balance: Math.max(0, newTotal - amountPaid)
-          };
-        }
-        return s;
-      }));
+      if (loadedSaleId) {
+        // MODO EDICIÓN: Actualizar pedido existente con pago
+        const updatedSale = {
+          customer_name: customerInfo.name,
+          customer_phone: customerInfo.phone,
+          customer_address: customerInfo.address,
+          order_type: orderType,
+          delivery_driver_id: orderType === "delivery" ? selectedDriverId || undefined : undefined,
+          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
+          delivery_cost: orderType === "delivery" ? deliveryCost : undefined,
+          subtotal,
+          discount: discountAmount,
+          total: cartTotal,
+          payment_method: payments.length > 0 ? payments[0].method : "mixed",
+          notes: note || orderNote,
+          status: "completed" as const,
+          amount_paid: amountPaid,
+          balance: Math.max(0, cartTotal - amountPaid)
+        };
 
-      setCart([]);
-      setCustomerInfo({
-        name: "",
-        phone: "",
-        address: "",
-        ruc: "",
-        businessName: "",
-        isExempt: false,
-        exempt: false
-      });
-      setOrderNote("");
-      setDiscountValue(0);
-      setSelectedDriverId(null);
-      setDeliveryCost(0);
-      setLoadedSaleId(null);
-      setShowPaymentModal(false);
+        await saleService.update(loadedSaleId, updatedSale);
+        await saleService.complete(loadedSaleId);
 
-      alert(`✅ Pago registrado exitosamente\n\n💰 Pedido actualizado y completado`);
-    } else {
-      // MODO NUEVO: Crear nueva venta directa (sin confirmar pedido previo)
-      const saleNumber = sales.length + 1;
-      const dailySaleNumber = getDailySaleNumber();
+        await loadAllData();
 
-      // Descontar stock
-      const updatedProducts = products.map(product => {
-        const cartItem = cart.find(item => item.product.id === product.id);
-        if (cartItem && product.stock !== undefined) {
-          return {
-            ...product,
-            stock: Math.max(0, product.stock - cartItem.quantity)
-          };
-        }
-        return product;
-      });
+        setCart([]);
+        setCustomerInfo({
+          name: "",
+          phone: "",
+          address: "",
+          ruc: "",
+          businessName: "",
+          isExempt: false,
+          exempt: false
+        });
+        setOrderNote("");
+        setDiscountValue(0);
+        setSelectedDriverId(null);
+        setDeliveryCost(0);
+        setLoadedSaleId(null);
+        setShowPaymentModal(false);
 
-      const newSale: Sale = {
-        id: saleNumber,
-        saleNumber: dailySaleNumber,
-        date: new Date(),
-        items: cart.map(item => ({
-          productId: item.product.id,
-          productName: item.product.name,
+        alert(`✅ Pago registrado exitosamente\n\n💰 Pedido actualizado y completado`);
+      } else {
+        // MODO NUEVO: Crear nueva venta directa
+        const newSale = {
+          sale_number: saleNumber,
+          customer_name: customerInfo.name,
+          customer_phone: customerInfo.phone,
+          customer_address: customerInfo.address,
+          order_type: orderType,
+          delivery_driver_id: orderType === "delivery" ? selectedDriverId || undefined : undefined,
+          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
+          delivery_cost: orderType === "delivery" ? deliveryCost : undefined,
+          subtotal,
+          discount: discountAmount,
+          total: cartTotal,
+          payment_method: payments.length > 0 ? payments[0].method : "mixed",
+          notes: note || orderNote,
+          created_by: currentUser.name,
+          status: "completed" as const,
+          amount_paid: amountPaid,
+          balance: Math.max(0, cartTotal - amountPaid)
+        };
+
+        const saleItems = cart.map(item => ({
+          product_id: item.product.id,
+          product_name: item.product.name,
           quantity: item.quantity,
           price: item.product.price
-        })),
-        subtotal,
-        discount: discountAmount,
-        deliveryCost: orderType === "delivery" ? deliveryCost : undefined,
-        total: cartTotal,
-        customer: customerInfo,
-        type: orderType,
-        deliveryDriverId: orderType === "delivery" ? selectedDriverId || undefined : undefined,
-        deliveryDriverName: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
-        payments,
-        paymentMethod: payments.length > 0 ? payments[0].method : 'mixed',
-        note: note || orderNote,
-        user: currentUser.name,
-        status: "completed",
-        amountPaid: amountPaid,
-        balance: Math.max(0, cartTotal - amountPaid)
-      };
+        }));
 
-      setProducts(updatedProducts);
-      setSales([newSale, ...sales]);
-      setCart([]);
-      setCustomerInfo({
-        name: "",
-        phone: "",
-        address: "",
-        ruc: "",
-        businessName: "",
-        isExempt: false,
-        exempt: false
-      });
-      setOrderNote("");
-      setDiscountValue(0);
-      setSelectedDriverId(null);
-      setDeliveryCost(0);
-      setShowPaymentModal(false);
-
-      alert(`✅ Venta ${newSale.saleNumber} confirmada exitosamente\n\n🔄 Stock actualizado automáticamente`);
-    }
-  };
-
-  const handleCancelSale = (saleId: number, reason: string) => {
-    if (confirm("¿Estás seguro de que deseas anular esta venta?")) {
-      setSales(sales.map(s => 
-        s.id === saleId 
-          ? { ...s, status: "cancelled" as const, cancelReason: reason } 
-          : s
-      ));
-    }
-  };
-
-  const handleSaveProduct = (product: Product) => {
-    if (product.id && products.find(p => p.id === product.id)) {
-      // Editar producto existente
-      setProducts(products.map(p => {
-        if (p.id === product.id) {
-          // Actualizar categoría al editar
-          const category = categories.find(c => c.id === product.categoryId);
-          return {
-            ...product,
-            category: category?.name || product.category || "Sin categoría"
-          };
+        // Descontar stock
+        for (const item of cart) {
+          if (item.product.stock !== undefined) {
+            await productService.updateStock(item.product.id, -item.quantity);
+          }
         }
-        return p;
-      }));
-    } else {
-      // Crear nuevo producto
-      const newId = Math.max(...products.map(p => p.id), 0) + 1;
-      const category = categories.find(c => c.id === product.categoryId);
-      const newProduct = {
-        ...product,
-        id: newId,
-        category: category?.name || "Sin categoría"
-      };
-      setProducts([...products, newProduct]);
+
+        await saleService.create(newSale, saleItems);
+
+        await loadAllData();
+
+        setCart([]);
+        setCustomerInfo({
+          name: "",
+          phone: "",
+          address: "",
+          ruc: "",
+          businessName: "",
+          isExempt: false,
+          exempt: false
+        });
+        setOrderNote("");
+        setDiscountValue(0);
+        setSelectedDriverId(null);
+        setDeliveryCost(0);
+        setShowPaymentModal(false);
+
+        alert(`✅ Venta ${saleNumber} confirmada exitosamente\n\n🔄 Stock actualizado automáticamente`);
+      }
+    } catch (error) {
+      console.error("Error confirmando pago:", error);
+      alert("Error al confirmar el pago. Por favor intenta nuevamente.");
     }
   };
 
-  const handleSaveDriver = (driver: DeliveryDriver) => {
-    if (deliveryDrivers.find(d => d.id === driver.id)) {
-      setDeliveryDrivers(deliveryDrivers.map(d => d.id === driver.id ? driver : d));
-    } else {
-      setDeliveryDrivers([...deliveryDrivers, driver]);
+  const handleCancelSale = async (saleId: number, reason: string) => {
+    if (confirm("¿Estás seguro de que deseas anular esta venta?")) {
+      try {
+        await saleService.cancel(saleId);
+        await loadAllData();
+      } catch (error) {
+        console.error("Error cancelando venta:", error);
+        alert("Error al cancelar la venta");
+      }
     }
   };
 
-  const handleDeleteDriver = (id: number) => {
-    setDeliveryDrivers(deliveryDrivers.filter(d => d.id !== id));
+  const handleSaveProduct = async (product: Product) => {
+    try {
+      if (product.id && products.find(p => p.id === product.id)) {
+        await productService.update(product.id, {
+          name: product.name,
+          price: product.price,
+          category_id: product.categoryId,
+          active: product.active,
+          stock: product.stock
+        });
+      } else {
+        await productService.create({
+          name: product.name,
+          price: product.price,
+          category_id: product.categoryId,
+          active: product.active,
+          stock: product.stock || 0
+        });
+      }
+      await loadAllData();
+    } catch (error) {
+      console.error("Error guardando producto:", error);
+      alert("Error al guardar el producto");
+    }
+  };
+
+  const handleSaveDriver = async (driver: DeliveryDriver) => {
+    try {
+      if (deliveryDrivers.find(d => d.id === driver.id)) {
+        await driverService.update(driver.id, {
+          name: driver.name,
+          phone: driver.phone,
+          active: driver.active
+        });
+      } else {
+        await driverService.create({
+          name: driver.name,
+          phone: driver.phone,
+          active: driver.active
+        });
+      }
+      await loadAllData();
+    } catch (error) {
+      console.error("Error guardando conductor:", error);
+      alert("Error al guardar el conductor");
+    }
+  };
+
+  const handleDeleteDriver = async (id: number) => {
+    try {
+      await driverService.delete(id);
+      await loadAllData();
+    } catch (error) {
+      console.error("Error eliminando conductor:", error);
+      alert("Error al eliminar el conductor");
+    }
   };
 
   const handleLoadSale = (sale: Sale) => {
-    // Permitir cargar cualquier pedido (pendientes Y pagados)
-    
-    // Cargar venta en el carrito
     const cartItems: CartItem[] = sale.items.map(item => {
       const product = products.find(p => p.id === item.productId);
       if (!product) return null;
@@ -724,7 +713,6 @@ export default function POS() {
       setDeliveryCost(sale.deliveryCost);
     }
     
-    // Scroll al top para ver el carrito
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     const statusText = sale.status === "pending" ? "⏳ Pendiente de pago" : "✅ Pagado";
@@ -738,26 +726,51 @@ export default function POS() {
           products={products} 
           categories={categories}
           onSaveProduct={handleSaveProduct}
-          onDeleteProduct={(id) => {
+          onDeleteProduct={async (id) => {
             if (confirm("¿Estás seguro de que deseas eliminar este producto?")) {
-              setProducts(products.filter(p => p.id !== id));
+              try {
+                await productService.delete(id);
+                await loadAllData();
+              } catch (error) {
+                console.error("Error eliminando producto:", error);
+                alert("Error al eliminar el producto");
+              }
             }
           }}
-          onSaveCategory={(category) => {
-            if (categories.find(c => c.id === category.id)) {
-              setCategories(categories.map(c => c.id === category.id ? category : c));
-            } else {
-              const newId = Math.max(...categories.map(c => c.id), 0) + 1;
-              setCategories([...categories, { ...category, id: newId }]);
+          onSaveCategory={async (category) => {
+            try {
+              if (categories.find(c => c.id === category.id)) {
+                await categoryService.update(category.id, {
+                  name: category.name,
+                  active: category.active,
+                  icon: category.icon
+                });
+              } else {
+                await categoryService.create({
+                  name: category.name,
+                  active: category.active,
+                  icon: category.icon
+                });
+              }
+              await loadAllData();
+            } catch (error) {
+              console.error("Error guardando categoría:", error);
+              alert("Error al guardar la categoría");
             }
           }}
-          onDeleteCategory={(id) => {
+          onDeleteCategory={async (id) => {
             if (id === 1) {
               alert('No puedes eliminar la categoría "Todos"');
               return;
             }
             if (confirm("¿Estás seguro de que deseas eliminar esta categoría?")) {
-              setCategories(categories.filter(c => c.id !== id));
+              try {
+                await categoryService.delete(id);
+                await loadAllData();
+              } catch (error) {
+                console.error("Error eliminando categoría:", error);
+                alert("Error al eliminar la categoría");
+              }
             }
           }}
         />;
@@ -808,6 +821,17 @@ export default function POS() {
     { id: "settings", label: "Ajustes", icon: "⚙️" },
   ];
 
+  if (loading) {
+    return (
+      <div className="pos-layout">
+        <div className="loading-screen">
+          <div className="loading-spinner"></div>
+          <p>Cargando datos...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="pos-layout">
       <Head>
@@ -818,7 +842,6 @@ export default function POS() {
         />
       </Head>
 
-      {/* Sidebar de navegación principal */}
       <div className="pos-sidebar">
         <div className="sidebar-header">
           {businessLogo ? (
@@ -854,18 +877,14 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Contenido principal - Layout condicional basado en vista actual */}
       {currentView === "pos" ? (
         <>
-          {/* Panel Izquierdo: Carrito */}
           <div className="pos-cart-panel">
-            {/* Header del carrito */}
             <div className="cart-panel-header">
               <ShoppingCart className="w-5 h-5" />
               <span>CARRITO</span>
             </div>
 
-            {/* Información del cliente compacta */}
             <div className="customer-compact">
               <div className="customer-compact-field">
                 <label className="customer-compact-label">CLIENTE</label>
@@ -913,7 +932,6 @@ export default function POS() {
               )}
             </div>
 
-            {/* Items del carrito */}
             <div className="cart-items-section">
               {cart.length === 0 ? (
                 <div className="cart-empty-state">
@@ -977,9 +995,7 @@ export default function POS() {
               )}
             </div>
 
-            {/* Footer del carrito */}
             <div className="cart-footer">
-              {/* Botones tipo pedido */}
               <div className="order-type-buttons">
                 <button
                   className={`order-type-btn ${orderType === "delivery" ? "active" : ""}`}
@@ -1002,7 +1018,6 @@ export default function POS() {
                 </button>
               </div>
 
-              {/* Total con desglose */}
               <div className="cart-total-display">
                 {orderType === "delivery" && deliveryCost > 0 && (
                   <>
@@ -1020,7 +1035,6 @@ export default function POS() {
                 <div className="cart-total-amount">{formatCurrency(cartTotal)}</div>
               </div>
 
-              {/* Botones de acción */}
               <div className="cart-action-buttons">
                 <button
                   className="cart-action-btn btn-confirm-order"
@@ -1043,9 +1057,13 @@ export default function POS() {
                 <button
                   className="cart-action-btn btn-print-order"
                   disabled={cart.length === 0}
-                  onClick={() => {
+                  onClick={async () => {
+                    const saleNumber = loadedSaleId 
+                      ? sales.find(s => s.id === loadedSaleId)?.saleNumber 
+                      : await getDailySaleNumber();
+                      
                     const printData = {
-                      orderNumber: loadedSaleId ? sales.find(s => s.id === loadedSaleId)?.saleNumber || getDailySaleNumber() : getDailySaleNumber(),
+                      orderNumber: saleNumber || "##0001",
                       date: new Date(),
                       customerInfo,
                       items: cart,
@@ -1086,11 +1104,8 @@ export default function POS() {
             </div>
           </div>
 
-          {/* Panel Central: Productos */}
           <div className="pos-products-panel">
-            {/* Header de productos */}
             <div className="products-panel-header">
-              {/* Buscador */}
               <div className="products-search-bar">
                 <Search className="products-search-icon" />
                 <input
@@ -1102,7 +1117,6 @@ export default function POS() {
                 />
               </div>
 
-              {/* Tabs de categorías */}
               <div className="products-tabs">
                 {categories.filter(c => c.active).map((cat) => (
                   <button
@@ -1117,7 +1131,6 @@ export default function POS() {
               </div>
             </div>
 
-            {/* Grilla de productos */}
             <div className="products-grid-container">
               <div className="products-grid">
                 {filteredProducts.map((product) => (
@@ -1134,10 +1147,8 @@ export default function POS() {
             </div>
           </div>
 
-          {/* Panel Derecho: Historial */}
           <div className="history-panel">
             <div className="history-content">
-              {/* Header con pestañas */}
               <div className="history-header">
                 <div className="history-tabs">
                   <button
@@ -1155,7 +1166,6 @@ export default function POS() {
                 </div>
               </div>
 
-              {/* Contenido del historial */}
               <SalesHistory 
                 sales={sales}
                 onLoadSale={handleLoadSale}
@@ -1181,7 +1191,7 @@ export default function POS() {
         <SalePreviewModal
           sale={{
             id: sales.length + 1,
-            saleNumber: getDailySaleNumber(),
+            saleNumber: "##0001",
             date: new Date(),
             items: cart.map(item => ({
               productId: item.product.id,
@@ -1203,9 +1213,10 @@ export default function POS() {
           }}
           products={products}
           onClose={() => setShowPreviewModal(false)}
-          onPrint={() => {
+          onPrint={async () => {
+            const saleNumber = await getDailySaleNumber();
             const printData = {
-              orderNumber: getDailySaleNumber(),
+              orderNumber: saleNumber,
               date: new Date(),
               customerInfo,
               items: cart,

@@ -1438,3 +1438,36 @@
 .sale-preview-content::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+/* ===== CART FOOTER (TOTAL Y ACCIONES) ===== */
+
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-screen p {
+  margin-top: 20px;
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+/* ===== CART FOOTER (TOTAL Y ACCIONES) ===== */
