@@ -129,6 +129,7 @@ export default function POS() {
 
       // Cargar categorías
       const categoriesData = await categoryService.getAll();
+      console.log('Categories loaded from Supabase:', categoriesData);
       setCategories(categoriesData.map(c => ({
         ...c,
         active: c.active ?? true // Asegurar active
