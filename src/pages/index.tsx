@@ -1235,7 +1235,7 @@ export default function POS() {
       {showPreviewModal && (
         <SalePreviewModal
           sale={{
-            id: sales.length + 1,
+            id: loadedSaleId || 0,
             saleNumber: loadedSaleId 
               ? sales.find(s => s.id === loadedSaleId)?.saleNumber || nextSaleNumber
               : nextSaleNumber,
@@ -1258,7 +1258,7 @@ export default function POS() {
             deliveryCost,
             deliveryDriverName: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name : undefined
           }}
-          products={products}
+          businessLogo={businessLogo}
           onClose={() => setShowPreviewModal(false)}
           onPrint={async () => {
             const saleNumber = loadedSaleId 
@@ -1281,7 +1281,6 @@ export default function POS() {
             printKitchenOrder(printData);
             setShowPreviewModal(false);
           }}
-          businessLogo={businessLogo}
         />
       )}
     </div>

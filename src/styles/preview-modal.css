@@ -1,59 +1,267 @@
-/* Preview Modal - Logo styles */
+/* ==========================================
+   MODAL DE VISTA PREVIA DE VENTA
+   ========================================== */
 
-.sale-preview-logo {
+/* Overlay oscuro de fondo */
+.preview-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 20px 0;
-  margin-bottom: 10px;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease-out;
 }
 
-.preview-ticket-logo {
-  width: 120px;
-  height: 120px;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Contenedor del modal */
+.preview-modal-container {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Header con botón cerrar */
+.preview-modal-header {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+}
+
+.preview-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #64748b;
+}
+
+.preview-modal-close:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+/* Logo */
+.preview-modal-logo {
+  padding: 2rem 1.5rem 0.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.preview-logo-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.preview-logo-img {
+  width: 80px;
+  height: 80px;
   object-fit: contain;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Título */
+.preview-modal-title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 1rem 0 0.25rem;
+}
+
+.preview-modal-date {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0 0 1.5rem;
+}
+
+/* Sección de cliente */
+.preview-customer-section {
+  background: #f8fafc;
+  border-left: 4px solid #3b82f6;
+  padding: 0.75rem 1.5rem;
+  margin: 0 1.5rem 1.5rem;
   border-radius: 8px;
 }
 
-.logo-placeholder {
+.preview-customer-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.preview-customer-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Tabla de productos */
+.preview-table-container {
+  padding: 0 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.preview-table thead {
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.preview-table th {
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.preview-table th:nth-child(2),
+.preview-table th:nth-child(3),
+.preview-table th:nth-child(4) {
+  text-align: right;
+}
+
+.preview-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.preview-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.preview-table td {
+  padding: 0.75rem 0.5rem;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.preview-table td:nth-child(1) {
+  font-weight: 500;
+}
+
+.preview-table td:nth-child(2),
+.preview-table td:nth-child(3),
+.preview-table td:nth-child(4) {
+  text-align: right;
+  font-weight: 600;
+}
+
+/* Sección de total */
+.preview-total-section {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+  border-top: 2px solid #e2e8f0;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+}
+
+.preview-total-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.preview-total-amount {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #10b981;
+}
+
+/* Botón imprimir */
+.preview-print-button {
+  width: calc(100% - 3rem);
+  margin: 0 1.5rem 1.5rem;
+  padding: 0.875rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.logo-text {
-  font-size: 18px;
-  font-weight: 600;
-  color: #374151;
-  letter-spacing: 2px;
+.preview-print-button:hover {
+  background: #2563eb;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-.logo-text-bold {
-  font-size: 24px;
-  font-weight: 800;
-  color: #1f2937;
-  letter-spacing: 1px;
+/* Scrollbar personalizada */
+.preview-modal-container::-webkit-scrollbar {
+  width: 8px;
 }
 
-.preview-business-header {
-  text-align: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 2px dashed #e5e7eb;
+.preview-modal-container::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.preview-business-name {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 8px;
+.preview-modal-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 
-.preview-business-info {
-  font-size: 12px;
-  text-align: center;
-  color: #6b7280;
-  margin: 2px 0;
+.preview-modal-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
