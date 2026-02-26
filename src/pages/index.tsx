@@ -146,12 +146,18 @@ export default function POS() {
         ...sale,
         id: sale.id,
         saleNumber: sale.sale_number,
-        date: new Date(sale.date || new Date()),
+        date: sale.date ? new Date(sale.date).toISOString() : new Date().toISOString(), // Convertir a string ISO
         items: sale.sale_items?.map(item => ({
-          productId: item.product_id || 0,
-          productName: item.product_name,
+          // Reconstruir estructura CartItem completa
+          product: {
+            id: item.product_id || 0,
+            name: item.product_name || "Producto",
+            price: Number(item.product_price || 0),
+            active: true,
+            categoryId: 0 // Valor por defecto
+          },
           quantity: item.quantity,
-          price: Number(item.product_price)
+          // Mantener propiedades planas por compatibilidad si es necesario
         })) || [],
         subtotal: Number(sale.subtotal),
         discount: Number(sale.discount_amount || 0),
@@ -165,7 +171,7 @@ export default function POS() {
           isExempt: sale.exempt || false,
           exempt: sale.exempt || false
         },
-        type: (sale.order_type as OrderType) || "local",
+        orderType: (sale.order_type as OrderType) || "local",
         paymentMethod: sale.payment_method || "cash",
         status: (sale.status as "pending" | "completed" | "cancelled") || "pending",
         note: sale.notes || sale.note || "",
@@ -629,27 +635,32 @@ export default function POS() {
           }
         }
 
-        console.log('Creando venta en Supabase...', newSale);
+        console.log('Insertando en Supabase usando las variables locales directamente');
+        const saleToInsert = {
+          sale_number: saleNumber,
+          total: newSale.total,
+          subtotal: newSale.subtotal,
+          discount: newSale.discount_amount,
+          delivery_cost: newSale.delivery_cost,
+          order_type: newSale.order_type,
+          payment_method: newSale.payment_method,
+          customer_name: newSale.customer_name || null,
+          customer_phone: newSale.customer_phone || null,
+          customer_address: newSale.customer_address || null,
+          customer_ruc: newSale.customer_ruc || null,
+          customer_business_name: newSale.customer_business_name || null,
+          tax_exempt: newSale.tax_exempt,
+          notes: newSale.notes || null,
+          status: newSale.status,
+          items_count: newSale.items_count,
+          created_by: newSale.created_by
+        };
+
         const { data: saleData, error: saleError } = await supabase
           .from("sales")
-          .insert({
-            sale_number: saleNumber,
-            total: newSale.total,
-            subtotal: newSale.subtotal,
-            discount: newSale.discount_amount,
-            delivery_cost: newSale.delivery_cost,
-            order_type: newSale.order_type,
-            payment_method: newSale.payment_method,
-            customer_name: newSale.customer_name,
-            customer_phone: newSale.customer_phone,
-            customer_address: newSale.customer_address,
-            customer_ruc: newSale.customer_ruc,
-            customer_business_name: newSale.customer_business_name,
-            tax_exempt: newSale.tax_exempt,
-            notes: newSale.notes,
-            status: newSale.status,
-            items_count: newSale.items_count,
-          });
+          .insert(saleToInsert)
+          .select()
+          .single();
 
         console.log('Recargando datos...');
         await loadAllData();

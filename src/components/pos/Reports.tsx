@@ -954,3 +954,20 @@ export function Reports({ sales, products }: ReportsProps) {
     </div>
   );
 }
+
+// Helper para obtener nombre del producto de forma segura
+function getProductName(item: any): string {
+  if (item.product && item.product.name) return item.product.name;
+  // Fallback para datos antiguos o estructura plana
+  if (item.productName) return item.productName;
+  return "Producto desconocido";
+}
+
+// Helper para obtener precio de forma segura
+function getProductPrice(item: any): number {
+  if (item.product && item.product.price) return Number(item.product.price);
+  // Fallback para datos antiguos o estructura plana
+  if (item.price) return Number(item.price);
+  if (item.product_price) return Number(item.product_price);
+  return 0;
+}

@@ -75,10 +75,12 @@ export interface Sale {
   deliveryCost?: number;
   total: number;
   paymentMethod: string;
-  orderType: "delivery" | "pickup" | "local";
+  orderType: "delivery" | "pickup" | "local" | "dineIn";
   customer?: CustomerInfo;
   status: "pending" | "completed" | "cancelled";
   note?: string;
+  deliveryDriverName?: string;
+  payments?: Payment[];
 }
 
 export type UserRole = "admin" | "cashier" | "kitchen";
