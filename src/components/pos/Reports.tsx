@@ -166,10 +166,13 @@ export function Reports({ sales, products }: ReportsProps) {
       .filter(s => s.status === "completed")
       .forEach(sale => {
         sale.items.forEach(item => {
-          const existing = productMap.get(item.productName) || { quantitySold: 0, totalRevenue: 0 };
-          productMap.set(item.productName, {
+          const productName = getProductName(item);
+          const price = getProductPrice(item);
+          
+          const existing = productMap.get(productName) || { quantitySold: 0, totalRevenue: 0 };
+          productMap.set(productName, {
             quantitySold: existing.quantitySold + item.quantity,
-            totalRevenue: existing.totalRevenue + (item.price * item.quantity)
+            totalRevenue: existing.totalRevenue + (price * item.quantity)
           });
         });
       });
@@ -275,6 +278,9 @@ export function Reports({ sales, products }: ReportsProps) {
       
       // Agregar una fila por cada producto
       sale.items.forEach((item, index) => {
+        const productName = getProductName(item);
+        const price = getProductPrice(item);
+        
         detailedData.push([
           index === 0 ? sale.saleNumber : "", // ID solo en la primera fila
           index === 0 ? format(new Date(sale.date), "dd/MM/yyyy HH:mm") : "", // Fecha solo en la primera fila
@@ -286,10 +292,10 @@ export function Reports({ sales, products }: ReportsProps) {
           index === 0 ? balance : "",
           index === 0 ? paymentMethod : "",
           index === 0 ? amountPaid : "",
-          item.productName,
+          productName,
           item.quantity,
-          item.price,
-          item.price * item.quantity
+          price,
+          price * item.quantity
         ]);
       });
       
