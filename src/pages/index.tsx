@@ -638,22 +638,22 @@ export default function POS() {
         console.log('Insertando en Supabase usando las variables locales directamente');
         const saleToInsert = {
           sale_number: saleNumber,
-          total: newSale.total,
-          subtotal: newSale.subtotal,
-          discount: newSale.discount_amount,
-          delivery_cost: newSale.delivery_cost,
-          order_type: newSale.order_type,
-          payment_method: newSale.payment_method,
-          customer_name: newSale.customer_name || null,
-          customer_phone: newSale.customer_phone || null,
-          customer_address: newSale.customer_address || null,
-          customer_ruc: newSale.customer_ruc || null,
-          customer_business_name: newSale.customer_business_name || null,
-          tax_exempt: newSale.tax_exempt,
-          notes: newSale.notes || null,
-          status: newSale.status,
-          items_count: newSale.items_count,
-          created_by: newSale.created_by
+          total: cartTotal,
+          subtotal: subtotal,
+          discount: discountAmount,
+          delivery_cost: orderType === "delivery" ? deliveryCost : 0,
+          order_type: orderType,
+          payment_method: payments.length > 0 ? payments[0].method : "mixed",
+          customer_name: customerInfo.name || null,
+          customer_phone: customerInfo.phone || null,
+          customer_address: customerInfo.address || null,
+          customer_ruc: customerInfo.ruc || null,
+          customer_business_name: customerInfo.businessName || null,
+          tax_exempt: customerInfo.isExempt || false,
+          notes: note || orderNote || null,
+          status: "completed" as const,
+          items_count: cart.length,
+          created_by: currentUser.name
         };
 
         const { data: saleData, error: saleError } = await supabase
