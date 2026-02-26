@@ -7,10 +7,11 @@ interface SalesHistoryProps {
   sales: Sale[];
   onLoadSale: (sale: Sale) => void;
   onCancelSale?: (saleId: number, reason: string) => void;
+  onDeleteSale?: (saleId: number) => void;
   filter?: "pending" | "all";
 }
 
-export function SalesHistory({ sales, onLoadSale, onCancelSale, filter = "all" }: SalesHistoryProps) {
+export function SalesHistory({ sales, onLoadSale, onCancelSale, onDeleteSale, filter = "all" }: SalesHistoryProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredSales = sales.filter((sale) => {
@@ -74,24 +75,43 @@ export function SalesHistory({ sales, onLoadSale, onCancelSale, filter = "all" }
             <div
               key={sale.id}
               className="history-item"
-              onClick={() => onLoadSale(sale)}
             >
-              <div className="history-item-header">
-                <span className="history-item-number">#{sale.saleNumber}</span>
-                <span className={`history-item-status status-${sale.status}`}>
-                  {getStatusText(sale.status)}
-                </span>
+              <div
+                onClick={() => onLoadSale(sale)}
+                style={{ cursor: 'pointer', flex: 1 }}
+              >
+                <div className="history-item-header">
+                  <span className="history-item-number">#{sale.saleNumber}</span>
+                  <span className={`history-item-status status-${sale.status}`}>
+                    {getStatusText(sale.status)}
+                  </span>
+                </div>
+                <div className="history-item-info">
+                  {sale.customerName || sale.customer?.name || "Cliente General"}
+                </div>
+                <div className="history-item-info">
+                  {sale.type === "delivery" ? "🛵 Delivery" : "📦 Para Retirar"}
+                </div>
+                <div className="history-item-footer">
+                  <span className="history-item-total">{formatCurrency(sale.total)}</span>
+                  <span className="history-item-date">{formatDate(sale.date)}</span>
+                </div>
               </div>
-              <div className="history-item-info">
-                {sale.customerName || sale.customer?.name || "Cliente General"}
-              </div>
-              <div className="history-item-info">
-                {sale.type === "delivery" ? "🛵 Delivery" : "📦 Para Retirar"}
-              </div>
-              <div className="history-item-footer">
-                <span className="history-item-total">{formatCurrency(sale.total)}</span>
-                <span className="history-item-date">{formatDate(sale.date)}</span>
-              </div>
+              
+              {onDeleteSale && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`¿Eliminar pedido ${sale.saleNumber}?\n\nEsta acción no se puede deshacer.`)) {
+                      onDeleteSale(sale.id);
+                    }
+                  }}
+                  className="history-item-delete-btn"
+                  title="Eliminar pedido"
+                >
+                  🗑️
+                </button>
+              )}
             </div>
           ))
         )}

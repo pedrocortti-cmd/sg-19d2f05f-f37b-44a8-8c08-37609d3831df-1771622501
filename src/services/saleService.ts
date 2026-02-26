@@ -150,6 +150,31 @@ export const saleService = {
     return this.update(id, { status: "completed" });
   },
 
+  // Eliminar venta (marca como eliminada o borra físicamente)
+  async delete(id: number): Promise<void> {
+    // Primero eliminar los items de la venta
+    const { error: itemsError } = await supabase
+      .from("sale_items")
+      .delete()
+      .eq("sale_id", id);
+
+    if (itemsError) {
+      console.error("Error deleting sale items:", itemsError);
+      throw itemsError;
+    }
+
+    // Luego eliminar la venta
+    const { error: saleError } = await supabase
+      .from("sales")
+      .delete()
+      .eq("id", id);
+
+    if (saleError) {
+      console.error("Error deleting sale:", saleError);
+      throw saleError;
+    }
+  },
+
   // Obtener siguiente número de venta del día
   async getNextDailySaleNumber(): Promise<string> {
     const today = new Date();

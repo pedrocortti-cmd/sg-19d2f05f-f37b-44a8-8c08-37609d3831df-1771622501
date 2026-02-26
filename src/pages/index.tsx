@@ -383,8 +383,13 @@ export default function POS() {
   // Eliminar venta de Supabase
   const handleDeleteSale = async (saleId: number) => {
     try {
-      // Aquí implementaremos el método delete en saleService
-      setSales(sales.filter(s => s.id !== saleId));
+      // Eliminar de Supabase
+      await saleService.delete(saleId);
+      
+      // Recargar datos para reflejar los cambios
+      await loadAllData();
+      
+      // Limpiar el carrito y estado
       setCart([]);
       setCustomerInfo({
         name: "",
@@ -400,10 +405,11 @@ export default function POS() {
       setSelectedDriverId(null);
       setDeliveryCost(0);
       setLoadedSaleId(null);
+      
       alert("🗑️ Pedido eliminado definitivamente");
     } catch (error) {
       console.error("Error eliminando venta:", error);
-      alert("Error al eliminar el pedido");
+      alert("❌ Error al eliminar el pedido. Por favor intenta nuevamente.");
     }
   };
 
@@ -803,6 +809,7 @@ export default function POS() {
         return <SalesHistory 
           sales={sales}
           onLoadSale={handleLoadSale}
+          onDeleteSale={handleDeleteSale}
         />;
       case "drivers":
         return <DeliveryDrivers 
@@ -1199,6 +1206,7 @@ export default function POS() {
               <SalesHistory 
                 sales={sales}
                 onLoadSale={handleLoadSale}
+                onDeleteSale={handleDeleteSale}
               />
             </div>
           </div>
