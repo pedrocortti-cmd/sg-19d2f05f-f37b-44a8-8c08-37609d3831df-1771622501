@@ -359,12 +359,17 @@ export function ProductsManager({
                       <SelectValue placeholder="Seleccionar categoría" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.filter(c => c.id !== 1).map((category) => (
-                        <SelectItem key={category.id} value={category.id.toString()}>
-                          {category.icon && <span className="mr-2">{category.icon}</span>}
-                          {category.name}
-                        </SelectItem>
-                      ))}
+                      {categories
+                        .filter(c => c.active && c.name.toLowerCase() !== 'todos')
+                        .map((category) => {
+                          console.log('Category in selector:', category);
+                          return (
+                            <SelectItem key={category.id} value={category.id.toString()}>
+                              {category.icon && <span className="mr-2">{category.icon}</span>}
+                              {category.name}
+                            </SelectItem>
+                          );
+                        })}
                     </SelectContent>
                   </Select>
                 </div>
