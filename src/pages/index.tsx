@@ -129,13 +129,80 @@ export default function POS() {
   // Estado para el logo del negocio
   const [businessLogo, setBusinessLogo] = useState<string | null>(null);
 
-  // Cargar logo desde localStorage al iniciar
+  // Cargar todos los datos desde localStorage al iniciar
   useEffect(() => {
+    // Cargar productos
+    const savedProducts = localStorage.getItem("products");
+    if (savedProducts) {
+      try {
+        setProducts(JSON.parse(savedProducts));
+      } catch (error) {
+        console.error("Error al cargar productos:", error);
+      }
+    }
+
+    // Cargar categorías
+    const savedCategories = localStorage.getItem("categories");
+    if (savedCategories) {
+      try {
+        setCategories(JSON.parse(savedCategories));
+      } catch (error) {
+        console.error("Error al cargar categorías:", error);
+      }
+    }
+
+    // Cargar ventas
+    const savedSales = localStorage.getItem("sales");
+    if (savedSales) {
+      try {
+        const parsedSales = JSON.parse(savedSales);
+        // Convertir fechas de string a Date
+        const salesWithDates = parsedSales.map((sale: any) => ({
+          ...sale,
+          date: new Date(sale.date)
+        }));
+        setSales(salesWithDates);
+      } catch (error) {
+        console.error("Error al cargar ventas:", error);
+      }
+    }
+
+    // Cargar conductores
+    const savedDrivers = localStorage.getItem("deliveryDrivers");
+    if (savedDrivers) {
+      try {
+        setDeliveryDrivers(JSON.parse(savedDrivers));
+      } catch (error) {
+        console.error("Error al cargar conductores:", error);
+      }
+    }
+
+    // Cargar logo
     const savedLogo = localStorage.getItem("businessLogo");
     if (savedLogo) {
       setBusinessLogo(savedLogo);
     }
   }, []);
+
+  // Guardar productos en localStorage cada vez que cambien
+  useEffect(() => {
+    localStorage.setItem("products", JSON.stringify(products));
+  }, [products]);
+
+  // Guardar categorías en localStorage cada vez que cambien
+  useEffect(() => {
+    localStorage.setItem("categories", JSON.stringify(categories));
+  }, [categories]);
+
+  // Guardar ventas en localStorage cada vez que cambien
+  useEffect(() => {
+    localStorage.setItem("sales", JSON.stringify(sales));
+  }, [sales]);
+
+  // Guardar conductores en localStorage cada vez que cambien
+  useEffect(() => {
+    localStorage.setItem("deliveryDrivers", JSON.stringify(deliveryDrivers));
+  }, [deliveryDrivers]);
 
   const handleLogoChange = (logoUrl: string | null) => {
     setBusinessLogo(logoUrl);
