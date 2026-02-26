@@ -529,22 +529,28 @@ export default function POS() {
     }
 
     try {
+      console.log('Iniciando confirmación de pago...', { payments, note, cart });
+      
       const amountPaid = payments.reduce((sum, p) => sum + p.amount, 0);
       const selectedDriver = deliveryDrivers.find(d => d.id === selectedDriverId);
       const saleNumber = await getDailySaleNumber();
 
+      console.log('Datos calculados:', { amountPaid, selectedDriver, saleNumber, loadedSaleId });
+
       if (loadedSaleId) {
+        console.log('MODO EDICIÓN: Actualizando pedido existente', loadedSaleId);
+        
         // MODO EDICIÓN: Actualizar pedido existente con pago
         const updatedSale = {
           customer_name: customerInfo.name,
           customer_phone: customerInfo.phone,
           customer_address: customerInfo.address,
           order_type: orderType,
-          delivery_driver_id: orderType === "delivery" ? selectedDriverId || undefined : undefined,
-          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
-          delivery_cost: orderType === "delivery" ? deliveryCost : undefined,
+          driver_id: orderType === "delivery" ? (selectedDriverId || null) : null,
+          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
+          delivery_cost: orderType === "delivery" ? deliveryCost : 0,
           subtotal,
-          discount: discountAmount,
+          discount_amount: discountAmount,
           total: cartTotal,
           payment_method: payments.length > 0 ? payments[0].method : "mixed",
           notes: note || orderNote,
@@ -553,11 +559,16 @@ export default function POS() {
           balance: Math.max(0, cartTotal - amountPaid)
         };
 
+        console.log('Actualizando venta en Supabase...', updatedSale);
         await saleService.update(loadedSaleId, updatedSale);
+        
+        console.log('Completando venta...');
         await saleService.complete(loadedSaleId);
 
+        console.log('Recargando datos...');
         await loadAllData();
 
+        // Limpiar estado
         setCart([]);
         setCustomerInfo({
           name: "",
@@ -575,8 +586,11 @@ export default function POS() {
         setLoadedSaleId(null);
         setShowPaymentModal(false);
 
+        console.log('Pago completado exitosamente');
         alert(`✅ Pago registrado exitosamente\n\n💰 Pedido actualizado y completado`);
       } else {
+        console.log('MODO NUEVO: Creando nueva venta directa');
+        
         // MODO NUEVO: Crear nueva venta directa
         const newSale = {
           sale_number: saleNumber,
@@ -606,6 +620,7 @@ export default function POS() {
           subtotal: item.product.price * item.quantity
         }));
 
+        console.log('Descontando stock de productos...');
         // Descontar stock
         for (const item of cart) {
           if (item.product.stock !== undefined) {
@@ -613,10 +628,13 @@ export default function POS() {
           }
         }
 
+        console.log('Creando venta en Supabase...', newSale);
         await saleService.create(newSale, saleItems);
 
+        console.log('Recargando datos...');
         await loadAllData();
 
+        // Limpiar estado
         setCart([]);
         setCustomerInfo({
           name: "",
@@ -633,11 +651,17 @@ export default function POS() {
         setDeliveryCost(0);
         setShowPaymentModal(false);
 
+        console.log('Venta completada exitosamente');
         alert(`✅ Venta ${saleNumber} confirmada exitosamente\n\n🔄 Stock actualizado automáticamente`);
       }
     } catch (error) {
-      console.error("Error confirmando pago:", error);
-      alert("Error al confirmar el pago. Por favor intenta nuevamente.");
+      console.error("Error completo al confirmar pago:", error);
+      console.error("Stack trace:", error instanceof Error ? error.stack : 'No stack available');
+      console.error("Error details:", {
+        message: error instanceof Error ? error.message : String(error),
+        name: error instanceof Error ? error.name : 'Unknown',
+      });
+      alert(`❌ Error al confirmar el pago:\n\n${error instanceof Error ? error.message : 'Error desconocido'}\n\nPor favor intenta nuevamente o contacta soporte.`);
     }
   };
 
@@ -1186,23 +1210,6 @@ export default function POS() {
 
           <div className="history-panel">
             <div className="history-content">
-              <div className="history-header">
-                <div className="history-tabs">
-                  <button
-                    className={`history-tab ${historyFilter === "pending" ? "active" : ""}`}
-                    onClick={() => setHistoryFilter("pending")}
-                  >
-                    🔴 Pendientes
-                  </button>
-                  <button
-                    className={`history-tab ${historyFilter === "all" ? "active" : ""}`}
-                    onClick={() => setHistoryFilter("all")}
-                  >
-                    📋 Todos
-                  </button>
-                </div>
-              </div>
-
               <SalesHistory 
                 sales={sales}
                 onLoadSale={handleLoadSale}

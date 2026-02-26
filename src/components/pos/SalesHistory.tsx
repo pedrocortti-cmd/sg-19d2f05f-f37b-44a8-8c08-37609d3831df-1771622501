@@ -1,130 +1,116 @@
-import { useState } from "react";
-import { Search } from "lucide-react";
-import { Sale } from "@/types/pos";
+import { Search, User as UserIcon, Clock, Eye, Trash2, Edit } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import type { Sale } from "@/types/pos";
+import { useState, useMemo } from "react";
 
 interface SalesHistoryProps {
   sales: Sale[];
   onLoadSale: (sale: Sale) => void;
-  onCancelSale?: (saleId: number, reason: string) => void;
-  onDeleteSale?: (saleId: number) => void;
-  filter?: "pending" | "all";
+  onDeleteSale: (saleId: number) => void;
 }
 
-export function SalesHistory({ sales, onLoadSale, onCancelSale, onDeleteSale, filter = "all" }: SalesHistoryProps) {
+export function SalesHistory({ sales, onLoadSale, onDeleteSale }: SalesHistoryProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState<"pending" | "all">("pending");
+  const [displayedCount, setDisplayedCount] = useState(10);
 
-  const filteredSales = sales.filter((sale) => {
-    const matchesSearch = 
-      sale.saleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (sale.customerName || "").toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = filter === "all" || sale.status === "pending";
-    
-    return matchesSearch && matchesFilter;
-  });
-
-  const formatDate = (dateInput: string | Date) => {
-    const date = new Date(dateInput);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${day}/${month} ${hours}:${minutes}`;
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "⏳ Pendiente";
-      case "completed":
-        return "✅ Pagado";
-      case "cancelled":
-        return "❌ Cancelado";
-      default:
-        return status;
-    }
-  };
-
-  const emptyMessage = filter === "pending" 
-    ? "No hay pedidos pendientes de pago" 
-    : "No hay ventas registradas";
+  const filteredSales = useMemo(() => {
+    return sales
+      .filter((sale) => {
+        const matchesSearch = 
+          sale.saleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          sale.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          "";
+        const matchesStatus = filter === "all" || sale.status === "pending";
+        return matchesSearch && matchesStatus;
+      })
+      .slice(0, displayedCount);
+  }, [sales, searchTerm, filter, displayedCount]);
 
   return (
-    <>
-      {/* Buscador */}
-      <div className="history-search">
-        <Search className="search-icon" />
-        <input
-          type="text"
-          placeholder="Buscar..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-        />
-      </div>
-
-      {/* Lista de ventas */}
-      <div className="history-list">
-        {filteredSales.length === 0 ? (
-          <div className="history-empty">
-            <p>{emptyMessage}</p>
-          </div>
-        ) : (
-          filteredSales.map((sale) => (
-            <div
-              key={sale.id}
-              className="history-item"
+    <div className="history-panel">
+      <div className="history-content">
+        <div className="history-header">
+          <div className="history-tabs">
+            <button
+              className={`history-tab ${filter === "pending" ? "active" : ""}`}
+              onClick={() => setFilter("pending")}
             >
+              🔴 Pendientes
+            </button>
+            <button
+              className={`history-tab ${filter === "all" ? "active" : ""}`}
+              onClick={() => setFilter("all")}
+            >
+              📋 Todos
+            </button>
+          </div>
+
+          <div className="history-search">
+            <Search className="history-search-icon" />
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="history-list">
+          {filteredSales.length === 0 ? (
+            <div className="history-empty">
+              <Clock className="history-empty-icon" />
+              <p className="history-empty-text">
+                {filter === "pending" ? "No hay pedidos pendientes" : "No hay ventas"}
+              </p>
+            </div>
+          ) : (
+            filteredSales.map((sale) => (
               <div
+                key={sale.id}
+                className="history-card"
                 onClick={() => onLoadSale(sale)}
-                style={{ cursor: 'pointer', flex: 1 }}
               >
-                <div className="history-item-header">
-                  <span className="history-item-number">#{sale.saleNumber}</span>
-                  <span className={`history-item-status status-${sale.status}`}>
-                    {getStatusText(sale.status)}
+                <div className="history-card-header">
+                  <span className="history-order-number">{sale.saleNumber}</span>
+                  <span className={`history-status-badge ${sale.type}`}>
+                    {sale.type === "delivery" ? "Delivery" : sale.type === "pickup" ? "Para Retirar" : "Local"}
                   </span>
                 </div>
-                <div className="history-item-info">
-                  {sale.customerName || sale.customer?.name || "Cliente General"}
+
+                <div className="history-card-client">
+                  <UserIcon className="history-client-icon" />
+                  <span className="history-client-name">
+                    {sale.customer?.name || "Sin cliente"}
+                  </span>
                 </div>
-                <div className="history-item-info">
-                  {sale.type === "delivery" ? "🛵 Delivery" : "📦 Para Retirar"}
-                </div>
-                <div className="history-item-footer">
-                  <span className="history-item-total">{formatCurrency(sale.total)}</span>
-                  <span className="history-item-date">{formatDate(sale.date)}</span>
+
+                <div className="history-card-footer">
+                  <span className="history-total">{formatCurrency(sale.total)}</span>
+                  <span className="history-datetime">
+                    {new Date(sale.date).toLocaleDateString("es-PY", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
+                  </span>
                 </div>
               </div>
-              
-              {onDeleteSale && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`¿Eliminar pedido ${sale.saleNumber}?\n\nEsta acción no se puede deshacer.`)) {
-                      onDeleteSale(sale.id);
-                    }
-                  }}
-                  className="history-item-delete-btn"
-                  title="Eliminar pedido"
-                >
-                  🗑️
-                </button>
-              )}
-            </div>
-          ))
-        )}
-      </div>
+            ))
+          )}
 
-      {/* Botón cargar más */}
-      {filteredSales.length > 0 && (
-        <div className="history-load-more">
-          <button className="btn-load-more">
-            Cargar Más
-          </button>
+          {filteredSales.length > 0 && filteredSales.length >= displayedCount && (
+            <button
+              className="btn-load-more"
+              onClick={() => setDisplayedCount(prev => prev + 10)}
+            >
+              Cargar Más
+            </button>
+          )}
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 }
