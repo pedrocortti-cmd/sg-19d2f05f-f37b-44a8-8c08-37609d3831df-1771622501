@@ -155,6 +155,7 @@
   font-weight: 700;
   font-size: 1.125rem;
   color: var(--text-primary);
+  flex-shrink: 0;
 }
 
 /* Info del cliente compacta */
@@ -164,6 +165,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .customer-compact-field {
@@ -203,6 +205,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-height: 0;
 }
 
 .cart-empty-state {
@@ -229,6 +232,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .cart-item-header {
@@ -351,6 +355,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  flex-shrink: 0;
 }
 
 .order-type-buttons {
@@ -614,11 +619,13 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
 }
 
 .history-header {
   padding: 1rem;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .history-tabs {
@@ -653,6 +660,7 @@
   position: relative;
   padding: 1rem;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .search-icon {
@@ -685,6 +693,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-height: 0;
 }
 
 .history-empty {
@@ -702,9 +711,9 @@
   border-radius: 0.5rem;
   padding: 0.875rem;
   transition: all 0.2s;
-  display: flex;
-  align-items: stretch;
-  gap: 0.5rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
 }
 
 .history-item:hover {
@@ -774,28 +783,36 @@
 }
 
 .history-item-delete-btn {
-  padding: 0.5rem;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem;
   border: 1px solid var(--border);
-  border-radius: 0.375rem;
+  border-radius: 0.25rem;
   background: white;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 1rem;
+  font-size: 0.875rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
+  width: 28px;
+  height: 28px;
+  color: var(--text-secondary);
+  z-index: 10;
 }
 
 .history-item-delete-btn:hover {
   background: var(--danger-color);
   border-color: var(--danger-color);
-  transform: scale(1.05);
+  color: white;
+  transform: scale(1.1);
 }
 
 .history-load-more {
   padding: 0.75rem;
   border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .btn-load-more {
