@@ -167,16 +167,16 @@ export const saleService = {
 
     if (error) {
       console.error("Error fetching last sale number:", error);
-      return "##0001";
+      return "#0001";
     }
 
     if (!data || data.length === 0) {
-      return "##0001";
+      return "#0001";
     }
 
-    const lastNumber = parseInt(data[0].sale_number.replace("##", ""));
+    const lastNumber = parseInt(data[0].sale_number.replace("##", "").replace("#", ""));
     const nextNumber = lastNumber + 1;
-    return `##${String(nextNumber).padStart(4, "0")}`;
+    return `#${String(nextNumber).padStart(4, "0")}`;
   },
 
   // Obtener estadísticas de ventas

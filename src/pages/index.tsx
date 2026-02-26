@@ -50,6 +50,9 @@ export default function POS() {
   const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
   const [deliveryCost, setDeliveryCost] = useState(0);
 
+  // Estado para el próximo número de venta
+  const [nextSaleNumber, setNextSaleNumber] = useState<string>("#0001");
+
   // Estado para controlar si estamos editando/cobrando una venta existente
   const [loadedSaleId, setLoadedSaleId] = useState<number | null>(null);
 
@@ -177,6 +180,10 @@ export default function POS() {
       const driversData = await driverService.getActive();
       setDeliveryDrivers(driversData);
 
+      // Cargar próximo número de venta
+      const nextNumber = await saleService.getNextDailySaleNumber();
+      setNextSaleNumber(nextNumber);
+
       // Cargar logo desde localStorage (este se mantiene en local)
       const savedLogo = localStorage.getItem("businessLogo");
       if (savedLogo) {
@@ -224,7 +231,7 @@ export default function POS() {
         counter: dailyCounter
       }));
       
-      return `##${dailyCounter.toString().padStart(4, '0')}`;
+      return `#${dailyCounter.toString().padStart(4, '0')}`;
     }
   };
 
@@ -1214,7 +1221,9 @@ export default function POS() {
         <SalePreviewModal
           sale={{
             id: sales.length + 1,
-            saleNumber: "##0001",
+            saleNumber: loadedSaleId 
+              ? sales.find(s => s.id === loadedSaleId)?.saleNumber || nextSaleNumber
+              : nextSaleNumber,
             date: new Date(),
             items: cart.map(item => ({
               productId: item.product.id,
@@ -1237,7 +1246,9 @@ export default function POS() {
           products={products}
           onClose={() => setShowPreviewModal(false)}
           onPrint={async () => {
-            const saleNumber = await getDailySaleNumber();
+            const saleNumber = loadedSaleId 
+              ? sales.find(s => s.id === loadedSaleId)?.saleNumber || nextSaleNumber
+              : nextSaleNumber;
             const printData = {
               orderNumber: saleNumber,
               date: new Date(),
