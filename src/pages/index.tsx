@@ -120,43 +120,55 @@ export default function POS() {
 
       // Cargar productos
       const productsData = await productService.getActive();
-      setProducts(productsData);
+      setProducts(productsData.map(p => ({
+        ...p,
+        categoryId: p.category_id || 0, // Mapear category_id a categoryId
+        price: Number(p.price), // Asegurar que sea número
+        stock: p.stock || 0
+      })));
 
       // Cargar categorías
       const categoriesData = await categoryService.getAll();
-      setCategories(categoriesData);
+      setCategories(categoriesData.map(c => ({
+        ...c,
+        active: c.active ?? true // Asegurar active
+      })));
 
       // Cargar ventas
       const salesData = await saleService.getAll();
       setSales(salesData.map(sale => ({
         ...sale,
-        date: new Date(sale.date),
+        id: sale.id,
         saleNumber: sale.sale_number,
+        date: new Date(sale.date || new Date()),
         items: sale.sale_items?.map(item => ({
-          productId: item.product_id,
+          productId: item.product_id || 0,
           productName: item.product_name,
           quantity: item.quantity,
-          price: item.price
+          price: Number(item.product_price)
         })) || [],
+        subtotal: Number(sale.subtotal),
+        discount: Number(sale.discount_amount || 0),
+        total: Number(sale.total),
         customer: {
           name: sale.customer_name || "",
           phone: sale.customer_phone || "",
           address: sale.customer_address || "",
-          ruc: "",
-          businessName: "",
-          isExempt: false,
-          exempt: false
+          ruc: sale.customer_ruc || "",
+          businessName: sale.customer_business_name || "",
+          isExempt: sale.exempt || false,
+          exempt: sale.exempt || false
         },
-        type: sale.order_type as OrderType,
+        type: (sale.order_type as OrderType) || "local",
         paymentMethod: sale.payment_method || "cash",
-        status: sale.status as "pending" | "completed" | "cancelled",
-        note: sale.notes || "",
+        status: (sale.status as "pending" | "completed" | "cancelled") || "pending",
+        note: sale.notes || sale.note || "",
         user: sale.created_by || "Usuario",
         deliveryDriverName: sale.delivery_driver_name || undefined,
-        deliveryDriverId: sale.delivery_driver_id || undefined,
-        deliveryCost: sale.delivery_cost || undefined,
-        amountPaid: sale.amount_paid || 0,
-        balance: sale.balance || 0
+        deliveryDriverId: sale.driver_id || undefined,
+        deliveryCost: Number(sale.delivery_cost || 0),
+        amountPaid: Number(sale.amount_paid || 0),
+        balance: Number(sale.balance || 0)
       })));
 
       // Cargar conductores
@@ -444,11 +456,11 @@ export default function POS() {
           customer_phone: customerInfo.phone,
           customer_address: customerInfo.address,
           order_type: orderType,
-          delivery_driver_id: orderType === "delivery" ? selectedDriverId || undefined : undefined,
-          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
-          delivery_cost: orderType === "delivery" ? deliveryCost : undefined,
+          driver_id: orderType === "delivery" ? (selectedDriverId || null) : null,
+          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
+          delivery_cost: orderType === "delivery" ? deliveryCost : 0,
           subtotal,
-          discount: discountAmount,
+          discount_amount: discountAmount,
           total: cartTotal,
           payment_method: "pending",
           notes: orderNote,
@@ -462,7 +474,8 @@ export default function POS() {
           product_id: item.product.id,
           product_name: item.product.name,
           quantity: item.quantity,
-          price: item.product.price
+          product_price: item.product.price,
+          subtotal: item.product.price * item.quantity
         }));
 
         await saleService.create(newSale, saleItems);
@@ -556,11 +569,11 @@ export default function POS() {
           customer_phone: customerInfo.phone,
           customer_address: customerInfo.address,
           order_type: orderType,
-          delivery_driver_id: orderType === "delivery" ? selectedDriverId || undefined : undefined,
-          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : undefined,
-          delivery_cost: orderType === "delivery" ? deliveryCost : undefined,
+          driver_id: orderType === "delivery" ? (selectedDriverId || null) : null,
+          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
+          delivery_cost: orderType === "delivery" ? deliveryCost : 0,
           subtotal,
-          discount: discountAmount,
+          discount_amount: discountAmount,
           total: cartTotal,
           payment_method: payments.length > 0 ? payments[0].method : "mixed",
           notes: note || orderNote,
@@ -574,7 +587,8 @@ export default function POS() {
           product_id: item.product.id,
           product_name: item.product.name,
           quantity: item.quantity,
-          price: item.product.price
+          product_price: item.product.price,
+          subtotal: item.product.price * item.quantity
         }));
 
         // Descontar stock

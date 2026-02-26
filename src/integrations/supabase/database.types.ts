@@ -17,17 +17,23 @@ export type Database = {
     Tables: {
       categories: {
         Row: {
+          active: boolean | null
           created_at: string | null
+          icon: string | null
           id: number
           name: string
         }
         Insert: {
+          active?: boolean | null
           created_at?: string | null
+          icon?: string | null
           id?: number
           name: string
         }
         Update: {
+          active?: boolean | null
           created_at?: string | null
+          icon?: string | null
           id?: number
           name?: string
         }
@@ -228,18 +234,24 @@ export type Database = {
       }
       sales: {
         Row: {
+          amount_paid: number | null
+          balance: number | null
           created_at: string | null
+          created_by: string | null
           customer_address: string | null
           customer_business_name: string | null
           customer_name: string | null
           customer_phone: string | null
           customer_ruc: string | null
           date: string | null
+          delivery_cost: number | null
+          delivery_driver_name: string | null
           discount_amount: number | null
           driver_id: number | null
           exempt: boolean | null
           id: number
           note: string | null
+          notes: string | null
           order_type: string | null
           payment_method: string | null
           sale_number: string
@@ -249,18 +261,24 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          amount_paid?: number | null
+          balance?: number | null
           created_at?: string | null
+          created_by?: string | null
           customer_address?: string | null
           customer_business_name?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           customer_ruc?: string | null
           date?: string | null
+          delivery_cost?: number | null
+          delivery_driver_name?: string | null
           discount_amount?: number | null
           driver_id?: number | null
           exempt?: boolean | null
           id?: number
           note?: string | null
+          notes?: string | null
           order_type?: string | null
           payment_method?: string | null
           sale_number: string
@@ -270,18 +288,24 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          amount_paid?: number | null
+          balance?: number | null
           created_at?: string | null
+          created_by?: string | null
           customer_address?: string | null
           customer_business_name?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           customer_ruc?: string | null
           date?: string | null
+          delivery_cost?: number | null
+          delivery_driver_name?: string | null
           discount_amount?: number | null
           driver_id?: number | null
           exempt?: boolean | null
           id?: number
           note?: string | null
+          notes?: string | null
           order_type?: string | null
           payment_method?: string | null
           sale_number?: string
