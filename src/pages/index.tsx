@@ -39,6 +39,7 @@ export default function POS() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [historyFilter, setHistoryFilter] = useState<"pending" | "all">("pending");
@@ -248,11 +249,11 @@ export default function POS() {
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === "Todos" || product.category === selectedCategory;
+      const matchesCategory = selectedCategoryId === null || product.categoryId === selectedCategoryId;
       const isActive = product.active;
       return matchesSearch && matchesCategory && isActive;
     });
-  }, [products, searchTerm, selectedCategory]);
+  }, [products, searchTerm, selectedCategoryId]);
 
   // Filtrar historial de ventas
   const filteredSales = useMemo(() => {
@@ -1136,8 +1137,15 @@ export default function POS() {
                 {categories.filter(c => c.active).map((cat) => (
                   <button
                     key={cat.id}
-                    className={`products-tab ${selectedCategory === cat.name ? "active" : ""}`}
-                    onClick={() => setSelectedCategory(cat.name)}
+                    className={`products-tab ${selectedCategoryId === cat.id ? "active" : ""}`}
+                    onClick={() => {
+                      if (cat.name === "Todos") {
+                        setSelectedCategoryId(null);
+                      } else {
+                        setSelectedCategoryId(cat.id);
+                      }
+                      setSelectedCategory(cat.name);
+                    }}
                   >
                     {cat.icon && <span className="mr-1">{cat.icon}</span>}
                     {cat.name}
