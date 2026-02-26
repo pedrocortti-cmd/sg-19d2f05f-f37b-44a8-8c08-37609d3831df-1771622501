@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Product, StockMovement } from "@/types/pos";
-import { Search, Package, AlertTriangle, Plus, Minus, History, Download } from "lucide-react";
+import { Product } from "@/types/pos";
+import { Search, Package, AlertTriangle, Plus, Minus, X } from "lucide-react";
 
 interface InventoryProps {
   products: Product[];
@@ -57,10 +57,18 @@ export function Inventory({ products, onUpdateProduct }: InventoryProps) {
     return { label: "Disponible", className: "good", icon: "✓" };
   };
 
+  // Función para cerrar modal y limpiar estado
+  const handleCloseModal = () => {
+    setShowAdjustment(false);
+    setSelectedProduct(null);
+    setAdjustmentType("add");
+    setAdjustmentQuantity("");
+    setAdjustmentReason("");
+  };
+
   // Función para ajustar stock
   const handleAdjustStock = () => {
-    if (!selectedProduct || !adjustmentQuantity || !adjustmentReason.trim()) {
-      alert("Por favor completa todos los campos");
+    if (!selectedProduct || !adjustmentQuantity) {
       return;
     }
 
@@ -98,21 +106,7 @@ export function Inventory({ products, onUpdateProduct }: InventoryProps) {
       createdAt: new Date(),
     });
 
-    // Resetear formulario
-    setShowAdjustment(false);
-    setSelectedProduct(null);
-    setAdjustmentQuantity("");
-    setAdjustmentReason("");
-    alert(`Stock actualizado correctamente. Nuevo stock: ${newStock} unidades`);
-  };
-
-  // Función para establecer stock inicial
-  const handleSetInitialStock = (product: Product, stock: number) => {
-    const updatedProduct = {
-      ...product,
-      stock,
-    };
-    onUpdateProduct(updatedProduct);
+    handleCloseModal();
   };
 
   // Renderizar vista de stock
@@ -193,6 +187,7 @@ export function Inventory({ products, onUpdateProduct }: InventoryProps) {
                       variant="outline"
                       onClick={() => {
                         setSelectedProduct(product);
+                        setAdjustmentType("add");
                         setShowAdjustment(true);
                       }}
                       className="inventory-adjust-btn"
@@ -303,7 +298,7 @@ export function Inventory({ products, onUpdateProduct }: InventoryProps) {
       {/* Métricas */}
       <div className="inventory-metrics">
         <div className="inventory-metric">
-          <div className="inventory-metric-icon">📦</div>
+          <div className="inventory-metric-icon blue">📦</div>
           <div className="inventory-metric-content">
             <span className="inventory-metric-value">{totalUnits.toLocaleString("es-PY")}</span>
             <span className="inventory-metric-label">Unidades Totales</span>
@@ -311,11 +306,12 @@ export function Inventory({ products, onUpdateProduct }: InventoryProps) {
         </div>
         
         <div className="inventory-metric">
-          <div className="inventory-metric-icon">💰</div>
+          <div className="inventory-metric-icon green">💰</div>
           <div className="inventory-metric-content">
             <span className="inventory-metric-value">
               Gs. {totalInventoryValue.toLocaleString("es-PY")}
             </span>
+            <span className="inventory-metric-label">Valor en Stock</span>
           </div>
         </div>
       </div>
@@ -344,37 +340,41 @@ export function Inventory({ products, onUpdateProduct }: InventoryProps) {
         {activeTab === "alerts" && renderAlertsView()}
       </div>
 
-      {/* Modal de ajuste de stock */}
+      {/* Modal de Ajuste de Stock */}
       {showAdjustment && selectedProduct && (
-        <div className="pos-modal-overlay" onClick={() => setShowAdjustment(false)}>
-          <div className="pos-modal inventory-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="inventory-modal-overlay" onClick={handleCloseModal}>
+          <div className="inventory-modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="inventory-modal-header">
-              <h2>Ajustar Stock - {selectedProduct.name}</h2>
+              <h3 className="inventory-modal-title">
+                Ajustar Stock - {selectedProduct.name}
+              </h3>
               <button
-                className="pos-modal-close"
-                onClick={() => setShowAdjustment(false)}
+                className="inventory-modal-close"
+                onClick={handleCloseModal}
               >
-                ×
+                <X size={20} />
               </button>
             </div>
 
             <div className="inventory-modal-body">
-              <div className="inventory-current-stock">
-                <Package size={20} />
-                <span>Stock Actual: <strong>{selectedProduct.stock || 0} unidades</strong></span>
+              {/* Stock actual */}
+              <div className="inventory-stock-current">
+                <Package size={20} className="text-blue-600" />
+                <span className="inventory-stock-label">Stock Actual:</span>
+                <span className="inventory-stock-value">{selectedProduct.stock || 0} unidades</span>
               </div>
 
-              {/* Tipo de ajuste */}
-              <div className="inventory-adjustment-type">
+              {/* Tabs de tipo de ajuste */}
+              <div className="inventory-adjustment-tabs">
                 <button
-                  className={`inventory-type-btn ${adjustmentType === "add" ? "active" : ""}`}
+                  className={`inventory-tab ${adjustmentType === "add" ? "inventory-tab-active" : ""}`}
                   onClick={() => setAdjustmentType("add")}
                 >
                   <Plus size={18} />
                   Agregar Stock
                 </button>
                 <button
-                  className={`inventory-type-btn ${adjustmentType === "remove" ? "active" : ""}`}
+                  className={`inventory-tab ${adjustmentType === "remove" ? "inventory-tab-active" : ""}`}
                   onClick={() => setAdjustmentType("remove")}
                 >
                   <Minus size={18} />
@@ -382,58 +382,46 @@ export function Inventory({ products, onUpdateProduct }: InventoryProps) {
                 </button>
               </div>
 
-              {/* Cantidad */}
+              {/* Campo de cantidad */}
               <div className="inventory-form-group">
-                <label>Cantidad</label>
-                <Input
+                <label className="inventory-form-label">Cantidad</label>
+                <input
                   type="number"
-                  min="1"
+                  className="inventory-form-input"
+                  placeholder="Ingresa la cantidad"
+                  min="0"
                   value={adjustmentQuantity}
                   onChange={(e) => setAdjustmentQuantity(e.target.value)}
-                  placeholder="Ingresa la cantidad"
-                  className="inventory-input"
                 />
               </div>
 
-              {/* Motivo */}
+              {/* Campo de motivo */}
               <div className="inventory-form-group">
-                <label>Motivo del Ajuste</label>
+                <label className="inventory-form-label">Motivo del Ajuste</label>
                 <textarea
+                  className="inventory-form-textarea"
+                  placeholder="Ej: Compra de mercadería, Corrección de inventario, Producto dañado..."
+                  rows={3}
                   value={adjustmentReason}
                   onChange={(e) => setAdjustmentReason(e.target.value)}
-                  placeholder="Ej: Compra de mercadería, Corrección de inventario, Producto dañado..."
-                  className="inventory-textarea"
-                  rows={3}
                 />
               </div>
-
-              {/* Preview del nuevo stock */}
-              {adjustmentQuantity && (
-                <div className="inventory-preview">
-                  <span>Nuevo Stock:</span>
-                  <strong>
-                    {adjustmentType === "add"
-                      ? (selectedProduct.stock || 0) + parseInt(adjustmentQuantity)
-                      : Math.max(0, (selectedProduct.stock || 0) - parseInt(adjustmentQuantity))}
-                    {" unidades"}
-                  </strong>
-                </div>
-              )}
             </div>
 
             <div className="inventory-modal-footer">
-              <Button
-                variant="outline"
-                onClick={() => setShowAdjustment(false)}
+              <button
+                className="inventory-btn-cancel"
+                onClick={handleCloseModal}
               >
                 Cancelar
-              </Button>
-              <Button
+              </button>
+              <button
+                className="inventory-btn-confirm"
                 onClick={handleAdjustStock}
-                className="inventory-confirm-btn"
+                disabled={!adjustmentQuantity || parseInt(adjustmentQuantity) <= 0}
               >
                 Confirmar Ajuste
-              </Button>
+              </button>
             </div>
           </div>
         </div>
