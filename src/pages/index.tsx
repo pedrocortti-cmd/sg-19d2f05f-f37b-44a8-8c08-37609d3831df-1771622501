@@ -558,21 +558,21 @@ export default function POS() {
         
         // MODO EDICIÓN: Actualizar pedido existente con pago
         const updatedSale = {
-          customer_name: customerInfo.name,
-          customer_phone: customerInfo.phone,
-          customer_address: customerInfo.address,
+          customer_name: customerInfo.name || null,
+          customer_phone: customerInfo.phone || null,
+          customer_address: customerInfo.address || null,
           order_type: orderType,
           driver_id: orderType === "delivery" ? (selectedDriverId || null) : null,
           delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
-          delivery_cost: orderType === "delivery" ? deliveryCost : 0,
-          subtotal,
-          discount_amount: discountAmount,
-          total: cartTotal,
-          payment_method: payments.length > 0 ? payments[0].method : "mixed",
-          notes: note || orderNote,
+          delivery_cost: orderType === "delivery" ? Number(deliveryCost) : 0,
+          subtotal: Number(subtotal),
+          discount_amount: Number(discountAmount),
+          total: Number(cartTotal),
+          payment_method: payments.length > 0 ? payments[0].method : "cash",
+          notes: note || orderNote || null,
           status: "completed" as const,
-          amount_paid: amountPaid,
-          balance: Math.max(0, cartTotal - amountPaid)
+          amount_paid: Number(amountPaid),
+          balance: Math.max(0, Number(cartTotal) - Number(amountPaid))
         };
 
         console.log('💾 Actualizando venta en Supabase...', updatedSale);
@@ -617,28 +617,39 @@ export default function POS() {
         }
 
         console.log('💾 Preparando datos para insertar en Supabase...');
+        
+        // Asegurar que todos los valores numéricos sean números válidos
+        const finalTotal = Number(cartTotal) || 0;
+        const finalSubtotal = Number(subtotal) || 0;
+        const finalDiscountAmount = Number(discountAmount) || 0;
+        const finalDeliveryCost = orderType === "delivery" ? (Number(deliveryCost) || 0) : 0;
+        const finalAmountPaid = Number(amountPaid) || 0;
+        const finalBalance = Math.max(0, finalTotal - finalAmountPaid);
+        
         const saleToInsert = {
           sale_number: saleNumber,
-          total: cartTotal,
-          subtotal: subtotal,
-          discount_amount: discountAmount,
-          delivery_cost: orderType === "delivery" ? deliveryCost : 0,
+          total: finalTotal,
+          subtotal: finalSubtotal,
+          discount_amount: finalDiscountAmount,
+          delivery_cost: finalDeliveryCost,
           order_type: orderType,
-          payment_method: payments.length > 0 ? payments[0].method : "mixed",
+          payment_method: payments.length > 0 ? payments[0].method : "cash",
           customer_name: customerInfo.name || null,
           customer_phone: customerInfo.phone || null,
           customer_address: customerInfo.address || null,
           customer_ruc: customerInfo.ruc || null,
           customer_business_name: customerInfo.businessName || null,
           exempt: customerInfo.isExempt || false,
+          driver_id: orderType === "delivery" ? (selectedDriverId || null) : null,
+          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
           notes: note || orderNote || null,
           status: "completed" as const,
-          amount_paid: amountPaid,
-          balance: Math.max(0, cartTotal - amountPaid),
+          amount_paid: finalAmountPaid,
+          balance: finalBalance,
           created_by: currentUser.name
         };
 
-        console.log('💾 Objeto a insertar:', saleToInsert);
+        console.log('💾 Objeto a insertar:', JSON.stringify(saleToInsert, null, 2));
 
         const { data: saleData, error: saleError } = await supabase
           .from("sales")
@@ -660,12 +671,12 @@ export default function POS() {
             sale_id: saleData.id,
             product_id: item.product.id,
             product_name: item.product.name,
-            product_price: item.product.price,
+            product_price: Number(item.product.price),
             quantity: item.quantity,
-            subtotal: item.product.price * item.quantity
+            subtotal: Number(item.product.price) * item.quantity
           }));
 
-          console.log('💾 Items a guardar:', saleItems);
+          console.log('💾 Items a guardar:', JSON.stringify(saleItems, null, 2));
 
           const { error: itemsError } = await supabase
             .from("sale_items")
