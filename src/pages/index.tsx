@@ -536,16 +536,25 @@ export default function POS() {
     }
 
     try {
-      console.log('Iniciando confirmación de pago...', { payments, note, cart });
+      console.log('🔄 Iniciando confirmación de pago...', { payments, note, cart });
       
       const amountPaid = payments.reduce((sum, p) => sum + p.amount, 0);
       const selectedDriver = deliveryDrivers.find(d => d.id === selectedDriverId);
       const saleNumber = await getDailySaleNumber();
 
-      console.log('Datos calculados:', { amountPaid, selectedDriver, saleNumber, loadedSaleId });
+      console.log('📊 Datos calculados:', { 
+        amountPaid, 
+        selectedDriver, 
+        saleNumber, 
+        loadedSaleId,
+        cartTotal,
+        subtotal,
+        discountAmount,
+        deliveryCost
+      });
 
       if (loadedSaleId) {
-        console.log('MODO EDICIÓN: Actualizando pedido existente', loadedSaleId);
+        console.log('✏️ MODO EDICIÓN: Actualizando pedido existente', loadedSaleId);
         
         // MODO EDICIÓN: Actualizar pedido existente con pago
         const updatedSale = {
@@ -566,13 +575,13 @@ export default function POS() {
           balance: Math.max(0, cartTotal - amountPaid)
         };
 
-        console.log('Actualizando venta en Supabase...', updatedSale);
+        console.log('💾 Actualizando venta en Supabase...', updatedSale);
         await saleService.update(loadedSaleId, updatedSale);
         
-        console.log('Completando venta...');
+        console.log('✅ Completando venta...');
         await saleService.complete(loadedSaleId);
 
-        console.log('Recargando datos...');
+        console.log('🔄 Recargando datos...');
         await loadAllData();
 
         // Limpiar estado
@@ -593,54 +602,26 @@ export default function POS() {
         setLoadedSaleId(null);
         setShowPaymentModal(false);
 
-        console.log('Pago completado exitosamente');
+        console.log('✅ Pago completado exitosamente');
         alert(`✅ Pago registrado exitosamente\n\n💰 Pedido actualizado y completado`);
       } else {
-        console.log('MODO NUEVO: Creando nueva venta directa');
+        console.log('🆕 MODO NUEVO: Creando nueva venta directa');
         
-        // MODO NUEVO: Crear nueva venta directa
-        const newSale = {
-          sale_number: saleNumber,
-          customer_name: customerInfo.name,
-          customer_phone: customerInfo.phone,
-          customer_address: customerInfo.address,
-          order_type: orderType,
-          driver_id: orderType === "delivery" ? (selectedDriverId || null) : null,
-          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
-          delivery_cost: orderType === "delivery" ? deliveryCost : 0,
-          subtotal,
-          discount_amount: discountAmount,
-          total: cartTotal,
-          payment_method: payments.length > 0 ? payments[0].method : "mixed",
-          notes: note || orderNote,
-          created_by: currentUser.name,
-          status: "completed" as const,
-          amount_paid: amountPaid,
-          balance: Math.max(0, cartTotal - amountPaid)
-        };
-
-        const saleItems = cart.map(item => ({
-          product_id: item.product.id,
-          product_name: item.product.name,
-          quantity: item.quantity,
-          product_price: item.product.price,
-          subtotal: item.product.price * item.quantity
-        }));
-
-        console.log('Descontando stock de productos...');
+        console.log('🔄 Descontando stock de productos...');
         // Descontar stock
         for (const item of cart) {
           if (item.product.stock !== undefined) {
+            console.log(`📦 Descontando ${item.quantity} de ${item.product.name} (ID: ${item.product.id})`);
             await productService.updateStock(item.product.id, -item.quantity);
           }
         }
 
-        console.log('Insertando en Supabase usando las variables locales directamente');
+        console.log('💾 Preparando datos para insertar en Supabase...');
         const saleToInsert = {
           sale_number: saleNumber,
           total: cartTotal,
           subtotal: subtotal,
-          discount: discountAmount,
+          discount_amount: discountAmount,
           delivery_cost: orderType === "delivery" ? deliveryCost : 0,
           order_type: orderType,
           payment_method: payments.length > 0 ? payments[0].method : "mixed",
@@ -649,12 +630,15 @@ export default function POS() {
           customer_address: customerInfo.address || null,
           customer_ruc: customerInfo.ruc || null,
           customer_business_name: customerInfo.businessName || null,
-          tax_exempt: customerInfo.isExempt || false,
+          exempt: customerInfo.isExempt || false,
           notes: note || orderNote || null,
           status: "completed" as const,
-          items_count: cart.length,
+          amount_paid: amountPaid,
+          balance: Math.max(0, cartTotal - amountPaid),
           created_by: currentUser.name
         };
+
+        console.log('💾 Objeto a insertar:', saleToInsert);
 
         const { data: saleData, error: saleError } = await supabase
           .from("sales")
@@ -662,7 +646,40 @@ export default function POS() {
           .select()
           .single();
 
-        console.log('Recargando datos...');
+        if (saleError) {
+          console.error('❌ Error al insertar venta:', saleError);
+          throw new Error(`Error al guardar venta: ${saleError.message}`);
+        }
+
+        console.log('✅ Venta guardada:', saleData);
+
+        // Guardar items de la venta
+        if (saleData) {
+          console.log('💾 Guardando items de la venta...');
+          const saleItems = cart.map(item => ({
+            sale_id: saleData.id,
+            product_id: item.product.id,
+            product_name: item.product.name,
+            product_price: item.product.price,
+            quantity: item.quantity,
+            subtotal: item.product.price * item.quantity
+          }));
+
+          console.log('💾 Items a guardar:', saleItems);
+
+          const { error: itemsError } = await supabase
+            .from("sale_items")
+            .insert(saleItems);
+
+          if (itemsError) {
+            console.error('❌ Error al guardar items:', itemsError);
+            throw new Error(`Error al guardar items: ${itemsError.message}`);
+          }
+
+          console.log('✅ Items guardados correctamente');
+        }
+
+        console.log('🔄 Recargando datos...');
         await loadAllData();
 
         // Limpiar estado
@@ -683,17 +700,20 @@ export default function POS() {
         setLoadedSaleId(null);
         setShowPaymentModal(false);
 
-        console.log('Venta completada exitosamente');
+        console.log('✅ Venta completada exitosamente');
         alert(`✅ Venta ${saleNumber} confirmada exitosamente\n\n🔄 Stock actualizado automáticamente`);
       }
     } catch (error) {
-      console.error("Error completo al confirmar pago:", error);
+      console.error("❌ Error completo al confirmar pago:", error);
       console.error("Stack trace:", error instanceof Error ? error.stack : 'No stack available');
       console.error("Error details:", {
         message: error instanceof Error ? error.message : String(error),
         name: error instanceof Error ? error.name : 'Unknown',
       });
-      alert(`❌ Error al confirmar el pago:\n\n${error instanceof Error ? error.message : 'Error desconocido'}\n\nPor favor intenta nuevamente o contacta soporte.`);
+      
+      // Mostrar error más específico al usuario
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`❌ Error al confirmar el pago:\n\n${errorMessage}\n\nPor favor revisa la consola del navegador (F12) para más detalles.`);
     }
   };
 
