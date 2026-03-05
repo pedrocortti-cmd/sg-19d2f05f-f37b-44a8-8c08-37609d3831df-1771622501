@@ -654,14 +654,14 @@ export default function POS() {
 
       const { data: existingSales } = await supabase
         .from("sales")
-        .select("saleNumber")
-        .like("saleNumber", `${dateStr}-%`)
-        .order("saleNumber", { ascending: false })
+        .select("sale_number")
+        .like("sale_number", `${dateStr}-%`)
+        .order("sale_number", { ascending: false })
         .limit(1);
 
       let sequence = 1;
       if (existingSales && existingSales.length > 0) {
-        const lastNumber = existingSales[0].saleNumber;
+        const lastNumber = existingSales[0].sale_number;
         const lastSequence = parseInt(lastNumber.split("-")[1]);
         sequence = lastSequence + 1;
       }
@@ -752,7 +752,7 @@ export default function POS() {
       await loadAllData();
 
       // Mostrar confirmación
-      alert(`✅ Pedido #${sale.saleNumber} confirmado exitosamente`);
+      alert(`✅ Pedido #${sale.sale_number} confirmado exitosamente`);
 
       // Limpiar estado SILENCIOSAMENTE (sin preguntas)
       console.log("🧹 Limpiando carrito silenciosamente (sin preguntas)");
