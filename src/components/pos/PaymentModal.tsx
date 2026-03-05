@@ -26,7 +26,12 @@ export function PaymentModal({ total, onClose, onConfirm }: PaymentModalProps) {
       return;
     }
 
-    setPayments([...payments, { method: currentMethod, amount }]);
+    setPayments([...payments, { 
+      id: Date.now(), 
+      method: currentMethod, 
+      amount,
+      timestamp: new Date()
+    }]);
     setCurrentAmount("");
   };
 
