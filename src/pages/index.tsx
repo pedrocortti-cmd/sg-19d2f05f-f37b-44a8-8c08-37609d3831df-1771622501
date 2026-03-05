@@ -483,11 +483,9 @@ export default function POS() {
           customer_address: string | null;
           customer_ruc: string | null;
           customer_business_name: string | null;
-          tax_exempt: boolean;
+          exempt: boolean;
           order_type: string;
           notes: string;
-          discount_type: string;
-          discount_value: number;
           subtotal: number;
           discount_amount: number;
           total: number;
@@ -500,11 +498,9 @@ export default function POS() {
           customer_address: customerInfo.address || null,
           customer_ruc: customerInfo.ruc || null,
           customer_business_name: customerInfo.businessName || null,
-          tax_exempt: customerInfo.isExempt || false,
+          exempt: customerInfo.isExempt || false,
           order_type: orderType,
           notes: orderNote,
-          discount_type: discountType,
-          discount_value: discountValue,
           subtotal: subtotal,
           discount_amount: discountAmount,
           total: finalTotal,
@@ -631,18 +627,17 @@ export default function POS() {
       // Preparar datos de venta
       const saleData: {
         sale_number: string;
-        sale_date: string;
+        sale_date: string; // Mapear a 'date' en la BD si es necesario, pero el esquema dice 'date'
+        date: string; // Agregar campo date explícito
         customer_name: string | null;
         customer_phone: string | null;
         customer_address: string | null;
         customer_ruc: string | null;
         customer_business_name: string | null;
-        tax_exempt: boolean;
+        exempt: boolean;
         order_type: string;
         status: string;
         notes: string;
-        discount_type: string;
-        discount_value: number;
         subtotal: number;
         discount_amount: number;
         total: number;
@@ -651,18 +646,17 @@ export default function POS() {
         delivery_driver_name?: string | null;
       } = {
         sale_number: saleNumber,
-        sale_date: today.toISOString(),
+        sale_date: today.toISOString(), // Mantener por compatibilidad si se usa en otro lado
+        date: today.toISOString(), // Campo correcto según esquema
         customer_name: customerInfo.name || null,
         customer_phone: customerInfo.phone || null,
         customer_address: customerInfo.address || null,
         customer_ruc: customerInfo.ruc || null,
         customer_business_name: customerInfo.businessName || null,
-        tax_exempt: customerInfo.isExempt || false,
+        exempt: customerInfo.isExempt || false,
         order_type: orderType,
         status: "pending",
         notes: orderNote,
-        discount_type: discountType,
-        discount_value: discountValue,
         subtotal: subtotal,
         discount_amount: discountAmount,
         total: finalTotal,
@@ -1045,10 +1039,10 @@ export default function POS() {
           product: {
             id: item.products!.id,
             name: item.products!.name,
-            price: Number(item.product_price),
+            price: Number(item.product_price || 0),
             categoryId: item.products!.category_id || 0,
             active: true,
-            stock: 0 // Valor por defecto ya que no viene en esta consulta
+            stock: 0 // Valor por defecto
           },
           quantity: item.quantity,
           itemNote: "" // Valor por defecto
@@ -1064,13 +1058,14 @@ export default function POS() {
         address: sale.customer_address || "",
         ruc: sale.customer_ruc || "",
         businessName: sale.customer_business_name || "",
-        isExempt: sale.tax_exempt || false,
-        exempt: sale.tax_exempt || false
+        isExempt: sale.exempt || false,
+        exempt: sale.exempt || false
       });
       setOrderType((sale.order_type as OrderType) || "local");
       setOrderNote(sale.notes || "");
-      setDiscountType((sale.discount_type as "percentage" | "amount") || "percentage");
-      setDiscountValue(sale.discount_value || 0);
+      // Como no guardamos discount_type/value en BD, inferimos o reseteamos
+      setDiscountType("percentage"); 
+      setDiscountValue(0); 
       setDeliveryCost(Number(sale.delivery_cost || 0));
       
       // ✅ CRÍTICO: Cargar el repartidor si existe
