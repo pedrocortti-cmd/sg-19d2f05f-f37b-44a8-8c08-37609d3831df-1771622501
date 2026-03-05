@@ -21,7 +21,7 @@ import {
   Plus, 
   Minus, 
   Trash2, 
-  User, 
+  User as UserIcon, 
   Phone, 
   MapPin, 
   FileText, 
@@ -315,7 +315,7 @@ export default function POS() {
           id: product.id,
           name: product.name,
           price: product.price,
-          category_id: product.category_id,
+          category_id: product.categoryId, // Usar categoryId del objeto Product
           active: product.active,
           stock: product.stock || 0
         });
@@ -407,7 +407,7 @@ export default function POS() {
         .update({
           name: product.name,
           price: product.price,
-          category_id: product.category_id,
+          category_id: product.categoryId, // Usar categoryId del objeto Product
           active: product.active,
           stock: product.stock || 0
         })
@@ -1293,7 +1293,7 @@ export default function POS() {
       case "sales":
         return <SalesHistory 
           sales={sales}
-          onLoadSale={loadSaleToEdit}
+          onLoadSale={(sale) => sale.id && loadSaleToEdit(sale.id)}
           onDeleteSale={handleDeleteSale}
         />;
       case "drivers":
@@ -1737,7 +1737,7 @@ export default function POS() {
         {activeView === "sales" && (
           <SalesHistory 
             sales={sales} 
-            onLoadSale={loadSaleToEdit}
+            onLoadSale={(sale) => sale.id && loadSaleToEdit(sale.id)}
             onDeleteSale={handleDeleteSale}
           />
         )}
