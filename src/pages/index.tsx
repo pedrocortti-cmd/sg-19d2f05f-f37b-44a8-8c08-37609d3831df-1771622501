@@ -422,109 +422,125 @@ export default function POS() {
 
   // Confirmar pedido sin pago (para cocina)
   const handleConfirmOrder = async () => {
-    if (cart.length === 0) {
-      alert("El carrito está vacío");
-      return;
-    }
-
     try {
-      const selectedDriver = deliveryDrivers.find(d => d.id === selectedDriverId);
+      console.log('🔄 Iniciando confirmación de pedido (sin pago)...');
+      
+      // Validar que haya items en el carrito
+      if (cart.length === 0) {
+        alert("El carrito está vacío");
+        return;
+      }
+
+      // Calcular totales
+      const subtotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+      const discountAmount = discountType === 'percentage' 
+        ? (subtotal * discountValue) / 100 
+        : discountValue;
+      const finalDeliveryCost = orderType === 'delivery' ? deliveryCost : 0;
+      const total = subtotal - discountAmount + finalDeliveryCost;
+
+      console.log('📊 Datos calculados:', {
+        subtotal,
+        discountAmount,
+        deliveryCost: finalDeliveryCost,
+        total,
+        orderType,
+        deliveryDriverId: selectedDriverId
+      });
+
+      // Generar número de venta
       const saleNumber = await getDailySaleNumber();
 
-      if (loadedSaleId) {
-        // MODO EDICIÓN: Actualizar pedido existente
-        const updatedSale = {
-          customer_name: customerInfo.name,
-          customer_phone: customerInfo.phone,
-          customer_address: customerInfo.address,
-          order_type: orderType,
-          driver_id: orderType === "delivery" ? (selectedDriverId || null) : null,
-          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
-          delivery_cost: orderType === "delivery" ? deliveryCost : 0,
-          subtotal,
-          discount_amount: discountAmount,
-          total: cartTotal,
-          notes: orderNote,
-        };
+      // Crear objeto de venta con todos los campos necesarios
+      const newSale = {
+        sale_number: saleNumber,
+        date: new Date().toISOString(),
+        order_type: orderType,
+        customer_name: customerInfo.name || null,
+        customer_phone: customerInfo.phone || null,
+        customer_address: customerInfo.address || null,
+        customer_ruc: customerInfo.ruc || null,
+        customer_business_name: customerInfo.businessName || null,
+        exempt: customerInfo.isExempt || false,
+        subtotal: subtotal,
+        discount_amount: discountAmount,
+        delivery_cost: finalDeliveryCost,
+        driver_id: orderType === 'delivery' ? selectedDriverId : null,
+        delivery_driver_name: orderType === 'delivery' && selectedDriverId 
+          ? deliveryDrivers.find(d => d.id === selectedDriverId)?.name 
+          : null,
+        total: total,
+        payment_method: null, // Sin método de pago aún
+        status: 'pending' as const,
+        notes: orderNote || null,
+        created_by: currentUser.name
+      };
 
-        // Actualizar en Supabase
-        await saleService.update(loadedSaleId, updatedSale);
+      console.log('💾 Insertando pedido en Supabase:', newSale);
 
-        // Recargar ventas
-        await loadAllData();
+      // Guardar en Supabase
+      const { data: saleData, error: saleError } = await supabase
+        .from("sales")
+        .insert(newSale)
+        .select()
+        .single();
 
-        setCart([]);
-        setCustomerInfo({
-          name: "",
-          phone: "",
-          address: "",
-          ruc: "",
-          businessName: "",
-          isExempt: false,
-          exempt: false
-        });
-        setOrderNote("");
-        setDiscountValue(0);
-        setSelectedDriverId(null);
-        setDeliveryCost(0);
-        setLoadedSaleId(null);
-
-        alert(`✅ Pedido actualizado exitosamente\n\n💾 Cambios guardados`);
-      } else {
-        // MODO NUEVO: Crear nuevo pedido
-        const newSale = {
-          sale_number: saleNumber,
-          customer_name: customerInfo.name,
-          customer_phone: customerInfo.phone,
-          customer_address: customerInfo.address,
-          order_type: orderType,
-          driver_id: orderType === "delivery" ? (selectedDriverId || null) : null,
-          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
-          delivery_cost: orderType === "delivery" ? deliveryCost : 0,
-          subtotal,
-          discount_amount: discountAmount,
-          total: cartTotal,
-          payment_method: "pending",
-          notes: orderNote,
-          created_by: currentUser.name,
-          status: "pending" as const,
-          amount_paid: 0,
-          balance: cartTotal
-        };
-
-        const saleItems = cart.map(item => ({
-          product_id: item.product.id,
-          product_name: item.product.name,
-          quantity: item.quantity,
-          product_price: item.product.price,
-          subtotal: item.product.price * item.quantity
-        }));
-
-        await saleService.create(newSale, saleItems);
-
-        // Recargar ventas
-        await loadAllData();
-
-        setCart([]);
-        setCustomerInfo({
-          name: "",
-          phone: "",
-          address: "",
-          ruc: "",
-          businessName: "",
-          isExempt: false,
-          exempt: false
-        });
-        setOrderNote("");
-        setDiscountValue(0);
-        setSelectedDriverId(null);
-        setDeliveryCost(0);
-
-        alert(`✅ Pedido ${saleNumber} confirmado\n\n🖨️ Comanda enviada a cocina\n⏳ Pendiente de pago`);
+      if (saleError) {
+        console.error('❌ Error al insertar pedido:', saleError);
+        throw saleError;
       }
+
+      console.log('✅ Pedido insertado:', saleData);
+
+      // Guardar items de la venta
+      const saleItems = cart.map(item => ({
+        sale_id: saleData.id,
+        product_id: item.product.id,
+        product_name: item.product.name,
+        quantity: item.quantity,
+        product_price: Number(item.product.price),
+        subtotal: Number(item.product.price) * item.quantity
+      }));
+
+      console.log('💾 Insertando items del pedido:', saleItems);
+
+      const { error: itemsError } = await supabase
+        .from("sale_items")
+        .insert(saleItems);
+
+      if (itemsError) {
+        console.error('❌ Error al insertar items:', itemsError);
+        throw itemsError;
+      }
+
+      console.log('✅ Items insertados correctamente');
+
+      // Actualizar estado local
+      await loadAllData();
+
+      // Limpiar carrito y formulario
+      setCart([]);
+      setOrderNote("");
+      setDiscountValue(0);
+      setCustomerInfo({
+        name: "",
+        phone: "",
+        address: "",
+        ruc: "",
+        businessName: "",
+        isExempt: false,
+        exempt: false
+      });
+      setDeliveryCost(0);
+      setSelectedDriverId(null);
+
+      alert(`✅ Pedido #${saleNumber} confirmado exitosamente!\n\nTotal: Gs. ${total.toLocaleString()}`);
+      console.log('✅ Pedido confirmado y carrito limpiado');
+
     } catch (error) {
-      console.error("Error confirmando pedido:", error);
-      alert("Error al confirmar el pedido. Por favor intenta nuevamente.");
+      console.error('❌ Error completo al confirmar pedido:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`❌ Error al confirmar el pedido:\n\n${errorMessage}\n\nPor favor revisa la consola del navegador (F12) para más detalles.`);
     }
   };
 
