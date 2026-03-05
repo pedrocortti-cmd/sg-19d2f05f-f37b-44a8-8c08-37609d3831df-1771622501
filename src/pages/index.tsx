@@ -140,9 +140,46 @@ export default function POS() {
   // Estado para el logo del negocio
   const [businessLogo, setBusinessLogo] = useState<string | null>(null);
 
-  // Cargar todos los datos desde Supabase al iniciar
+  // Función para cargar todos los datos (reutilizable)
+  const loadAllData = async () => {
+    try {
+      console.log("🔄 Cargando datos...");
+
+      // Cargar productos
+      const productsData = await productService.getActive();
+      setProducts(productsData);
+
+      // Cargar categorías
+      const categoriesData = await categoryService.getAll();
+      setCategories(categoriesData);
+
+      // Cargar repartidores
+      const driversData = await driverService.getAll();
+      setDeliveryDrivers(driversData);
+
+      // Cargar ventas
+      const salesData = await saleService.getAll();
+      setSales(salesData);
+
+      console.log("✅ Datos actualizados correctamente");
+      setLoading(false);
+    } catch (error) {
+      console.error("❌ Error al cargar datos:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert(`⚠️ Error al cargar datos: ${errorMessage}\nVerifica la consola para más detalles.`);
+      setLoading(false);
+    }
+  };
+
+  // Cargar datos iniciales
   useEffect(() => {
     loadAllData();
+
+    // Cargar configuraciones guardadas
+    const savedLogo = localStorage.getItem("businessLogo");
+    if (savedLogo) {
+      setBusinessLogo(savedLogo);
+    }
   }, []);
 
   // Debug: loggear cuando cambia selectedDriverId
@@ -154,53 +191,6 @@ export default function POS() {
       console.log('🔍 Repartidor seleccionado:', driver);
     }
   }, [selectedDriverId, deliveryDrivers]);
-
-  const loadAllData = async () => {
-    try {
-      setLoading(true);
-
-      // Cargar productos
-      const productsData = await productService.getActive();
-      setProducts(productsData.map(p => ({
-        ...p,
-        categoryId: p.categoryId || 0, // Ya viene correcto del servicio
-        price: Number(p.price), // Asegurar que sea número
-        stock: p.stock || 0
-      })));
-
-      // Cargar categorías
-      const categoriesData = await categoryService.getAll();
-      console.log('Categories loaded from Supabase:', categoriesData);
-      setCategories(categoriesData.map(c => ({
-        ...c,
-        active: c.active ?? true // Asegurar active
-      })));
-
-      // Cargar ventas - Los servicios ya retornan con camelCase
-      const salesData = await saleService.getAll();
-      setSales(salesData); // Ya vienen correctamente mapeados
-
-      // Cargar conductores
-      const driversData = await driverService.getActive();
-      setDeliveryDrivers(driversData);
-
-      // Cargar próximo número de venta
-      const nextNumber = await saleService.getNextDailySaleNumber();
-      setNextSaleNumber(nextNumber);
-
-      // Cargar logo desde localStorage (este se mantiene en local)
-      const savedLogo = localStorage.getItem("businessLogo");
-      if (savedLogo) {
-        setBusinessLogo(savedLogo);
-      }
-
-    } catch (error) {
-      console.error("Error cargando datos:", error);
-      alert("Error al cargar datos. Por favor recarga la página.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleLogoChange = (logoUrl: string | null) => {
     setBusinessLogo(logoUrl);
