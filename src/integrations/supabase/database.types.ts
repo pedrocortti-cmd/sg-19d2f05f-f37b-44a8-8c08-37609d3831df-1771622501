@@ -22,6 +22,7 @@ export type Database = {
           icon: string | null
           id: number
           name: string
+          order: number | null
         }
         Insert: {
           active?: boolean | null
@@ -29,6 +30,7 @@ export type Database = {
           icon?: string | null
           id?: number
           name: string
+          order?: number | null
         }
         Update: {
           active?: boolean | null
@@ -36,6 +38,7 @@ export type Database = {
           icon?: string | null
           id?: number
           name?: string
+          order?: number | null
         }
         Relationships: []
       }
@@ -119,6 +122,7 @@ export type Database = {
           category_id: number | null
           created_at: string | null
           id: number
+          image: string | null
           min_stock: number | null
           name: string
           price: number
@@ -130,6 +134,7 @@ export type Database = {
           category_id?: number | null
           created_at?: string | null
           id?: number
+          image?: string | null
           min_stock?: number | null
           name: string
           price: number
@@ -141,6 +146,7 @@ export type Database = {
           category_id?: number | null
           created_at?: string | null
           id?: number
+          image?: string | null
           min_stock?: number | null
           name?: string
           price?: number

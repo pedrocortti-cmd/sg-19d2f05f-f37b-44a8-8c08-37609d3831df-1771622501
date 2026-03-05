@@ -182,4 +182,84 @@ export const saleService = {
       throw error;
     }
   },
+
+  // Actualizar venta completa
+  async update(id: number, saleData: Partial<any>): Promise<void> {
+    const { error } = await supabase
+      .from("sales")
+      .update(saleData)
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al actualizar venta:", error);
+      throw error;
+    }
+  },
+
+  // Completar venta
+  async complete(id: number): Promise<void> {
+    const { error } = await supabase
+      .from("sales")
+      .update({ status: "completed" })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al completar venta:", error);
+      throw error;
+    }
+  },
+
+  // Cancelar venta
+  async cancel(id: number): Promise<void> {
+    const { error } = await supabase
+      .from("sales")
+      .update({ status: "cancelled" })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al cancelar venta:", error);
+      throw error;
+    }
+  },
+
+  // Eliminar venta
+  async delete(id: number): Promise<void> {
+    const { error } = await supabase
+      .from("sales")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al eliminar venta:", error);
+      throw error;
+    }
+  },
+
+  // Obtener número de venta del día siguiente
+  async getNextDailySaleNumber(): Promise<string> {
+    const today = new Date().toISOString().split("T")[0].replace(/-/g, "");
+    
+    const { data, error } = await supabase
+      .from("sales")
+      .select("sale_number")
+      .like("sale_number", `${today}%`)
+      .order("sale_number", { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error("Error al obtener número de venta:", error);
+      const timestamp = Date.now().toString().slice(-4);
+      return `${today}-${timestamp}`;
+    }
+
+    if (!data || data.length === 0) {
+      return `${today}-0001`;
+    }
+
+    const lastNumber = data[0].sale_number;
+    const lastSeq = parseInt(lastNumber.split("-")[1] || "0");
+    const nextSeq = (lastSeq + 1).toString().padStart(4, "0");
+    
+    return `${today}-${nextSeq}`;
+  },
 };
