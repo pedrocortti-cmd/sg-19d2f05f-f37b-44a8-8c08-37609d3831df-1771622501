@@ -1,7 +1,44 @@
-import { useState, useMemo, useEffect } from "react";
-import Head from "next/head";
-import { ShoppingCart, Package, BarChart3, Settings, LogOut, X, User as UserIcon, Trash2, Plus, Minus, ShoppingBag, TrendingUp, DollarSign, Users, Clock, Search, Printer, Check, Edit, Send, Eye, FileText, MessageSquare } from "lucide-react";
-import { PaymentModal } from "@/components/pos/PaymentModal";
+import { useEffect, useState, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+import { formatCurrency } from "@/lib/utils";
+import { SEO } from "@/components/SEO";
+import type { 
+  Product, 
+  Category, 
+  CartItem, 
+  Sale, 
+  DeliveryDriver, 
+  CustomerInfo, 
+  OrderType, 
+  PrintFormatConfig, 
+  Payment,
+  User 
+} from "@/types/pos";
+import { printKitchenOrder } from "@/lib/printService";
+import { 
+  ShoppingCart, 
+  Plus, 
+  Minus, 
+  Trash2, 
+  User, 
+  Phone, 
+  MapPin, 
+  FileText, 
+  CreditCard,
+  Store,
+  Package,
+  Settings,
+  LogOut,
+  BarChart3,
+  DollarSign,
+  Printer,
+  MessageSquare,
+  X,
+  Eye,
+  Check,
+  Search
+} from "lucide-react";
 import { SalesHistory } from "@/components/pos/SalesHistory";
 import { ProductsManager } from "@/components/pos/ProductsManager";
 import { Inventory } from "@/components/pos/Inventory";
@@ -10,34 +47,19 @@ import { PrinterSettings } from "@/components/pos/PrinterSettings";
 import { PrintFormatSettings } from "@/components/pos/PrintFormatSettings";
 import { DeliveryDrivers } from "@/components/pos/DeliveryDrivers";
 import { LogoSettings } from "@/components/pos/LogoSettings";
-import { SEO } from "@/components/SEO";
-import { cn, formatCurrency } from "@/lib/utils";
-import { printKitchenOrder } from "@/lib/printService";
-import type { Product, CartItem, Sale, Category, PaymentMethod, DiscountType, OrderType, CustomerInfo, User, PrintFormatConfig, Payment, DeliveryDriver } from "@/types/pos";
+import { PaymentModal } from "@/components/pos/PaymentModal";
 import { SalePreviewModal } from "@/components/pos/SalePreviewModal";
 import { productService } from "@/services/productService";
 import { categoryService } from "@/services/categoryService";
 import { saleService } from "@/services/saleService";
 import { driverService } from "@/services/driverService";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 
 // 🔄 VERSION: 2026-03-05T13:30:00 - FORZAR RECARGA
 // Fix crítico: Guardar driver_id y delivery_driver_name correctamente
 
 export default function POS() {
-  // Estado para la vista actual
-  const [currentView, setCurrentView] = useState<
-    | "pos"
-    | "sales"
-    | "products"
-    | "inventory"
-    | "informes"
-    | "settings"
-    | "drivers"
-  >("pos");
-
-  // Estados del POS
+  // Estados principales
+  const [activeView, setActiveView] = useState<"pos" | "sales" | "products" | "inventory" | "reports" | "settings" | "drivers">("pos");
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -281,6 +303,122 @@ export default function POS() {
       const today = new Date().toISOString().split('T')[0];
       const timestamp = Date.now().toString().slice(-4);
       return `${today.replace(/-/g, '')}-${timestamp}`;
+    }
+  };
+
+  // Función para guardar producto
+  const handleSaveProduct = async (product: Product) => {
+    try {
+      const { error } = await supabase
+        .from("products")
+        .upsert({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          category_id: product.category_id,
+          active: product.active,
+          stock: product.stock || 0
+        });
+
+      if (error) throw error;
+
+      await loadAllData();
+      alert("✅ Producto guardado exitosamente");
+    } catch (error) {
+      console.error("Error al guardar producto:", error);
+      alert("❌ Error al guardar producto");
+    }
+  };
+
+  // Función para eliminar producto
+  const handleDeleteProduct = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      await loadAllData();
+      alert("✅ Producto eliminado exitosamente");
+    } catch (error) {
+      console.error("Error al eliminar producto:", error);
+      alert("❌ Error al eliminar producto");
+    }
+  };
+
+  // Función para guardar categoría
+  const handleSaveCategory = async (category: Category) => {
+    try {
+      const { error } = await supabase
+        .from("categories")
+        .upsert({
+          id: category.id,
+          name: category.name,
+          icon: category.icon,
+          active: category.active
+        });
+
+      if (error) throw error;
+
+      await loadAllData();
+      alert("✅ Categoría guardada exitosamente");
+    } catch (error) {
+      console.error("Error al guardar categoría:", error);
+      alert("❌ Error al guardar categoría");
+    }
+  };
+
+  // Función para eliminar categoría
+  const handleDeleteCategory = async (id: number) => {
+    try {
+      // Verificar si hay productos en esta categoría
+      const { data: productsInCategory } = await supabase
+        .from("products")
+        .select("id")
+        .eq("category_id", id);
+
+      if (productsInCategory && productsInCategory.length > 0) {
+        alert("❌ No se puede eliminar la categoría porque tiene productos asociados");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      await loadAllData();
+      alert("✅ Categoría eliminada exitosamente");
+    } catch (error) {
+      console.error("Error al eliminar categoría:", error);
+      alert("❌ Error al eliminar categoría");
+    }
+  };
+
+  // Función para actualizar producto (inventario)
+  const handleUpdateProduct = async (product: Product) => {
+    try {
+      const { error } = await supabase
+        .from("products")
+        .update({
+          name: product.name,
+          price: product.price,
+          category_id: product.category_id,
+          active: product.active,
+          stock: product.stock || 0
+        })
+        .eq("id", product.id);
+
+      if (error) throw error;
+
+      await loadAllData();
+    } catch (error) {
+      console.error("Error al actualizar producto:", error);
+      alert("❌ Error al actualizar producto");
     }
   };
 
@@ -945,61 +1083,55 @@ export default function POS() {
     }
   };
 
-  const handleSaveProduct = async (product: Product) => {
-    try {
-      if (product.id && products.find(p => p.id === product.id)) {
-        await productService.update(product.id, {
-          name: product.name,
-          price: product.price,
-          category_id: product.categoryId,
-          active: product.active,
-          stock: product.stock
-        });
-      } else {
-        await productService.create({
-          name: product.name,
-          price: product.price,
-          category_id: product.categoryId,
-          active: product.active,
-          stock: product.stock || 0
-        });
-      }
-      await loadAllData();
-    } catch (error) {
-      console.error("Error guardando producto:", error);
-      alert("Error al guardar el producto");
-    }
-  };
-
+  // Función para guardar conductor
   const handleSaveDriver = async (driver: DeliveryDriver) => {
     try {
-      if (deliveryDrivers.find(d => d.id === driver.id)) {
-        await driverService.update(driver.id, {
-          name: driver.name,
-          phone: driver.phone,
-          active: driver.active
-        });
+      if (driver.id && driver.id > 1000000000) {
+        // Es un ID temporal (timestamp), insertar nuevo
+        const { error } = await supabase
+          .from("delivery_drivers")
+          .insert({
+            name: driver.name,
+            phone: driver.phone,
+            active: driver.active
+          });
+        if (error) throw error;
       } else {
-        await driverService.create({
-          name: driver.name,
-          phone: driver.phone,
-          active: driver.active
-        });
+        // Actualizar existente
+        const { error } = await supabase
+          .from("delivery_drivers")
+          .update({
+            name: driver.name,
+            phone: driver.phone,
+            active: driver.active
+          })
+          .eq("id", driver.id);
+        if (error) throw error;
       }
+
       await loadAllData();
+      alert("✅ Repartidor guardado exitosamente");
     } catch (error) {
-      console.error("Error guardando conductor:", error);
-      alert("Error al guardar el conductor");
+      console.error("Error al guardar repartidor:", error);
+      alert("❌ Error al guardar repartidor");
     }
   };
 
+  // Función para eliminar conductor
   const handleDeleteDriver = async (id: number) => {
     try {
-      await driverService.delete(id);
+      const { error } = await supabase
+        .from("delivery_drivers")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
       await loadAllData();
+      alert("✅ Repartidor eliminado exitosamente");
     } catch (error) {
-      console.error("Error eliminando conductor:", error);
-      alert("Error al eliminar el conductor");
+      console.error("Error eliminando repartidor:", error);
+      alert("❌ Error al eliminar el repartidor");
     }
   };
 
@@ -1146,66 +1278,22 @@ export default function POS() {
   };
 
   const renderContent = () => {
-    switch (currentView) {
+    switch (activeView) {
       case "products":
         return <ProductsManager 
           products={products} 
           categories={categories}
           onSaveProduct={handleSaveProduct}
-          onDeleteProduct={async (id) => {
-            if (confirm("¿Estás seguro de que deseas eliminar este producto?")) {
-              try {
-                await productService.delete(id);
-                await loadAllData();
-              } catch (error) {
-                console.error("Error eliminando producto:", error);
-                alert("Error al eliminar el producto");
-              }
-            }
-          }}
-          onSaveCategory={async (category) => {
-            try {
-              if (categories.find(c => c.id === category.id)) {
-                await categoryService.update(category.id, {
-                  name: category.name,
-                  active: category.active,
-                  icon: category.icon
-                });
-              } else {
-                await categoryService.create({
-                  name: category.name,
-                  active: category.active,
-                  icon: category.icon
-                });
-              }
-              await loadAllData();
-            } catch (error) {
-              console.error("Error guardando categoría:", error);
-              alert("Error al guardar la categoría");
-            }
-          }}
-          onDeleteCategory={async (id) => {
-            if (id === 1) {
-              alert('No puedes eliminar la categoría "Todos"');
-              return;
-            }
-            if (confirm("¿Estás seguro de que deseas eliminar esta categoría?")) {
-              try {
-                await categoryService.delete(id);
-                await loadAllData();
-              } catch (error) {
-                console.error("Error eliminando categoría:", error);
-                alert("Error al eliminar la categoría");
-              }
-            }
-          }}
+          onDeleteProduct={handleDeleteProduct}
+          onSaveCategory={handleSaveCategory}
+          onDeleteCategory={handleDeleteCategory}
         />;
       case "inventory":
-        return <Inventory products={products} onUpdateProduct={handleSaveProduct} />;
+        return <Inventory products={products} onUpdateProduct={handleUpdateProduct} />;
       case "sales":
         return <SalesHistory 
           sales={sales}
-          onLoadSale={handleLoadSale}
+          onLoadSale={loadSaleToEdit}
           onDeleteSale={handleDeleteSale}
         />;
       case "drivers":
@@ -1214,7 +1302,7 @@ export default function POS() {
           onSaveDriver={handleSaveDriver}
           onDeleteDriver={handleDeleteDriver}
         />;
-      case "informes":
+      case "reports":
         return <Reports sales={sales} products={products} />;
       case "settings":
         return (
@@ -1244,7 +1332,7 @@ export default function POS() {
     { id: "products", label: "Productos y Servicios", icon: "🎯" },
     { id: "inventory", label: "Inventario", icon: "📦" },
     { id: "drivers", label: "Repartidores", icon: "🛵" },
-    { id: "informes", label: "Informes", icon: "📊" },
+    { id: "reports", label: "Informes", icon: "📊" },
     { id: "settings", label: "Ajustes", icon: "⚙️" },
   ];
 
@@ -1274,16 +1362,75 @@ export default function POS() {
         </div>
 
         <nav className="flex-1 py-6">
-          {navigationItems.map((item) => (
-            <div
-              key={item.id}
-              className={`nav-item ${currentView === item.id ? "active" : ""}`}
-              onClick={() => setCurrentView(item.id as any)}
-            >
-              <span className="nav-item-icon">{item.icon}</span>
-              <span>{item.label}</span>
-            </div>
-          ))}
+          <button
+            onClick={() => setActiveView("pos")}
+            className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors ${
+              activeView === "pos" ? "bg-[#34495e] text-white" : "text-gray-300 hover:bg-[#34495e]"
+            }`}
+          >
+            <ShoppingCart className="w-5 h-5" />
+            <span>Punto de Venta</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView("sales")}
+            className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors ${
+              activeView === "sales" ? "bg-[#34495e] text-white" : "text-gray-300 hover:bg-[#34495e]"
+            }`}
+          >
+            <FileText className="w-5 h-5" />
+            <span>Ventas</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView("products")}
+            className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors ${
+              activeView === "products" ? "bg-[#34495e] text-white" : "text-gray-300 hover:bg-[#34495e]"
+            }`}
+          >
+            <Package className="w-5 h-5" />
+            <span>Productos y Servicios</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView("inventory")}
+            className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors ${
+              activeView === "inventory" ? "bg-[#34495e] text-white" : "text-gray-300 hover:bg-[#34495e]"
+            }`}
+          >
+            <Store className="w-5 h-5" />
+            <span>Inventario</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView("drivers")}
+            className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors ${
+              activeView === "drivers" ? "bg-[#34495e] text-white" : "text-gray-300 hover:bg-[#34495e]"
+            }`}
+          >
+            <div className="w-5 h-5 flex items-center justify-center">🛵</div>
+            <span>Repartidores</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView("reports")}
+            className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors ${
+              activeView === "reports" ? "bg-[#34495e] text-white" : "text-gray-300 hover:bg-[#34495e]"
+            }`}
+          >
+            <BarChart3 className="w-5 h-5" />
+            <span>Informes</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView("settings")}
+            className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-colors ${
+              activeView === "settings" ? "bg-[#34495e] text-white" : "text-gray-300 hover:bg-[#34495e]"
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            <span>Ajustes</span>
+          </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -1294,301 +1441,346 @@ export default function POS() {
         </div>
       </aside>
 
-      {currentView === "pos" ? (
-        <>
-          <div className="pos-cart-panel">
-            <div className="cart-panel-header">
-              <ShoppingCart className="w-5 h-5" />
-              <span>CARRITO</span>
-            </div>
+      {/* Main Content */}
+      <main className="flex-1 overflow-hidden">
+        {activeView === "pos" && (
+          <div className="h-full flex">
+            {/* Panel Izquierdo - Cliente y Carrito */}
+            <div className="w-96 bg-white border-r flex flex-col">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center gap-3 mb-4">
+                  <ShoppingCart className="w-5 h-5" />
+                  <span className="text-sm font-medium">CLIENTE</span>
+                </div>
 
-            <div className="customer-compact">
-              <div className="customer-compact-field">
-                <label className="customer-compact-label">CLIENTE</label>
-                <input
-                  type="text"
-                  className="customer-compact-input"
-                  placeholder="Nombre del cliente"
-                  value={customerInfo.name}
-                  onChange={(e) =>
-                    setCustomerInfo({ ...customerInfo, name: e.target.value })
-                  }
-                />
-              </div>
-
-              {orderType === "delivery" && (
-                <>
+                <div className="customer-compact">
                   <div className="customer-compact-field">
-                    <label className="customer-compact-label">REPARTIDOR</label>
-                    <select
-                      className="customer-compact-input"
-                      value={selectedDriverId || ""}
-                      onChange={(e) => {
-                        setSelectedDriverId(e.target.value ? Number(e.target.value) : null);
-                        console.log('🔄 onChange repartidor:', e.target.value, selectedDriverId);
-                      }}
-                    >
-                      <option value="">Seleccionar repartidor</option>
-                      {deliveryDrivers.filter(d => d.active).map(driver => (
-                        <option key={driver.id} value={driver.id}>
-                          🛵 {driver.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="customer-compact-field">
-                    <label className="customer-compact-label">COSTO DELIVERY</label>
+                    <label className="customer-compact-label">NOMBRE</label>
                     <input
-                      type="number"
+                      type="text"
                       className="customer-compact-input"
-                      placeholder="0"
-                      value={deliveryCost || ""}
-                      onChange={(e) => setDeliveryCost(Math.max(0, Number(e.target.value) || 0))}
-                      min="0"
+                      placeholder="Nombre del cliente"
+                      value={customerInfo.name}
+                      onChange={(e) =>
+                        setCustomerInfo({ ...customerInfo, name: e.target.value })
+                      }
                     />
                   </div>
-                </>
-              )}
-            </div>
 
-            <div className="cart-items-section">
-              {cart.length === 0 ? (
-                <div className="cart-empty-state">
-                  <ShoppingCart className="cart-empty-icon" />
-                  <p>No hay productos en el carrito</p>
+                  {orderType === "delivery" && (
+                    <>
+                      <div className="customer-compact-field">
+                        <label className="customer-compact-label">REPARTIDOR</label>
+                        <select
+                          className="customer-compact-input"
+                          value={selectedDriverId || ""}
+                          onChange={(e) => {
+                            setSelectedDriverId(e.target.value ? Number(e.target.value) : null);
+                            console.log('🔄 onChange repartidor:', e.target.value, selectedDriverId);
+                          }}
+                        >
+                          <option value="">Seleccionar repartidor</option>
+                          {deliveryDrivers.filter(d => d.active).map(driver => (
+                            <option key={driver.id} value={driver.id}>
+                              🛵 {driver.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="customer-compact-field">
+                        <label className="customer-compact-label">COSTO DELIVERY</label>
+                        <input
+                          type="number"
+                          className="customer-compact-input"
+                          placeholder="0"
+                          value={deliveryCost || ""}
+                          onChange={(e) => setDeliveryCost(Math.max(0, Number(e.target.value) || 0))}
+                          min="0"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
-              ) : (
-                cart.map((item) => (
-                  <div key={item.product.id} className="cart-item-card">
-                    <div className="cart-item-header">
-                      <div className="cart-item-name-container">
-                        <span className="cart-item-name">{item.product.name}</span>
+
+                <div className="cart-items-section">
+                  {cart.length === 0 ? (
+                    <div className="cart-empty-state">
+                      <ShoppingCart className="cart-empty-icon" />
+                      <p>No hay productos en el carrito</p>
+                    </div>
+                  ) : (
+                    cart.map((item) => (
+                      <div key={item.product.id} className="cart-item-card">
+                        <div className="cart-item-header">
+                          <div className="cart-item-name-container">
+                            <span className="cart-item-name">{item.product.name}</span>
+                            {item.itemNote && (
+                              <span className="cart-item-note-indicator">
+                                <MessageSquare className="w-3 h-3" />
+                              </span>
+                            )}
+                          </div>
+                          <span className="cart-item-price">{formatCurrency(item.product.price * item.quantity)}</span>
+                        </div>
+                        
                         {item.itemNote && (
-                          <span className="cart-item-note-indicator">
-                            <MessageSquare className="w-3 h-3" />
-                          </span>
+                          <div className="cart-item-note-display">
+                            📝 {item.itemNote}
+                          </div>
                         )}
+                        
+                        <div className="cart-item-controls">
+                          <button 
+                            className="cart-item-qty-btn" 
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          >
+                            -
+                          </button>
+                          <span className="cart-item-quantity">{item.quantity}</span>
+                          <button 
+                            className="cart-item-qty-btn" 
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          >
+                            +
+                          </button>
+                          <button 
+                            className="cart-item-remove" 
+                            onClick={() => removeFromCart(item.product.id)}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        
+                        <div className="cart-item-note-input">
+                          <input
+                            type="text"
+                            placeholder="Agregar nota (ej: Sin Huevo)"
+                            value={item.itemNote || ""}
+                            onChange={(e) => updateItemNote(item.product.id, e.target.value)}
+                            className="cart-item-note-field"
+                          />
+                        </div>
                       </div>
-                      <span className="cart-item-price">{formatCurrency(item.product.price * item.quantity)}</span>
-                    </div>
-                    
-                    {item.itemNote && (
-                      <div className="cart-item-note-display">
-                        📝 {item.itemNote}
-                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="cart-footer">
+                  <div className="order-type-buttons">
+                    <button
+                      className={`order-type-btn ${orderType === "delivery" ? "active" : ""}`}
+                      onClick={() => {
+                        setOrderType("delivery");
+                        if (deliveryCost === 0) setDeliveryCost(0);
+                      }}
+                    >
+                      Delivery
+                    </button>
+                    <button
+                      className={`order-type-btn ${orderType === "pickup" ? "active" : ""}`}
+                      onClick={() => {
+                        setOrderType("pickup");
+                        setDeliveryCost(0);
+                        setSelectedDriverId(null);
+                      }}
+                    >
+                      Para Retirar
+                    </button>
+                  </div>
+
+                  <div className="cart-total-display">
+                    {orderType === "delivery" && deliveryCost > 0 && (
+                      <>
+                        <div className="cart-subtotal-row">
+                          <span>Subtotal:</span>
+                          <span>{formatCurrency(subtotal - discountAmount)}</span>
+                        </div>
+                        <div className="cart-delivery-row">
+                          <span>🛵 Delivery:</span>
+                          <span>{formatCurrency(deliveryCost)}</span>
+                        </div>
+                      </>
                     )}
-                    
-                    <div className="cart-item-controls">
-                      <button 
-                        className="cart-item-qty-btn" 
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                      >
-                        -
-                      </button>
-                      <span className="cart-item-quantity">{item.quantity}</span>
-                      <button 
-                        className="cart-item-qty-btn" 
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                      >
-                        +
-                      </button>
-                      <button 
-                        className="cart-item-remove" 
-                        onClick={() => removeFromCart(item.product.id)}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    
-                    <div className="cart-item-note-input">
-                      <input
-                        type="text"
-                        placeholder="Agregar nota (ej: Sin Huevo)"
-                        value={item.itemNote || ""}
-                        onChange={(e) => updateItemNote(item.product.id, e.target.value)}
-                        className="cart-item-note-field"
-                      />
-                    </div>
+                    <div className="cart-total-label">TOTAL</div>
+                    <div className="cart-total-amount">{formatCurrency(cartTotal)}</div>
                   </div>
-                ))
-              )}
-            </div>
 
-            <div className="cart-footer">
-              <div className="order-type-buttons">
-                <button
-                  className={`order-type-btn ${orderType === "delivery" ? "active" : ""}`}
-                  onClick={() => {
-                    setOrderType("delivery");
-                    if (deliveryCost === 0) setDeliveryCost(0);
-                  }}
-                >
-                  Delivery
-                </button>
-                <button
-                  className={`order-type-btn ${orderType === "pickup" ? "active" : ""}`}
-                  onClick={() => {
-                    setOrderType("pickup");
-                    setDeliveryCost(0);
-                    setSelectedDriverId(null);
-                  }}
-                >
-                  Para Retirar
-                </button>
-              </div>
+                  <div className="cart-action-buttons">
+                    <button
+                      className="cart-action-btn btn-confirm-order"
+                      disabled={cart.length === 0}
+                      onClick={handleConfirmOrder}
+                    >
+                      <Check className="w-4 h-4" />
+                      {loadedSaleId ? "Guardar Cambios" : "Confirmar Pedido"}
+                    </button>
 
-              <div className="cart-total-display">
-                {orderType === "delivery" && deliveryCost > 0 && (
-                  <>
-                    <div className="cart-subtotal-row">
-                      <span>Subtotal:</span>
-                      <span>{formatCurrency(subtotal - discountAmount)}</span>
-                    </div>
-                    <div className="cart-delivery-row">
-                      <span>🛵 Delivery:</span>
-                      <span>{formatCurrency(deliveryCost)}</span>
-                    </div>
-                  </>
-                )}
-                <div className="cart-total-label">TOTAL</div>
-                <div className="cart-total-amount">{formatCurrency(cartTotal)}</div>
-              </div>
+                    <button
+                      className="cart-action-btn btn-receive-payment"
+                      disabled={cart.length === 0}
+                      onClick={() => setShowPaymentModal(true)}
+                    >
+                      <DollarSign className="w-4 h-4" />
+                      Recibir Pago
+                    </button>
 
-              <div className="cart-action-buttons">
-                <button
-                  className="cart-action-btn btn-confirm-order"
-                  disabled={cart.length === 0}
-                  onClick={handleConfirmOrder}
-                >
-                  <Check className="w-4 h-4" />
-                  {loadedSaleId ? "Guardar Cambios" : "Confirmar Pedido"}
-                </button>
-
-                <button
-                  className="cart-action-btn btn-receive-payment"
-                  disabled={cart.length === 0}
-                  onClick={() => setShowPaymentModal(true)}
-                >
-                  <DollarSign className="w-4 h-4" />
-                  Recibir Pago
-                </button>
-
-                <button
-                  className="cart-action-btn btn-print-order"
-                  disabled={cart.length === 0}
-                  onClick={async () => {
-                    const saleNumber = loadedSaleId 
-                      ? sales.find(s => s.id === loadedSaleId)?.saleNumber 
-                      : await getDailySaleNumber();
+                    <button
+                      className="cart-action-btn btn-print-order"
+                      disabled={cart.length === 0}
+                      onClick={async () => {
+                        const saleNumber = loadedSaleId 
+                          ? sales.find(s => s.id === loadedSaleId)?.saleNumber 
+                          : await getDailySaleNumber();
                       
-                    const printData = {
-                      orderNumber: saleNumber || "##0001",
-                      date: new Date(),
-                      customerInfo,
-                      items: cart,
-                      orderType,
-                      deliveryDriver: orderType === "delivery" ? deliveryDrivers.find(d => d.id === selectedDriverId) : undefined,
-                      deliveryCost,
-                      subtotal,
-                      discount: discountAmount,
-                      total: cartTotal,
-                      note: orderNote
-                    };
+                        const printData = {
+                          orderNumber: saleNumber || "##0001",
+                          date: new Date(),
+                          customerInfo,
+                          items: cart,
+                          orderType,
+                          deliveryDriver: orderType === "delivery" ? deliveryDrivers.find(d => d.id === selectedDriverId) : undefined,
+                          deliveryCost,
+                          subtotal,
+                          discount: discountAmount,
+                          total: cartTotal,
+                          note: orderNote
+                        };
                     
-                    printKitchenOrder(printData);
-                  }}
-                >
-                  <Printer className="w-4 h-4" />
-                  Imprimir Pedido
-                </button>
+                        printKitchenOrder(printData);
+                      }}
+                    >
+                      <Printer className="w-4 h-4" />
+                      Imprimir Pedido
+                    </button>
 
-                <button
-                  className="cart-action-btn btn-preview"
-                  disabled={cart.length === 0}
-                  onClick={() => setShowPreviewModal(true)}
-                >
-                  <Eye className="w-4 h-4" />
-                  Vista Previa
-                </button>
+                    <button
+                      className="cart-action-btn btn-preview"
+                      disabled={cart.length === 0}
+                      onClick={() => setShowPreviewModal(true)}
+                    >
+                      <Eye className="w-4 h-4" />
+                      Vista Previa
+                    </button>
 
-                <button
-                  className="cart-action-btn btn-delete-sale"
-                  disabled={cart.length === 0}
-                  onClick={clearCart}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  {loadedSaleId ? "Eliminar Pedido" : "Vaciar Carrito"}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="pos-products-panel">
-            <div className="products-panel-header">
-              <div className="products-search-bar">
-                <Search className="products-search-icon" />
-                <input
-                  type="text"
-                  className="products-search-input"
-                  placeholder="Buscar productos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-              <div className="products-tabs">
-                {categories.filter(c => c.active).map((cat) => (
-                  <button
-                    key={cat.id}
-                    className={`products-tab ${selectedCategoryId === cat.id ? "active" : ""}`}
-                    onClick={() => {
-                      if (cat.name === "Todos") {
-                        setSelectedCategoryId(null);
-                      } else {
-                        setSelectedCategoryId(cat.id);
-                      }
-                      setSelectedCategory(cat.name);
-                    }}
-                  >
-                    {cat.icon && <span className="mr-1">{cat.icon}</span>}
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="products-grid-container">
-              <div className="products-grid">
-                {filteredProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="product-card"
-                    onClick={() => addToCart(product)}
-                  >
-                    <div className="product-card-name">{product.name}</div>
-                    <div className="product-card-price">{formatCurrency(product.price)}</div>
+                    <button
+                      className="cart-action-btn btn-delete-sale"
+                      disabled={cart.length === 0}
+                      onClick={clearCart}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      {loadedSaleId ? "Eliminar Pedido" : "Vaciar Carrito"}
+                    </button>
                   </div>
-                ))}
+                </div>
+              </div>
+
+              {/* Panel Principal - Productos */}
+              <div className="flex-1 flex flex-col bg-gray-50">
+                <div className="p-6 border-b border-gray-200">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Package className="w-5 h-5" />
+                    <span className="text-sm font-medium">PRODUCTOS</span>
+                  </div>
+
+                  <div className="products-search-bar">
+                    <Search className="products-search-icon" />
+                    <input
+                      type="text"
+                      className="products-search-input"
+                      placeholder="Buscar productos..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="products-tabs">
+                    {categories.filter(c => c.active).map((cat) => (
+                      <button
+                        key={cat.id}
+                        className={`products-tab ${selectedCategoryId === cat.id ? "active" : ""}`}
+                        onClick={() => {
+                          if (cat.name === "Todos") {
+                            setSelectedCategoryId(null);
+                          } else {
+                            setSelectedCategoryId(cat.id);
+                          }
+                          setSelectedCategory(cat.name);
+                        }}
+                      >
+                        {cat.icon && <span className="mr-1">{cat.icon}</span>}
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="products-grid-container">
+                  <div className="products-grid">
+                    {filteredProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        className="product-card"
+                        onClick={() => addToCart(product)}
+                      >
+                        <div className="product-card-name">{product.name}</div>
+                        <div className="product-card-price">{formatCurrency(product.price)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        )}
 
-          <div className="history-panel">
-            <div className="history-content">
-              <SalesHistory 
-                sales={sales}
-                onLoadSale={handleLoadSale}
-                onDeleteSale={handleDeleteSale}
-              />
-            </div>
+        {activeView === "sales" && (
+          <SalesHistory 
+            sales={sales} 
+            onLoadSale={loadSaleToEdit}
+            onDeleteSale={handleDeleteSale}
+          />
+        )}
+
+        {activeView === "drivers" && (
+          <DeliveryDrivers 
+            drivers={deliveryDrivers}
+            onSaveDriver={handleSaveDriver}
+            onDeleteDriver={handleDeleteDriver}
+          />
+        )}
+
+        {activeView === "products" && (
+          <ProductsManager
+            products={products}
+            categories={categories}
+            onSaveProduct={handleSaveProduct}
+            onDeleteProduct={handleDeleteProduct}
+            onSaveCategory={handleSaveCategory}
+            onDeleteCategory={handleDeleteCategory}
+          />
+        )}
+
+        {activeView === "inventory" && (
+          <Inventory
+            products={products}
+            onUpdateProduct={handleUpdateProduct}
+          />
+        )}
+
+        {activeView === "reports" && (
+          <Reports
+            sales={sales}
+            products={products}
+          />
+        )}
+
+        {activeView === "settings" && (
+          <div className="h-full overflow-y-auto p-6">
+            <PrinterSettings />
           </div>
-        </>
-      ) : (
-        <div className="pos-content-area">
-          {renderContent()}
-        </div>
-      )}
+        )}
+      </main>
 
       {showPaymentModal && (
         <PaymentModal
