@@ -696,24 +696,32 @@ export default function POS() {
       console.log("✅ Venta guardada exitosamente:", sale);
 
       // Guardar items de la venta
-      const saleItems = cart.map((item) => ({
-        sale_id: sale.id,
-        product_id: item.product.id,
-        product_name: item.product.name,
-        product_price: item.product.price,
-        quantity: item.quantity,
-        subtotal: item.product.price * item.quantity
-      }));
+      if (saleData) {
+        console.log('💾 Guardando items de la venta...');
+        const saleItems = cart.map(item => ({
+          sale_id: saleData.id,
+          product_id: item.product.id,
+          product_name: item.product.name,
+          product_price: Number(item.product.price),
+          quantity: item.quantity,
+          subtotal: Number(item.product.price) * item.quantity
+        }));
 
-      const { error: itemsError } = await supabase
-        .from("sale_items")
-        .insert(saleItems);
+        console.log('💾 Items a guardar:', JSON.stringify(saleItems, null, 2));
 
-      if (itemsError) throw itemsError;
+        const { error: itemsError } = await supabase
+          .from("sale_items")
+          .insert(saleItems);
 
-      console.log("✅ Items guardados exitosamente");
+        if (itemsError) {
+          console.error('❌ Error al guardar items:', itemsError);
+          throw new Error(`Error al guardar items: ${itemsError.message}`);
+        }
 
-      // Recargar datos
+        console.log('✅ Items guardados correctamente');
+      }
+
+      console.log('🔄 Recargando datos...');
       await loadAllData();
 
       // Mostrar confirmación
@@ -858,7 +866,7 @@ export default function POS() {
           console.log('💾 Guardando items de la venta...');
           const saleItems = cart.map(item => ({
             sale_id: saleData.id,
-            product_id: item.id,
+            product_id: item.product.id,
             product_name: item.product.name,
             product_price: Number(item.product.price),
             quantity: item.quantity,
