@@ -696,10 +696,10 @@ export default function POS() {
       console.log("✅ Venta guardada exitosamente:", sale);
 
       // Guardar items de la venta
-      if (saleData) {
+      if (sale) {
         console.log('💾 Guardando items de la venta...');
         const saleItems = cart.map(item => ({
-          sale_id: saleData.id,
+          sale_id: sale.id,
           product_id: item.product.id,
           product_name: item.product.name,
           product_price: Number(item.product.price),
