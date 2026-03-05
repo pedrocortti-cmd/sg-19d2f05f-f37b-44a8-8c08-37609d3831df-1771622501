@@ -1,9 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
-
-type Category = Database["public"]["Tables"]["categories"]["Row"];
-type CategoryInsert = Database["public"]["Tables"]["categories"]["Insert"];
-type CategoryUpdate = Database["public"]["Tables"]["categories"]["Update"];
+import type { Category } from "@/types/pos";
 
 export const categoryService = {
   // Obtener todas las categorías
@@ -11,74 +7,95 @@ export const categoryService = {
     const { data, error } = await supabase
       .from("categories")
       .select("*")
-      .order("name", { ascending: true });
+      .order("order", { ascending: true });
 
     if (error) {
-      console.error("Error fetching categories:", error);
+      console.error("Error al obtener categorías:", error);
       throw error;
     }
 
-    return data || [];
+    return (data || []).map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      active: cat.active,
+      order: cat.order || 0,
+      icon: cat.icon || undefined,
+    }));
   },
 
-  // Obtener categoría por ID
-  async getById(id: number): Promise<Category | null> {
+  // Obtener categorías activas
+  async getActive(): Promise<Category[]> {
     const { data, error } = await supabase
       .from("categories")
       .select("*")
-      .eq("id", id)
-      .single();
+      .eq("active", true)
+      .order("order", { ascending: true });
 
     if (error) {
-      console.error("Error fetching category:", error);
+      console.error("Error al obtener categorías activas:", error);
       throw error;
     }
 
-    return data;
+    return (data || []).map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      active: cat.active,
+      order: cat.order || 0,
+      icon: cat.icon || undefined,
+    }));
   },
 
   // Crear categoría
-  async create(category: Omit<CategoryInsert, "id">): Promise<Category> {
+  async create(category: Omit<Category, "id">): Promise<Category> {
     const { data, error } = await supabase
       .from("categories")
-      .insert(category)
+      .insert({
+        name: category.name,
+        active: category.active,
+        order: category.order || 0,
+        icon: category.icon || null,
+      })
       .select()
       .single();
 
     if (error) {
-      console.error("Error creating category:", error);
+      console.error("Error al crear categoría:", error);
       throw error;
     }
 
-    return data;
+    return {
+      id: data.id,
+      name: data.name,
+      active: data.active,
+      order: data.order || 0,
+      icon: data.icon || undefined,
+    };
   },
 
   // Actualizar categoría
-  async update(id: number, updates: CategoryUpdate): Promise<Category> {
-    const { data, error } = await supabase
+  async update(id: number, category: Partial<Category>): Promise<void> {
+    const { error } = await supabase
       .from("categories")
-      .update(updates)
-      .eq("id", id)
-      .select()
-      .single();
+      .update({
+        name: category.name,
+        active: category.active,
+        order: category.order,
+        icon: category.icon || null,
+      })
+      .eq("id", id);
 
     if (error) {
-      console.error("Error updating category:", error);
+      console.error("Error al actualizar categoría:", error);
       throw error;
     }
-
-    return data;
   },
 
   // Eliminar categoría
   async delete(id: number): Promise<void> {
-    const { error } = await supabase
-      .from("categories")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("categories").delete().eq("id", id);
 
     if (error) {
-      console.error("Error deleting category:", error);
+      console.error("Error al eliminar categoría:", error);
       throw error;
     }
   },

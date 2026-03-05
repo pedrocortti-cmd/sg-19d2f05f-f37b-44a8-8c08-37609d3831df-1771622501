@@ -1,235 +1,185 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
-
-type Sale = Database["public"]["Tables"]["sales"]["Row"];
-type SaleInsert = Database["public"]["Tables"]["sales"]["Insert"];
-type SaleUpdate = Database["public"]["Tables"]["sales"]["Update"];
-type SaleItem = Database["public"]["Tables"]["sale_items"]["Row"];
-type SaleItemInsert = Database["public"]["Tables"]["sale_items"]["Insert"];
-
-export interface SaleWithItems extends Sale {
-  sale_items: SaleItem[];
-}
+import type { Sale } from "@/types/pos";
 
 export const saleService = {
   // Obtener todas las ventas
-  async getAll(): Promise<SaleWithItems[]> {
+  async getAll(): Promise<Sale[]> {
     const { data, error } = await supabase
       .from("sales")
       .select(`
         *,
-        sale_items (*)
+        sale_items(
+          id,
+          product_id,
+          product_name,
+          quantity,
+          price
+        )
       `)
-      .order("date", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching sales:", error);
+      console.error("Error al obtener ventas:", error);
       throw error;
     }
 
-    return data || [];
+    return (data || []).map((sale) => ({
+      id: sale.id,
+      saleNumber: sale.sale_number,
+      date: sale.created_at,
+      items: (sale.sale_items || []).map((item: any) => ({
+        product: {
+          id: item.product_id,
+          name: item.product_name,
+          price: Number(item.price),
+          categoryId: 0,
+          active: true,
+        },
+        quantity: item.quantity,
+      })),
+      subtotal: Number(sale.subtotal),
+      discount: Number(sale.discount_amount || 0),
+      deliveryCost: Number(sale.delivery_cost || 0),
+      total: Number(sale.total),
+      paymentMethod: sale.payment_method || "cash",
+      orderType: sale.order_type as "delivery" | "pickup" | "local" | "dineIn",
+      customer: sale.customer_name
+        ? {
+            name: sale.customer_name,
+            phone: sale.customer_phone || "",
+            address: sale.customer_address || "",
+            ruc: sale.customer_ruc || undefined,
+            businessName: sale.customer_business_name || undefined,
+            isExempt: sale.exempt || false,
+          }
+        : undefined,
+      status: sale.status as "pending" | "completed" | "cancelled",
+      note: sale.notes || undefined,
+      deliveryDriverName: sale.delivery_driver_name || undefined,
+    }));
   },
 
   // Obtener ventas por fecha
-  async getByDate(startDate: string, endDate: string): Promise<SaleWithItems[]> {
+  async getByDateRange(startDate: string, endDate: string): Promise<Sale[]> {
     const { data, error } = await supabase
       .from("sales")
       .select(`
         *,
-        sale_items (*)
+        sale_items(
+          id,
+          product_id,
+          product_name,
+          quantity,
+          price
+        )
       `)
-      .gte("date", startDate)
-      .lte("date", endDate)
-      .order("date", { ascending: false });
+      .gte("created_at", startDate)
+      .lte("created_at", endDate)
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching sales by date:", error);
+      console.error("Error al obtener ventas por fecha:", error);
       throw error;
     }
 
-    return data || [];
-  },
-
-  // Obtener ventas del día
-  async getToday(): Promise<SaleWithItems[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    return this.getByDate(today.toISOString(), tomorrow.toISOString());
+    return (data || []).map((sale) => ({
+      id: sale.id,
+      saleNumber: sale.sale_number,
+      date: sale.created_at,
+      items: (sale.sale_items || []).map((item: any) => ({
+        product: {
+          id: item.product_id,
+          name: item.product_name,
+          price: Number(item.price),
+          categoryId: 0,
+          active: true,
+        },
+        quantity: item.quantity,
+      })),
+      subtotal: Number(sale.subtotal),
+      discount: Number(sale.discount_amount || 0),
+      deliveryCost: Number(sale.delivery_cost || 0),
+      total: Number(sale.total),
+      paymentMethod: sale.payment_method || "cash",
+      orderType: sale.order_type as "delivery" | "pickup" | "local" | "dineIn",
+      status: sale.status as "pending" | "completed" | "cancelled",
+      deliveryDriverName: sale.delivery_driver_name || undefined,
+    }));
   },
 
   // Obtener venta por ID
-  async getById(id: number): Promise<SaleWithItems | null> {
+  async getById(id: number): Promise<Sale | null> {
     const { data, error } = await supabase
       .from("sales")
       .select(`
         *,
-        sale_items (*)
+        sale_items(
+          id,
+          product_id,
+          product_name,
+          quantity,
+          price
+        )
       `)
       .eq("id", id)
       .single();
 
     if (error) {
-      console.error("Error fetching sale:", error);
-      throw error;
+      console.error("Error al obtener venta:", error);
+      return null;
     }
 
-    return data;
-  },
-
-  // Crear venta con items
-  async create(
-    sale: Omit<SaleInsert, "id">,
-    items: Omit<SaleItemInsert, "id" | "sale_id">[]
-  ): Promise<SaleWithItems> {
-    // Crear la venta
-    const { data: saleData, error: saleError } = await supabase
-      .from("sales")
-      .insert(sale)
-      .select()
-      .single();
-
-    if (saleError) {
-      console.error("Error creating sale:", saleError);
-      throw saleError;
-    }
-
-    // Crear los items de la venta
-    const saleItems = items.map(item => ({
-      ...item,
-      sale_id: saleData.id,
-    }));
-
-    const { data: itemsData, error: itemsError } = await supabase
-      .from("sale_items")
-      .insert(saleItems)
-      .select();
-
-    if (itemsError) {
-      console.error("Error creating sale items:", itemsError);
-      throw itemsError;
-    }
+    if (!data) return null;
 
     return {
-      ...saleData,
-      sale_items: itemsData || [],
+      id: data.id,
+      saleNumber: data.sale_number,
+      date: data.created_at,
+      items: (data.sale_items || []).map((item: any) => ({
+        product: {
+          id: item.product_id,
+          name: item.product_name,
+          price: Number(item.price),
+          categoryId: 0,
+          active: true,
+        },
+        quantity: item.quantity,
+      })),
+      subtotal: Number(data.subtotal),
+      discount: Number(data.discount_amount || 0),
+      deliveryCost: Number(data.delivery_cost || 0),
+      total: Number(data.total),
+      paymentMethod: data.payment_method || "cash",
+      orderType: data.order_type as "delivery" | "pickup" | "local" | "dineIn",
+      customer: data.customer_name
+        ? {
+            name: data.customer_name,
+            phone: data.customer_phone || "",
+            address: data.customer_address || "",
+            ruc: data.customer_ruc || undefined,
+            businessName: data.customer_business_name || undefined,
+            isExempt: data.exempt || false,
+          }
+        : undefined,
+      status: data.status as "pending" | "completed" | "cancelled",
+      note: data.notes || undefined,
+      deliveryDriverName: data.delivery_driver_name || undefined,
     };
   },
 
-  // Actualizar venta
-  async update(id: number, updates: SaleUpdate): Promise<Sale> {
-    const updateData = {
-      ...updates,
-      updated_at: new Date().toISOString(),
-    };
-
-    const { data, error } = await supabase
+  // Actualizar estado de venta
+  async updateStatus(
+    id: number,
+    status: "pending" | "completed" | "cancelled"
+  ): Promise<void> {
+    const { error } = await supabase
       .from("sales")
-      .update(updateData)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error updating sale:", error);
-      throw error;
-    }
-
-    return data;
-  },
-
-  // Cancelar venta
-  async cancel(id: number): Promise<Sale> {
-    return this.update(id, { status: "cancelled" });
-  },
-
-  // Completar venta
-  async complete(id: number): Promise<Sale> {
-    return this.update(id, { status: "completed" });
-  },
-
-  // Eliminar venta (marca como eliminada o borra físicamente)
-  async delete(id: number): Promise<void> {
-    // Primero eliminar los items de la venta
-    const { error: itemsError } = await supabase
-      .from("sale_items")
-      .delete()
-      .eq("sale_id", id);
-
-    if (itemsError) {
-      console.error("Error deleting sale items:", itemsError);
-      throw itemsError;
-    }
-
-    // Luego eliminar la venta
-    const { error: saleError } = await supabase
-      .from("sales")
-      .delete()
+      .update({ status })
       .eq("id", id);
 
-    if (saleError) {
-      console.error("Error deleting sale:", saleError);
-      throw saleError;
-    }
-  },
-
-  // Obtener siguiente número de venta del día
-  async getNextDailySaleNumber(): Promise<string> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const { data, error } = await supabase
-      .from("sales")
-      .select("sale_number")
-      .gte("date", today.toISOString())
-      .lt("date", tomorrow.toISOString())
-      .order("sale_number", { ascending: false })
-      .limit(1);
-
     if (error) {
-      console.error("Error fetching last sale number:", error);
-      return "#0001";
+      console.error("Error al actualizar estado de venta:", error);
+      throw error;
     }
-
-    if (!data || data.length === 0) {
-      return "#0001";
-    }
-
-    const lastNumber = parseInt(data[0].sale_number.replace("##", "").replace("#", ""));
-    const nextNumber = lastNumber + 1;
-    return `#${String(nextNumber).padStart(4, "0")}`;
-  },
-
-  // Obtener estadísticas de ventas
-  async getStats(startDate: string, endDate: string) {
-    const sales = await this.getByDate(startDate, endDate);
-
-    const totalSales = sales.length;
-    const totalRevenue = sales.reduce((sum, sale) => sum + Number(sale.total), 0);
-    const averageSale = totalSales > 0 ? totalRevenue / totalSales : 0;
-
-    const salesByType = sales.reduce((acc, sale) => {
-      const type = sale.order_type || "unknown";
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const salesByPayment = sales.reduce((acc, sale) => {
-      const method = sale.payment_method || "unknown";
-      acc[method] = (acc[method] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return {
-      totalSales,
-      totalRevenue,
-      averageSale,
-      salesByType,
-      salesByPayment,
-    };
   },
 };

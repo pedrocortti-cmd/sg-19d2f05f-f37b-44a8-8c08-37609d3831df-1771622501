@@ -1,12 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
-
-type DeliveryDriver = Database["public"]["Tables"]["delivery_drivers"]["Row"];
-type DeliveryDriverInsert = Database["public"]["Tables"]["delivery_drivers"]["Insert"];
-type DeliveryDriverUpdate = Database["public"]["Tables"]["delivery_drivers"]["Update"];
+import type { DeliveryDriver } from "@/types/pos";
 
 export const driverService = {
-  // Obtener todos los conductores
+  // Obtener todos los repartidores
   async getAll(): Promise<DeliveryDriver[]> {
     const { data, error } = await supabase
       .from("delivery_drivers")
@@ -14,14 +10,19 @@ export const driverService = {
       .order("name", { ascending: true });
 
     if (error) {
-      console.error("Error fetching drivers:", error);
+      console.error("Error al obtener repartidores:", error);
       throw error;
     }
 
-    return data || [];
+    return (data || []).map((driver) => ({
+      id: driver.id,
+      name: driver.name,
+      phone: driver.phone || "",
+      active: driver.active,
+    }));
   },
 
-  // Obtener conductores activos
+  // Obtener repartidores activos
   async getActive(): Promise<DeliveryDriver[]> {
     const { data, error } = await supabase
       .from("delivery_drivers")
@@ -30,68 +31,61 @@ export const driverService = {
       .order("name", { ascending: true });
 
     if (error) {
-      console.error("Error fetching active drivers:", error);
+      console.error("Error al obtener repartidores activos:", error);
       throw error;
     }
 
-    return data || [];
+    return (data || []).map((driver) => ({
+      id: driver.id,
+      name: driver.name,
+      phone: driver.phone || "",
+      active: driver.active,
+    }));
   },
 
-  // Obtener conductor por ID
-  async getById(id: number): Promise<DeliveryDriver | null> {
+  // Crear repartidor
+  async create(driver: Omit<DeliveryDriver, "id">): Promise<DeliveryDriver> {
     const { data, error } = await supabase
       .from("delivery_drivers")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) {
-      console.error("Error fetching driver:", error);
-      throw error;
-    }
-
-    return data;
-  },
-
-  // Crear conductor
-  async create(driver: Omit<DeliveryDriverInsert, "id">): Promise<DeliveryDriver> {
-    const { data, error } = await supabase
-      .from("delivery_drivers")
-      .insert(driver)
+      .insert({
+        name: driver.name,
+        phone: driver.phone || null,
+        active: driver.active,
+      })
       .select()
       .single();
 
     if (error) {
-      console.error("Error creating driver:", error);
+      console.error("Error al crear repartidor:", error);
       throw error;
     }
 
-    return data;
-  },
-
-  // Actualizar conductor
-  async update(id: number, updates: DeliveryDriverUpdate): Promise<DeliveryDriver> {
-    const updateData = {
-      ...updates,
-      updated_at: new Date().toISOString(),
+    return {
+      id: data.id,
+      name: data.name,
+      phone: data.phone || "",
+      active: data.active,
     };
-
-    const { data, error } = await supabase
-      .from("delivery_drivers")
-      .update(updateData)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error updating driver:", error);
-      throw error;
-    }
-
-    return data;
   },
 
-  // Eliminar conductor
+  // Actualizar repartidor
+  async update(id: number, driver: Partial<DeliveryDriver>): Promise<void> {
+    const { error } = await supabase
+      .from("delivery_drivers")
+      .update({
+        name: driver.name,
+        phone: driver.phone || null,
+        active: driver.active,
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al actualizar repartidor:", error);
+      throw error;
+    }
+  },
+
+  // Eliminar repartidor
   async delete(id: number): Promise<void> {
     const { error } = await supabase
       .from("delivery_drivers")
@@ -99,18 +93,8 @@ export const driverService = {
       .eq("id", id);
 
     if (error) {
-      console.error("Error deleting driver:", error);
+      console.error("Error al eliminar repartidor:", error);
       throw error;
     }
-  },
-
-  // Activar/Desactivar conductor
-  async toggleActive(id: number): Promise<DeliveryDriver> {
-    const driver = await this.getById(id);
-    if (!driver) {
-      throw new Error("Driver not found");
-    }
-
-    return this.update(id, { active: !driver.active });
   },
 };
