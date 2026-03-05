@@ -2,11 +2,266 @@
 
 .drivers-container {
   display: flex;
-  flex-direction
-...
-ransition: all 0.2s;
+  flex-direction: column;
+  height: 100vh;
+  background: #f8f9fa;
+  overflow-y: auto;
 }
 
-.driver-form-actions button:hover {
-  filter: brightness(0.95);
+.drivers-header {
+  background: white;
+  padding: 24px;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drivers-title h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.drivers-title p {
+  color: #6c757d;
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.drivers-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-new-driver {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-new-driver:hover {
+  background: #2980b9;
+}
+
+.drivers-list {
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.driver-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.driver-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #3498db;
+}
+
+.driver-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.driver-avatar {
+  width: 48px;
+  height: 48px;
+  background: #e8f4f8;
+  color: #3498db;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.driver-details h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.driver-details p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6c757d;
+}
+
+.driver-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.driver-status.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.driver-status.inactive {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.driver-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f8f9fa;
+  color: #6c757d;
+}
+
+.btn-icon:hover {
+  background: #e9ecef;
+  color: #3498db;
+}
+
+.btn-icon.delete:hover {
+  background: #fee;
+  color: #e74c3c;
+}
+
+/* Modal Form */
+.driver-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.driver-form-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+.driver-form-header {
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.driver-form-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.driver-form-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6c757d;
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.driver-form-footer {
+  padding: 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  gap: 12px;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #dee2e6;
+  background: white;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-save {
+  flex: 1;
+  padding: 10px;
+  background: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-save:hover {
+  background: #219150;
 }
