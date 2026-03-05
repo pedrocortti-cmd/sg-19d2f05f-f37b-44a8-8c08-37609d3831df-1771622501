@@ -387,21 +387,7 @@ export default function POS() {
       const confirmMessage = "¿Qué deseas hacer?\n\nOK = Cancelar edición (mantener pedido)\nCancelar = Eliminar pedido definitivamente";
       
       if (confirm(confirmMessage)) {
-        setCart([]);
-        setCustomerInfo({
-          name: "",
-          phone: "",
-          address: "",
-          ruc: "",
-          businessName: "",
-          isExempt: false,
-          exempt: false
-        });
-        setOrderNote("");
-        setDiscountValue(0);
-        setSelectedDriverId(null);
-        setDeliveryCost(0);
-        setLoadedSaleId(null);
+        clearCartSilently();
         alert("❌ Edición cancelada\n\n💾 Pedido original mantenido");
       } else {
         if (confirm("⚠️ ¿ELIMINAR PEDIDO DEFINITIVAMENTE?\n\nEsta acción NO se puede deshacer.")) {
@@ -410,23 +396,28 @@ export default function POS() {
       }
     } else {
       if (confirm("¿Estás seguro de que deseas vaciar el carrito?")) {
-        setCart([]);
-        setCustomerInfo({
-          name: "",
-          phone: "",
-          address: "",
-          ruc: "",
-          businessName: "",
-          isExempt: false,
-          exempt: false
-        });
-        setOrderNote("");
-        setDiscountValue(0);
-        setSelectedDriverId(null);
-        setDeliveryCost(0);
-        setLoadedSaleId(null);
+        clearCartSilently();
       }
     }
+  };
+
+  // Limpiar carrito silenciosamente (sin preguntas) - usar después de confirmar pedidos exitosamente
+  const clearCartSilently = () => {
+    setCart([]);
+    setCustomerInfo({
+      name: "",
+      phone: "",
+      address: "",
+      ruc: "",
+      businessName: "",
+      isExempt: false,
+      exempt: false
+    });
+    setOrderNote("");
+    setDiscountValue(0);
+    setSelectedDriverId(null);
+    setDeliveryCost(0);
+    setLoadedSaleId(null);
   };
 
   // Eliminar venta de Supabase
@@ -438,22 +429,8 @@ export default function POS() {
       // Recargar datos para reflejar los cambios
       await loadAllData();
       
-      // Limpiar el carrito y estado
-      setCart([]);
-      setCustomerInfo({
-        name: "",
-        phone: "",
-        address: "",
-        ruc: "",
-        businessName: "",
-        isExempt: false,
-        exempt: false
-      });
-      setOrderNote("");
-      setDiscountValue(0);
-      setSelectedDriverId(null);
-      setDeliveryCost(0);
-      setLoadedSaleId(null);
+      // Limpiar el carrito y estado SILENCIOSAMENTE (sin preguntas)
+      clearCartSilently();
       
       alert("🗑️ Pedido eliminado definitivamente");
     } catch (error) {
@@ -465,87 +442,262 @@ export default function POS() {
   // Confirmar pedido sin pago (para cocina)
   const handleConfirmOrder = async () => {
     if (cart.length === 0) {
-      alert("El carrito está vacío");
+      alert("❌ El carrito está vacío. Agrega productos primero.");
       return;
     }
 
     try {
       console.log("=== CONFIRMAR PEDIDO - INICIO ===");
-      console.log("📦 Items en carrito:", cart.length);
-      console.log("🚚 Tipo de pedido:", orderType);
-      console.log("🆔 ID repartidor seleccionado:", selectedDriverId);
-      console.log("💰 Costo delivery:", deliveryCost);
+      console.log("🔍 Estado actual:");
+      console.log("  - loadedSaleId:", loadedSaleId);
+      console.log("  - orderType:", orderType);
+      console.log("  - selectedDriverId:", selectedDriverId);
+      console.log("  - cart items:", cart.length);
 
-      // Validar que si es delivery, tenga repartidor seleccionado
-      if (orderType === "delivery") {
-        if (!selectedDriverId) {
-          alert("❌ Por favor selecciona un repartidor para el delivery");
-          return;
+      // ✅ CASO 1: EDITANDO VENTA EXISTENTE
+      if (loadedSaleId) {
+        console.log("📝 MODO: Actualizando venta existente ID:", loadedSaleId);
+
+        // Calcular totales
+        const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+        let discountAmount = 0;
+        if (discountType === "percentage") {
+          discountAmount = (subtotal * discountValue) / 100;
+        } else if (discountType === "amount") {
+          discountAmount = discountValue;
         }
-        if (deliveryCost <= 0) {
-          alert("❌ Por favor ingresa el costo de delivery");
-          return;
+        const orderTotal = subtotal - discountAmount;
+        const finalTotal = orderType === "delivery" ? orderTotal + deliveryCost : orderTotal;
+
+        console.log("💰 Totales calculados:");
+        console.log("  - Subtotal:", subtotal);
+        console.log("  - Descuento:", discountAmount);
+        console.log("  - Total pedido:", orderTotal);
+        console.log("  - Costo delivery:", deliveryCost);
+        console.log("  - Total final:", finalTotal);
+
+        // Preparar datos de actualización
+        const updateData: {
+          customer_name: string | null;
+          customer_phone: string | null;
+          customer_address: string | null;
+          customer_ruc: string | null;
+          customer_business_name: string | null;
+          tax_exempt: boolean;
+          order_type: string;
+          notes: string;
+          discount_type: string;
+          discount_value: number;
+          subtotal: number;
+          discount_amount: number;
+          total: number;
+          delivery_cost?: number;
+          driver_id?: number | null;
+          delivery_driver_name?: string | null;
+        } = {
+          customer_name: customerInfo.name || null,
+          customer_phone: customerInfo.phone || null,
+          customer_address: customerInfo.address || null,
+          customer_ruc: customerInfo.ruc || null,
+          customer_business_name: customerInfo.businessName || null,
+          tax_exempt: customerInfo.isExempt || false,
+          order_type: orderType,
+          notes: orderNote,
+          discount_type: discountType,
+          discount_value: discountValue,
+          subtotal: subtotal,
+          discount_amount: discountAmount,
+          total: finalTotal,
+        };
+
+        // Si es delivery, agregar datos de delivery
+        if (orderType === "delivery") {
+          updateData.delivery_cost = deliveryCost;
+
+          // ✅ Buscar repartidor seleccionado
+          if (selectedDriverId) {
+            const selectedDriver = deliveryDrivers.find((d) => d.id === selectedDriverId);
+            if (selectedDriver) {
+              updateData.driver_id = selectedDriver.id;
+              updateData.delivery_driver_name = selectedDriver.name;
+              console.log("🛵 Repartidor encontrado:", selectedDriver);
+            } else {
+              console.warn("⚠️ No se encontró repartidor con ID:", selectedDriverId);
+            }
+          } else {
+            console.warn("⚠️ No hay repartidor seleccionado para delivery");
+          }
+        } else {
+          // Si NO es delivery, limpiar datos de delivery
+          updateData.delivery_cost = 0;
+          updateData.driver_id = null;
+          updateData.delivery_driver_name = null;
         }
+
+        console.log("💾 DATOS A ACTUALIZAR:", updateData);
+
+        // ✅ ACTUALIZAR venta existente (NO crear nueva)
+        const { error: updateError } = await supabase
+          .from("sales")
+          .update(updateData)
+          .eq("id", loadedSaleId);
+
+        if (updateError) throw updateError;
+
+        console.log("✅ Venta actualizada exitosamente");
+
+        // Eliminar items antiguos
+        const { error: deleteItemsError } = await supabase
+          .from("sale_items")
+          .delete()
+          .eq("sale_id", loadedSaleId);
+
+        if (deleteItemsError) throw deleteItemsError;
+
+        console.log("🗑️ Items antiguos eliminados");
+
+        // Insertar nuevos items
+        const saleItems = cart.map((item) => ({
+          sale_id: loadedSaleId,
+          product_id: item.product.id,
+          product_name: item.product.name,
+          product_price: item.product.price,
+          quantity: item.quantity,
+          subtotal: item.product.price * item.quantity
+        }));
+
+        const { error: itemsError } = await supabase
+          .from("sale_items")
+          .insert(saleItems);
+
+        if (itemsError) throw itemsError;
+
+        console.log("✅ Nuevos items insertados");
+
+        // Recargar datos
+        await loadAllData();
+
+        // Limpiar estado
+        console.log("🧹 Limpiando carrito silenciosamente (sin preguntas)");
+        clearCartSilently();
+
+        alert(`✅ Pedido actualizado exitosamente`);
+        console.log("=== CONFIRMAR PEDIDO - FIN ===");
+        return;
       }
 
-      // Buscar el repartidor seleccionado
-      const selectedDriver = orderType === "delivery" && selectedDriverId
-        ? deliveryDrivers.find(d => d.id === selectedDriverId)
-        : null;
-
-      console.log("🛵 Repartidor encontrado:", selectedDriver);
-
-      // Calcular totales
-      const subtotalVal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-      const deliveryCostToAdd = orderType === "delivery" ? deliveryCost : 0;
-      const discountAmountVal = discountType === "percentage"
-        ? (subtotalVal * discountValue) / 100
-        : discountValue;
-      const totalVal = subtotalVal + deliveryCostToAdd - discountAmountVal;
-
-      console.log("💵 Subtotal:", subtotalVal);
-      console.log("💵 Delivery:", deliveryCostToAdd);
-      console.log("💵 Descuento:", discountAmountVal);
-      console.log("💵 TOTAL:", totalVal);
+      // ✅ CASO 2: CREANDO VENTA NUEVA
+      console.log("🆕 MODO: Creando venta nueva");
 
       // Generar número de venta
-      const saleNumber = await getDailySaleNumber();
+      const today = new Date();
+      const dateStr = today.toISOString().split("T")[0].replace(/-/g, "");
 
-      // Preparar datos del pedido
-      const saleData = {
+      const { data: existingSales } = await supabase
+        .from("sales")
+        .select("sale_number")
+        .like("sale_number", `${dateStr}-%`)
+        .order("sale_number", { ascending: false })
+        .limit(1);
+
+      let sequence = 1;
+      if (existingSales && existingSales.length > 0) {
+        const lastNumber = existingSales[0].sale_number;
+        const lastSequence = parseInt(lastNumber.split("-")[1]);
+        sequence = lastSequence + 1;
+      }
+
+      const saleNumber = `${dateStr}-${sequence.toString().padStart(4, "0")}`;
+      console.log("🔢 Número de venta generado:", saleNumber);
+
+      // Calcular totales
+      const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+      let discountAmount = 0;
+      if (discountType === "percentage") {
+        discountAmount = (subtotal * discountValue) / 100;
+      } else if (discountType === "amount") {
+        discountAmount = discountValue;
+      }
+      const orderTotal = subtotal - discountAmount;
+      const finalTotal = orderType === "delivery" ? orderTotal + deliveryCost : orderTotal;
+
+      console.log("💰 Totales calculados:");
+      console.log("  - Subtotal:", subtotal);
+      console.log("  - Descuento:", discountAmount);
+      console.log("  - Total pedido:", orderTotal);
+      console.log("  - Costo delivery:", deliveryCost);
+      console.log("  - Total final:", finalTotal);
+
+      // Preparar datos de venta
+      const saleData: {
+        sale_number: string;
+        sale_date: string;
+        customer_name: string | null;
+        customer_phone: string | null;
+        customer_address: string | null;
+        customer_ruc: string | null;
+        customer_business_name: string | null;
+        tax_exempt: boolean;
+        order_type: string;
+        status: string;
+        notes: string;
+        discount_type: string;
+        discount_value: number;
+        subtotal: number;
+        discount_amount: number;
+        total: number;
+        delivery_cost?: number;
+        driver_id?: number | null;
+        delivery_driver_name?: string | null;
+      } = {
         sale_number: saleNumber,
-        customer_name: customerInfo.name || "Cliente",
+        sale_date: today.toISOString(),
+        customer_name: customerInfo.name || null,
         customer_phone: customerInfo.phone || null,
         customer_address: customerInfo.address || null,
         customer_ruc: customerInfo.ruc || null,
         customer_business_name: customerInfo.businessName || null,
-        exempt: customerInfo.isExempt || false,
-        subtotal: subtotalVal,
-        discount_amount: discountAmountVal,
-        delivery_cost: deliveryCostToAdd,
-        total: totalVal,
+        tax_exempt: customerInfo.isExempt || false,
         order_type: orderType,
         status: "pending",
-        notes: orderNote || null,
-        // CRÍTICO: Guardar driver_id y delivery_driver_name SOLO si es delivery
-        driver_id: orderType === "delivery" && selectedDriver ? selectedDriver.id : null,
-        delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
-        created_by: currentUser.name
+        notes: orderNote,
+        discount_type: discountType,
+        discount_value: discountValue,
+        subtotal: subtotal,
+        discount_amount: discountAmount,
+        total: finalTotal,
       };
+
+      // Si es delivery, agregar datos de delivery
+      if (orderType === "delivery") {
+        saleData.delivery_cost = deliveryCost;
+
+        // ✅ Buscar repartidor seleccionado
+        if (selectedDriverId) {
+          const selectedDriver = deliveryDrivers.find((d) => d.id === selectedDriverId);
+          if (selectedDriver) {
+            saleData.driver_id = selectedDriver.id;
+            saleData.delivery_driver_name = selectedDriver.name;
+            console.log("🛵 Repartidor encontrado:", selectedDriver);
+          } else {
+            console.warn("⚠️ No se encontró repartidor con ID:", selectedDriverId);
+          }
+        } else {
+          console.warn("⚠️ No hay repartidor seleccionado para delivery");
+        }
+      }
 
       console.log("💾 DATOS COMPLETOS A GUARDAR:", saleData);
 
-      // Guardar venta en Supabase
+      // Guardar venta
       const { data: sale, error: saleError } = await supabase
         .from("sales")
         .insert([saleData])
         .select()
         .single();
 
-      if (saleError) {
-        console.error("❌ Error al guardar venta:", saleError);
-        throw saleError;
-      }
+      if (saleError) throw saleError;
+      if (!sale) throw new Error("No se pudo crear la venta");
 
       console.log("✅ Venta guardada exitosamente:", sale);
 
@@ -554,50 +706,32 @@ export default function POS() {
         sale_id: sale.id,
         product_id: item.product.id,
         product_name: item.product.name,
-        quantity: item.quantity,
         product_price: item.product.price,
-        subtotal: item.product.price * item.quantity,
+        quantity: item.quantity,
+        subtotal: item.product.price * item.quantity
       }));
 
       const { error: itemsError } = await supabase
         .from("sale_items")
         .insert(saleItems);
 
-      if (itemsError) {
-        console.error("❌ Error al guardar items:", itemsError);
-        throw itemsError;
-      }
+      if (itemsError) throw itemsError;
 
-      console.log("✅ Items guardados exitosamente:", saleItems.length);
-
-      // Mostrar confirmación
-      alert(`✅ Pedido #${sale.sale_number} confirmado exitosamente`);
-
-      // Limpiar carrito y formulario
-      clearCart();
-      setCustomerInfo({
-        name: "",
-        phone: "",
-        address: "",
-        ruc: "",
-        businessName: "",
-        isExempt: false,
-        exempt: false
-      });
-      setOrderNote("");
-      setDiscountType("percentage");
-      setDiscountValue(0);
-      setDeliveryCost(0);
-      // NO limpiar selectedDriverId aquí - mantenerlo para próximas ventas
-      // setSelectedDriverId(null);
-
-      console.log("=== CONFIRMAR PEDIDO - FIN ===");
+      console.log("✅ Items guardados exitosamente");
 
       // Recargar datos
       await loadAllData();
 
+      // Mostrar confirmación
+      alert(`✅ Pedido #${sale.sale_number} confirmado exitosamente`);
+
+      // Limpiar estado SILENCIOSAMENTE (sin preguntas)
+      console.log("🧹 Limpiando carrito silenciosamente (sin preguntas)");
+      clearCartSilently();
+
+      console.log("=== CONFIRMAR PEDIDO - FIN ===");
     } catch (error: unknown) {
-      console.error("❌ ERROR GENERAL:", error);
+      console.error("❌ Error al confirmar pedido:", error);
       const msg = error instanceof Error ? error.message : String(error);
       alert(`❌ Error al confirmar el pedido:\n\n${msg}\n\nRevisa la consola (F12) para más detalles.`);
     }
@@ -659,22 +793,8 @@ export default function POS() {
         console.log('🔄 Recargando datos...');
         await loadAllData();
 
-        // Limpiar estado
-        setCart([]);
-        setCustomerInfo({
-          name: "",
-          phone: "",
-          address: "",
-          ruc: "",
-          businessName: "",
-          isExempt: false,
-          exempt: false
-        });
-        setOrderNote("");
-        setDiscountValue(0);
-        setSelectedDriverId(null);
-        setDeliveryCost(0);
-        setLoadedSaleId(null);
+        // Limpiar estado SILENCIOSAMENTE (sin preguntas)
+        clearCartSilently();
         setShowPaymentModal(false);
 
         console.log('✅ Pago completado exitosamente');
@@ -744,7 +864,7 @@ export default function POS() {
           console.log('💾 Guardando items de la venta...');
           const saleItems = cart.map(item => ({
             sale_id: saleData.id,
-            product_id: item.product.id,
+            product_id: item.id,
             product_name: item.product.name,
             product_price: Number(item.product.price),
             quantity: item.quantity,
@@ -870,6 +990,113 @@ export default function POS() {
     } catch (error) {
       console.error("Error eliminando conductor:", error);
       alert("Error al eliminar el conductor");
+    }
+  };
+
+  // Cargar una venta al carrito para editarla
+  const loadSaleToEdit = async (saleId: number) => {
+    try {
+      console.log("🔄 CARGAR VENTA PARA EDITAR - ID:", saleId);
+
+      // Obtener la venta con sus items y repartidor
+      const { data: sale, error: saleError } = await supabase
+        .from("sales")
+        .select(`
+          *,
+          delivery_drivers (
+            id,
+            name,
+            phone
+          )
+        `)
+        .eq("id", saleId)
+        .single();
+
+      if (saleError) throw saleError;
+      if (!sale) {
+        alert("❌ No se encontró la venta");
+        return;
+      }
+
+      console.log("✅ Venta encontrada:", sale);
+
+      // Obtener los items de la venta
+      const { data: items, error: itemsError } = await supabase
+        .from("sale_items")
+        .select(`
+          *,
+          products (
+            id,
+            name,
+            price,
+            category_id
+          )
+        `)
+        .eq("sale_id", saleId);
+
+      if (itemsError) throw itemsError;
+
+      console.log("✅ Items encontrados:", items);
+
+      // Mapear items al formato del carrito
+      const cartItems: CartItem[] = items
+        .filter((item) => item.products)
+        .map((item) => ({
+          product: {
+            id: item.products!.id,
+            name: item.products!.name,
+            price: Number(item.product_price),
+            categoryId: item.products!.category_id || 0,
+            active: true,
+            stock: 0 // Valor por defecto ya que no viene en esta consulta
+          },
+          quantity: item.quantity,
+          itemNote: "" // Valor por defecto
+        }));
+
+      console.log("🛒 Items mapeados al carrito:", cartItems);
+
+      // Cargar datos al estado
+      setCart(cartItems);
+      setCustomerInfo({
+        name: sale.customer_name || "",
+        phone: sale.customer_phone || "",
+        address: sale.customer_address || "",
+        ruc: sale.customer_ruc || "",
+        businessName: sale.customer_business_name || "",
+        isExempt: sale.tax_exempt || false,
+        exempt: sale.tax_exempt || false
+      });
+      setOrderType((sale.order_type as OrderType) || "local");
+      setOrderNote(sale.notes || "");
+      setDiscountType((sale.discount_type as "percentage" | "amount") || "percentage");
+      setDiscountValue(sale.discount_value || 0);
+      setDeliveryCost(Number(sale.delivery_cost || 0));
+      
+      // ✅ CRÍTICO: Cargar el repartidor si existe
+      if (sale.driver_id) {
+        console.log("🛵 Cargando repartidor ID:", sale.driver_id, "Nombre:", sale.delivery_driver_name);
+        setSelectedDriverId(sale.driver_id);
+      } else {
+        console.log("⚠️ Esta venta NO tiene repartidor asignado");
+        setSelectedDriverId(null);
+      }
+
+      // ✅ CRÍTICO: Guardar el ID de la venta que estamos editando
+      setLoadedSaleId(saleId);
+
+      console.log("✅ VENTA CARGADA PARA EDITAR - ID:", saleId);
+      console.log("🔍 Estado después de cargar:");
+      console.log("  - loadedSaleId:", saleId);
+      console.log("  - selectedDriverId:", sale.driver_id);
+      console.log("  - orderType:", sale.order_type);
+      console.log("  - cart items:", cartItems.length);
+
+      alert(`📝 Venta #${sale.sale_number} cargada para editar`);
+    } catch (error: unknown) {
+      console.error("❌ Error al cargar venta:", error);
+      const msg = error instanceof Error ? error.message : String(error);
+      alert(`❌ Error al cargar venta:\n\n${msg}`);
     }
   };
 
@@ -1022,30 +1249,20 @@ export default function POS() {
   }
 
   return (
-    <div className="pos-layout">
-      <Head>
-        <title>De la Gran Burger - POS</title>
-        <SEO
-          title="De la Gran Burger - Sistema POS"
-          description="Sistema de punto de venta para hamburguesería"
-        />
-      </Head>
-
-      <div className="pos-sidebar">
-        <div className="sidebar-header">
-          {businessLogo ? (
-            <img 
-              src={businessLogo} 
-              alt="Logo" 
-              className="sidebar-logo-image"
-            />
-          ) : (
-            <div className="sidebar-logo">DG</div>
-          )}
-          <h1 className="sidebar-title">De la Gran Burger</h1>
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <aside className="w-64 bg-[#2c3e50] text-white flex flex-col">
+        <div className="p-6 border-b border-gray-700">
+          <h1 className="text-2xl font-bold">{printFormatConfig.businessInfo.name}</h1>
+          <p className="text-sm text-gray-400 mt-1">Sistema POS</p>
         </div>
-        
-        <nav className="sidebar-nav">
+
+        {/* VERSION BANNER - DEBE SER VISIBLE */}
+        <div className="bg-green-600 text-white text-center py-2 text-xs font-bold">
+          🔄 v2026-03-05-13:47 ✅
+        </div>
+
+        <nav className="flex-1 py-6">
           {navigationItems.map((item) => (
             <div
               key={item.id}
@@ -1064,7 +1281,7 @@ export default function POS() {
             Cerrar Sesión
           </button>
         </div>
-      </div>
+      </aside>
 
       {currentView === "pos" ? (
         <>
