@@ -163,7 +163,7 @@ export default function POS() {
       const productsData = await productService.getActive();
       setProducts(productsData.map(p => ({
         ...p,
-        categoryId: p.category_id || 0, // Mapear category_id a categoryId
+        categoryId: p.categoryId || 0, // Ya viene correcto del servicio
         price: Number(p.price), // Asegurar que sea número
         stock: p.stock || 0
       })));
@@ -176,48 +176,9 @@ export default function POS() {
         active: c.active ?? true // Asegurar active
       })));
 
-      // Cargar ventas
+      // Cargar ventas - Los servicios ya retornan con camelCase
       const salesData = await saleService.getAll();
-      setSales(salesData.map(sale => ({
-        ...sale,
-        id: sale.id,
-        saleNumber: sale.sale_number,
-        date: sale.date ? new Date(sale.date).toISOString() : new Date().toISOString(), // Convertir a string ISO
-        items: sale.sale_items?.map(item => ({
-          // Reconstruir estructura CartItem completa
-          product: {
-            id: item.product_id || 0,
-            name: item.product_name || "Producto",
-            price: Number(item.product_price || 0),
-            active: true,
-            categoryId: 0 // Valor por defecto
-          },
-          quantity: item.quantity,
-          // Mantener propiedades planas por compatibilidad si es necesario
-        })) || [],
-        subtotal: Number(sale.subtotal),
-        discount: Number(sale.discount_amount || 0),
-        total: Number(sale.total),
-        customer: {
-          name: sale.customer_name || "",
-          phone: sale.customer_phone || "",
-          address: sale.customer_address || "",
-          ruc: sale.customer_ruc || "",
-          businessName: sale.customer_business_name || "",
-          isExempt: sale.exempt || false,
-          exempt: sale.exempt || false
-        },
-        orderType: (sale.order_type as OrderType) || "local",
-        paymentMethod: sale.payment_method || "cash",
-        status: (sale.status as "pending" | "completed" | "cancelled") || "pending",
-        note: sale.notes || sale.note || "",
-        user: sale.created_by || "Usuario",
-        deliveryDriverName: sale.delivery_driver_name || undefined,
-        deliveryDriverId: sale.driver_id || undefined,
-        deliveryCost: Number(sale.delivery_cost || 0),
-        amountPaid: Number(sale.amount_paid || 0),
-        balance: Number(sale.balance || 0)
-      })));
+      setSales(salesData); // Ya vienen correctamente mapeados
 
       // Cargar conductores
       const driversData = await driverService.getActive();
@@ -616,44 +577,44 @@ export default function POS() {
 
         // Preparar datos de actualización
         const updateData: {
-          customer_name: string | null;
-          customer_phone: string | null;
-          customer_address: string | null;
-          customer_ruc: string | null;
-          customer_business_name: string | null;
+          customerName: string | null;
+          customerPhone: string | null;
+          customerAddress: string | null;
+          customerRuc: string | null;
+          customerBusinessName: string | null;
           exempt: boolean;
-          order_type: string;
+          orderType: string;
           notes: string;
           subtotal: number;
-          discount_amount: number;
+          discountAmount: number;
           total: number;
-          delivery_cost?: number;
-          driver_id?: number | null;
-          delivery_driver_name?: string | null;
+          deliveryCost?: number;
+          driverId?: number | null;
+          deliveryDriverName?: string | null;
         } = {
-          customer_name: customerInfo.name || null,
-          customer_phone: customerInfo.phone || null,
-          customer_address: customerInfo.address || null,
-          customer_ruc: customerInfo.ruc || null,
-          customer_business_name: customerInfo.businessName || null,
+          customerName: customerInfo.name || null,
+          customerPhone: customerInfo.phone || null,
+          customerAddress: customerInfo.address || null,
+          customerRuc: customerInfo.ruc || null,
+          customerBusinessName: customerInfo.businessName || null,
           exempt: customerInfo.isExempt || false,
-          order_type: orderType,
+          orderType: orderType,
           notes: orderNote,
           subtotal: subtotal,
-          discount_amount: discountAmount,
+          discountAmount: discountAmount,
           total: finalTotal,
         };
 
         // Si es delivery, agregar datos de delivery
         if (orderType === "delivery") {
-          updateData.delivery_cost = deliveryCost;
+          updateData.deliveryCost = deliveryCost;
 
           // ✅ Buscar repartidor seleccionado
           if (selectedDriverId) {
             const selectedDriver = deliveryDrivers.find((d) => d.id === selectedDriverId);
             if (selectedDriver) {
-              updateData.driver_id = selectedDriver.id;
-              updateData.delivery_driver_name = selectedDriver.name;
+              updateData.driverId = selectedDriver.id;
+              updateData.deliveryDriverName = selectedDriver.name;
               console.log("🛵 Repartidor encontrado:", selectedDriver);
             } else {
               console.warn("⚠️ No se encontró repartidor con ID:", selectedDriverId);
@@ -663,9 +624,9 @@ export default function POS() {
           }
         } else {
           // Si NO es delivery, limpiar datos de delivery
-          updateData.delivery_cost = 0;
-          updateData.driver_id = null;
-          updateData.delivery_driver_name = null;
+          updateData.deliveryCost = 0;
+          updateData.driverId = null;
+          updateData.deliveryDriverName = null;
         }
 
         console.log("💾 DATOS A ACTUALIZAR:", updateData);
@@ -692,10 +653,10 @@ export default function POS() {
 
         // Insertar nuevos items
         const saleItems = cart.map((item) => ({
-          sale_id: loadedSaleId,
-          product_id: item.product.id,
-          product_name: item.product.name,
-          product_price: item.product.price,
+          saleId: loadedSaleId,
+          productId: item.product.id,
+          productName: item.product.name,
+          productPrice: item.product.price,
           quantity: item.quantity,
           subtotal: item.product.price * item.quantity
         }));
@@ -729,14 +690,14 @@ export default function POS() {
 
       const { data: existingSales } = await supabase
         .from("sales")
-        .select("sale_number")
-        .like("sale_number", `${dateStr}-%`)
-        .order("sale_number", { ascending: false })
+        .select("saleNumber")
+        .like("saleNumber", `${dateStr}-%`)
+        .order("saleNumber", { ascending: false })
         .limit(1);
 
       let sequence = 1;
       if (existingSales && existingSales.length > 0) {
-        const lastNumber = existingSales[0].sale_number;
+        const lastNumber = existingSales[0].saleNumber;
         const lastSequence = parseInt(lastNumber.split("-")[1]);
         sequence = lastSequence + 1;
       }
@@ -764,52 +725,52 @@ export default function POS() {
 
       // Preparar datos de venta
       const saleData: {
-        sale_number: string;
-        sale_date: string; // Mapear a 'date' en la BD si es necesario, pero el esquema dice 'date'
+        saleNumber: string;
+        saleDate: string; // Mapear a 'date' en la BD si es necesario, pero el esquema dice 'date'
         date: string; // Agregar campo date explícito
-        customer_name: string | null;
-        customer_phone: string | null;
-        customer_address: string | null;
-        customer_ruc: string | null;
-        customer_business_name: string | null;
+        customerName: string | null;
+        customerPhone: string | null;
+        customerAddress: string | null;
+        customerRuc: string | null;
+        customerBusinessName: string | null;
         exempt: boolean;
-        order_type: string;
+        orderType: string;
         status: string;
         notes: string;
         subtotal: number;
-        discount_amount: number;
+        discountAmount: number;
         total: number;
-        delivery_cost?: number;
-        driver_id?: number | null;
-        delivery_driver_name?: string | null;
+        deliveryCost?: number;
+        driverId?: number | null;
+        deliveryDriverName?: string | null;
       } = {
-        sale_number: saleNumber,
-        sale_date: today.toISOString(), // Mantener por compatibilidad si se usa en otro lado
+        saleNumber: saleNumber,
+        saleDate: today.toISOString(), // Mantener por compatibilidad si se usa en otro lado
         date: today.toISOString(), // Campo correcto según esquema
-        customer_name: customerInfo.name || null,
-        customer_phone: customerInfo.phone || null,
-        customer_address: customerInfo.address || null,
-        customer_ruc: customerInfo.ruc || null,
-        customer_business_name: customerInfo.businessName || null,
+        customerName: customerInfo.name || null,
+        customerPhone: customerInfo.phone || null,
+        customerAddress: customerInfo.address || null,
+        customerRuc: customerInfo.ruc || null,
+        customerBusinessName: customerInfo.businessName || null,
         exempt: customerInfo.isExempt || false,
-        order_type: orderType,
+        orderType: orderType,
         status: "pending",
         notes: orderNote,
         subtotal: subtotal,
-        discount_amount: discountAmount,
+        discountAmount: discountAmount,
         total: finalTotal,
       };
 
       // Si es delivery, agregar datos de delivery
       if (orderType === "delivery") {
-        saleData.delivery_cost = deliveryCost;
+        saleData.deliveryCost = deliveryCost;
 
         // ✅ Buscar repartidor seleccionado
         if (selectedDriverId) {
           const selectedDriver = deliveryDrivers.find((d) => d.id === selectedDriverId);
           if (selectedDriver) {
-            saleData.driver_id = selectedDriver.id;
-            saleData.delivery_driver_name = selectedDriver.name;
+            saleData.driverId = selectedDriver.id;
+            saleData.deliveryDriverName = selectedDriver.name;
             console.log("🛵 Repartidor encontrado:", selectedDriver);
           } else {
             console.warn("⚠️ No se encontró repartidor con ID:", selectedDriverId);
@@ -837,10 +798,10 @@ export default function POS() {
       if (sale) {
         console.log('💾 Guardando items de la venta...');
         const saleItems = cart.map(item => ({
-          sale_id: sale.id,
-          product_id: item.product.id,
-          product_name: item.product.name,
-          product_price: Number(item.product.price),
+          saleId: sale.id,
+          productId: item.product.id,
+          productName: item.product.name,
+          productPrice: Number(item.product.price),
           quantity: item.quantity,
           subtotal: Number(item.product.price) * item.quantity
         }));
@@ -863,7 +824,7 @@ export default function POS() {
       await loadAllData();
 
       // Mostrar confirmación
-      alert(`✅ Pedido #${sale.sale_number} confirmado exitosamente`);
+      alert(`✅ Pedido #${sale.saleNumber} confirmado exitosamente`);
 
       // Limpiar estado SILENCIOSAMENTE (sin preguntas)
       console.log("🧹 Limpiando carrito silenciosamente (sin preguntas)");
@@ -915,20 +876,20 @@ export default function POS() {
         
         // MODO EDICIÓN: Actualizar pedido existente con pago
         const updatedSale = {
-          customer_name: customerInfo.name || null,
-          customer_phone: customerInfo.phone || null,
-          customer_address: customerInfo.address || null,
-          order_type: orderType,
-          driver_id: orderType === "delivery" ? (selectedDriverId || null) : null,
-          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
-          delivery_cost: orderType === "delivery" ? Number(deliveryCost) : 0,
+          customerName: customerInfo.name || null,
+          customerPhone: customerInfo.phone || null,
+          customerAddress: customerInfo.address || null,
+          orderType: orderType,
+          driverId: orderType === "delivery" ? (selectedDriverId || null) : null,
+          deliveryDriverName: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
+          deliveryCost: orderType === "delivery" ? Number(deliveryCost) : 0,
           subtotal: Number(subtotal),
-          discount_amount: Number(discountAmount),
+          discountAmount: Number(discountAmount),
           total: Number(cartTotal),
-          payment_method: payments.length > 0 ? payments[0].method : "cash",
+          paymentMethod: payments.length > 0 ? payments[0].method : "cash",
           notes: note || orderNote || null,
           status: "completed" as const,
-          amount_paid: Number(amountPaid),
+          amountPaid: Number(amountPaid),
           balance: Math.max(0, Number(cartTotal) - Number(amountPaid))
         };
 
@@ -970,26 +931,26 @@ export default function POS() {
         const finalBalance = Math.max(0, finalTotal - finalAmountPaid);
         
         const saleToInsert = {
-          sale_number: saleNumber,
+          saleNumber: saleNumber,
           total: finalTotal,
           subtotal: finalSubtotal,
-          discount_amount: finalDiscountAmount,
-          delivery_cost: finalDeliveryCost,
-          order_type: orderType,
-          payment_method: payments.length > 0 ? payments[0].method : "cash",
-          customer_name: customerInfo.name || null,
-          customer_phone: customerInfo.phone || null,
-          customer_address: customerInfo.address || null,
-          customer_ruc: customerInfo.ruc || null,
-          customer_business_name: customerInfo.businessName || null,
+          discountAmount: finalDiscountAmount,
+          deliveryCost: finalDeliveryCost,
+          orderType: orderType,
+          paymentMethod: payments.length > 0 ? payments[0].method : "cash",
+          customerName: customerInfo.name || null,
+          customerPhone: customerInfo.phone || null,
+          customerAddress: customerInfo.address || null,
+          customerRuc: customerInfo.ruc || null,
+          customerBusinessName: customerInfo.businessName || null,
           exempt: customerInfo.isExempt || false,
-          driver_id: orderType === "delivery" ? (selectedDriverId || null) : null,
-          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
+          driverId: orderType === "delivery" ? (selectedDriverId || null) : null,
+          deliveryDriverName: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
           notes: note || orderNote || null,
           status: "completed" as const,
-          amount_paid: finalAmountPaid,
+          amountPaid: finalAmountPaid,
           balance: finalBalance,
-          created_by: currentUser.name
+          createdBy: currentUser.name
         };
 
         console.log('💾 Objeto a insertar:', JSON.stringify(saleToInsert, null, 2));
@@ -1011,10 +972,10 @@ export default function POS() {
         if (saleData) {
           console.log('💾 Guardando items de la venta...');
           const saleItems = cart.map(item => ({
-            sale_id: saleData.id,
-            product_id: item.product.id,
-            product_name: item.product.name,
-            product_price: Number(item.product.price),
+            saleId: saleData.id,
+            productId: item.product.id,
+            productName: item.product.name,
+            productPrice: Number(item.product.price),
             quantity: item.quantity,
             subtotal: Number(item.product.price) * item.quantity
           }));
@@ -1140,21 +1101,9 @@ export default function POS() {
     try {
       console.log("🔄 CARGAR VENTA PARA EDITAR - ID:", saleId);
 
-      // Obtener la venta con sus items y repartidor
-      const { data: sale, error: saleError } = await supabase
-        .from("sales")
-        .select(`
-          *,
-          delivery_drivers (
-            id,
-            name,
-            phone
-          )
-        `)
-        .eq("id", saleId)
-        .single();
-
-      if (saleError) throw saleError;
+      // Buscar la venta en el estado de ventas (ya viene mapeada desde el servicio)
+      const sale = sales.find(s => s.id === saleId);
+      
       if (!sale) {
         alert("❌ No se encontró la venta");
         return;
@@ -1162,80 +1111,49 @@ export default function POS() {
 
       console.log("✅ Venta encontrada:", sale);
 
-      // Obtener los items de la venta
-      const { data: items, error: itemsError } = await supabase
-        .from("sale_items")
-        .select(`
-          *,
-          products (
-            id,
-            name,
-            price,
-            category_id
-          )
-        `)
-        .eq("sale_id", saleId);
-
-      if (itemsError) throw itemsError;
-
-      console.log("✅ Items encontrados:", items);
-
-      // Mapear items al formato del carrito
-      const cartItems: CartItem[] = items
-        .filter((item) => item.products)
-        .map((item) => ({
-          product: {
-            id: item.products!.id,
-            name: item.products!.name,
-            price: Number(item.product_price || 0),
-            categoryId: item.products!.category_id || 0,
-            active: true,
-            stock: 0 // Valor por defecto
-          },
-          quantity: item.quantity,
-          itemNote: "" // Valor por defecto
-        }));
+      // Los items ya vienen en formato CartItem desde el servicio
+      const cartItems: CartItem[] = sale.items;
 
       console.log("🛒 Items mapeados al carrito:", cartItems);
 
-      // Cargar datos al estado
+      // Cargar datos al estado - usar propiedades camelCase
       setCart(cartItems);
-      setCustomerInfo({
-        name: sale.customer_name || "",
-        phone: sale.customer_phone || "",
-        address: sale.customer_address || "",
-        ruc: sale.customer_ruc || "",
-        businessName: sale.customer_business_name || "",
-        isExempt: sale.exempt || false,
-        exempt: sale.exempt || false
+      setCustomerInfo(sale.customer || {
+        name: "",
+        phone: "",
+        address: "",
+        ruc: "",
+        businessName: "",
+        isExempt: false,
+        exempt: false
       });
-      setOrderType((sale.order_type as OrderType) || "local");
-      setOrderNote(sale.notes || "");
-      // Como no guardamos discount_type/value en BD, inferimos o reseteamos
+      setOrderType(sale.orderType || "local");
+      setOrderNote(sale.note || "");
       setDiscountType("percentage"); 
       setDiscountValue(0); 
-      setDeliveryCost(Number(sale.delivery_cost || 0));
+      setDeliveryCost(Number(sale.deliveryCost || 0));
       
-      // ✅ CRÍTICO: Cargar el repartidor si existe
-      if (sale.driver_id) {
-        console.log("🛵 Cargando repartidor ID:", sale.driver_id, "Nombre:", sale.delivery_driver_name);
-        setSelectedDriverId(sale.driver_id);
+      // Cargar el repartidor si existe - buscar por nombre
+      if (sale.deliveryDriverName) {
+        const driver = deliveryDrivers.find(d => d.name === sale.deliveryDriverName);
+        if (driver) {
+          console.log("🛵 Cargando repartidor:", driver);
+          setSelectedDriverId(driver.id);
+        } else {
+          console.log("⚠️ Repartidor no encontrado:", sale.deliveryDriverName);
+          setSelectedDriverId(null);
+        }
       } else {
         console.log("⚠️ Esta venta NO tiene repartidor asignado");
         setSelectedDriverId(null);
       }
 
-      // ✅ CRÍTICO: Guardar el ID de la venta que estamos editando
+      // Guardar el ID de la venta que estamos editando
       setLoadedSaleId(saleId);
 
       console.log("✅ VENTA CARGADA PARA EDITAR - ID:", saleId);
-      console.log("🔍 Estado después de cargar:");
-      console.log("  - loadedSaleId:", saleId);
-      console.log("  - selectedDriverId:", sale.driver_id);
-      console.log("  - orderType:", sale.order_type);
-      console.log("  - cart items:", cartItems.length);
 
-      alert(`📝 Venta #${sale.sale_number} cargada para editar`);
+      alert(`📝 Venta #${sale.saleNumber} cargada para editar`);
     } catch (error: unknown) {
       console.error("❌ Error al cargar venta:", error);
       const msg = error instanceof Error ? error.message : String(error);
