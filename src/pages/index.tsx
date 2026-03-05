@@ -20,6 +20,10 @@ import { categoryService } from "@/services/categoryService";
 import { saleService } from "@/services/saleService";
 import { driverService } from "@/services/driverService";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+// 🔄 VERSION: 2026-03-05T13:30:00 - FORZAR RECARGA
+// Fix crítico: Guardar driver_id y delivery_driver_name correctamente
 
 export default function POS() {
   // Estado para la vista actual
@@ -119,6 +123,16 @@ export default function POS() {
     loadAllData();
   }, []);
 
+  // Debug: loggear cuando cambia selectedDriverId
+  useEffect(() => {
+    console.log('🔍 selectedDriverId cambió a:', selectedDriverId);
+    console.log('🔍 deliveryDrivers disponibles:', deliveryDrivers);
+    if (selectedDriverId) {
+      const driver = deliveryDrivers.find(d => d.id === selectedDriverId);
+      console.log('🔍 Repartidor seleccionado:', driver);
+    }
+  }, [selectedDriverId, deliveryDrivers]);
+
   const loadAllData = async () => {
     try {
       setLoading(true);
@@ -214,31 +228,59 @@ export default function POS() {
     }
   };
 
-  // Función para obtener el número de pedido del día (ahora desde Supabase)
+  // Función para generar número de venta del día
   const getDailySaleNumber = async (): Promise<string> => {
     try {
-      return await saleService.getNextDailySaleNumber();
-    } catch (error) {
-      console.error("Error obteniendo número de venta:", error);
-      // Fallback a localStorage si falla Supabase
       const today = new Date().toISOString().split('T')[0];
-      const savedData = localStorage.getItem('dailySaleCounter');
       
-      let dailyCounter = 1;
+      console.log('📅 Generando número de venta para:', today);
       
-      if (savedData) {
-        const { date, counter } = JSON.parse(savedData);
-        if (date === today) {
-          dailyCounter = counter + 1;
-        }
+      // Obtener todas las ventas de hoy ordenadas por sale_number descendente
+      const { data: todaySales, error } = await supabase
+        .from('sales')
+        .select('sale_number')
+        .gte('created_at', `${today}T00:00:00`)
+        .lte('created_at', `${today}T23:59:59`)
+        .order('sale_number', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('❌ Error al obtener ventas del día:', error);
+        // Si hay error, generar número con timestamp para evitar duplicados
+        const timestamp = Date.now().toString().slice(-4);
+        return `${today.replace(/-/g, '')}-${timestamp}`;
       }
+
+      console.log('📊 Última venta de hoy:', todaySales);
+
+      if (!todaySales || todaySales.length === 0) {
+        // Primera venta del día
+        const firstNumber = `${today.replace(/-/g, '')}-0001`;
+        console.log('✅ Primera venta del día:', firstNumber);
+        return firstNumber;
+      }
+
+      // Obtener el último número y generar el siguiente
+      const lastSaleNumber = todaySales[0].sale_number;
+      console.log('📋 Último número de venta:', lastSaleNumber);
       
-      localStorage.setItem('dailySaleCounter', JSON.stringify({
-        date: today,
-        counter: dailyCounter
-      }));
+      // Extraer el número secuencial (últimos 4 dígitos después del guión)
+      const parts = lastSaleNumber.split('-');
+      const lastSequence = parseInt(parts[parts.length - 1], 10);
+      const nextSequence = lastSequence + 1;
       
-      return `#${dailyCounter.toString().padStart(4, '0')}`;
+      // Formatear con ceros a la izquierda (4 dígitos)
+      const nextNumber = `${today.replace(/-/g, '')}-${nextSequence.toString().padStart(4, '0')}`;
+      
+      console.log('✅ Nuevo número de venta:', nextNumber);
+      
+      return nextNumber;
+    } catch (err) {
+      console.error('❌ Error inesperado al generar número de venta:', err);
+      // Fallback: generar número único con timestamp
+      const today = new Date().toISOString().split('T')[0];
+      const timestamp = Date.now().toString().slice(-4);
+      return `${today.replace(/-/g, '')}-${timestamp}`;
     }
   };
 
@@ -422,129 +464,140 @@ export default function POS() {
 
   // Confirmar pedido sin pago (para cocina)
   const handleConfirmOrder = async () => {
+    if (cart.length === 0) {
+      alert("El carrito está vacío");
+      return;
+    }
+
     try {
-      console.log('🔄 Iniciando confirmación de pedido...');
-      
-      // Validación básica
-      if (cart.length === 0) {
-        console.log('❌ Carrito vacío');
-        alert('El carrito está vacío');
-        return;
+      console.log("=== CONFIRMAR PEDIDO - INICIO ===");
+      console.log("📦 Items en carrito:", cart.length);
+      console.log("🚚 Tipo de pedido:", orderType);
+      console.log("🆔 ID repartidor seleccionado:", selectedDriverId);
+      console.log("💰 Costo delivery:", deliveryCost);
+
+      // Validar que si es delivery, tenga repartidor seleccionado
+      if (orderType === "delivery") {
+        if (!selectedDriverId) {
+          alert("❌ Por favor selecciona un repartidor para el delivery");
+          return;
+        }
+        if (deliveryCost <= 0) {
+          alert("❌ Por favor ingresa el costo de delivery");
+          return;
+        }
       }
 
-      // Calcular valores
-      const subtotalVal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-      const deliveryCostValue = deliveryCost || 0;
-      const discountAmountVal = discountAmount || 0;
-      const total = subtotalVal + deliveryCostValue - discountAmountVal;
+      // Buscar el repartidor seleccionado
+      const selectedDriver = orderType === "delivery" && selectedDriverId
+        ? deliveryDrivers.find(d => d.id === selectedDriverId)
+        : null;
 
-      console.log('📊 Cálculos:', { 
-        subtotal: subtotalVal, 
-        delivery: deliveryCostValue, 
-        discount: discountAmountVal, 
-        total 
-      });
+      console.log("🛵 Repartidor encontrado:", selectedDriver);
 
-      // Obtener número de venta
-      const saleNum = await getDailySaleNumber();
+      // Calcular totales
+      const subtotalVal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+      const deliveryCostToAdd = orderType === "delivery" ? deliveryCost : 0;
+      const discountAmountVal = discountType === "percentage"
+        ? (subtotalVal * discountValue) / 100
+        : discountValue;
+      const totalVal = subtotalVal + deliveryCostToAdd - discountAmountVal;
 
-      // Preparar datos de la venta
+      console.log("💵 Subtotal:", subtotalVal);
+      console.log("💵 Delivery:", deliveryCostToAdd);
+      console.log("💵 Descuento:", discountAmountVal);
+      console.log("💵 TOTAL:", totalVal);
+
+      // Generar número de venta
+      const saleNumber = await getDailySaleNumber();
+
+      // Preparar datos del pedido
       const saleData = {
-        sale_number: saleNum,
-        total: total,
-        subtotal: subtotalVal,
-        discount_amount: discountAmountVal,
-        order_type: orderType || 'local',
-        status: 'pending',
-        notes: orderNote || null,
-        customer_name: customerInfo.name || null,
+        sale_number: saleNumber,
+        customer_name: customerInfo.name || "Cliente",
         customer_phone: customerInfo.phone || null,
         customer_address: customerInfo.address || null,
         customer_ruc: customerInfo.ruc || null,
         customer_business_name: customerInfo.businessName || null,
         exempt: customerInfo.isExempt || false,
-        driver_id: orderType === 'delivery' ? (selectedDriverId || null) : null,
-        delivery_driver_name: orderType === 'delivery' ? (deliveryDrivers.find(d => d.id === selectedDriverId)?.name || null) : null,
-        delivery_cost: orderType === 'delivery' ? deliveryCostValue : 0,
-        payment_method: null,
-        amount_paid: 0,
-        balance: total,
+        subtotal: subtotalVal,
+        discount_amount: discountAmountVal,
+        delivery_cost: deliveryCostToAdd,
+        total: totalVal,
+        order_type: orderType,
+        status: "pending",
+        notes: orderNote || null,
+        // CRÍTICO: Guardar driver_id y delivery_driver_name SOLO si es delivery
+        driver_id: orderType === "delivery" && selectedDriver ? selectedDriver.id : null,
+        delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
         created_by: currentUser.name
       };
 
-      console.log('💾 Datos de la venta a guardar:', JSON.stringify(saleData, null, 2));
+      console.log("💾 DATOS COMPLETOS A GUARDAR:", saleData);
 
-      // Insertar venta
+      // Guardar venta en Supabase
       const { data: sale, error: saleError } = await supabase
-        .from('sales')
-        .insert(saleData)
+        .from("sales")
+        .insert([saleData])
         .select()
         .single();
 
       if (saleError) {
-        throw new Error(`Error Supabase Sales: ${saleError.message} (Code: ${saleError.code})`);
+        console.error("❌ Error al guardar venta:", saleError);
+        throw saleError;
       }
 
-      if (!sale) {
-        throw new Error("No se recibió el objeto de venta creado");
-      }
+      console.log("✅ Venta guardada exitosamente:", sale);
 
-      console.log('✅ Venta creada ID:', sale.id);
-
-      // Preparar items
-      const itemsData = cart.map((item, index) => ({
+      // Guardar items de la venta
+      const saleItems = cart.map((item) => ({
         sale_id: sale.id,
         product_id: item.product.id,
         product_name: item.product.name,
-        product_price: item.product.price,
         quantity: item.quantity,
-        subtotal: item.product.price * item.quantity
+        unit_price: item.product.price,
+        subtotal: item.product.price * item.quantity,
       }));
 
-      console.log('💾 Guardando items:', itemsData.length);
-
       const { error: itemsError } = await supabase
-        .from('sale_items')
-        .insert(itemsData);
+        .from("sale_items")
+        .insert(saleItems);
 
       if (itemsError) {
-        throw new Error(`Error Supabase Items: ${itemsError.message}`);
+        console.error("❌ Error al guardar items:", itemsError);
+        throw itemsError;
       }
 
-      // Descontar stock
-      console.log('🔄 Descontando stock...');
-      for (const item of cart) {
-          if (item.product.stock !== undefined) {
-            await productService.updateStock(item.product.id, -item.quantity);
-          }
-      }
+      console.log("✅ Items guardados exitosamente:", saleItems.length);
 
-      console.log('✅ Pedido confirmado exitosamente');
-      
-      // Limpiar todo el estado
-      setCart([]);
+      // Mostrar confirmación
+      alert(`✅ Pedido #${sale.sale_number} confirmado exitosamente`);
+
+      // Limpiar carrito y formulario
+      clearCart();
       setCustomerInfo({
-          name: "",
-          phone: "",
-          address: "",
-          ruc: "",
-          businessName: "",
-          isExempt: false,
-          exempt: false
+        name: "",
+        phone: "",
+        address: "",
+        ruc: "",
+        businessName: "",
+        isExempt: false,
+        exempt: false
       });
       setOrderNote("");
+      setDiscountType("percentage");
       setDiscountValue(0);
       setDeliveryCost(0);
-      setSelectedDriverId(null);
-      setLoadedSaleId(null);
-      
-      // Recargar datos para actualizar lista de ventas y stock visual
-      await loadAllData(); 
+      // NO limpiar selectedDriverId aquí - mantenerlo para próximas ventas
+      // setSelectedDriverId(null);
 
-      alert(`✅ Pedido ${saleNum} confirmado exitosamente!`);
+      console.log("=== CONFIRMAR PEDIDO - FIN ===");
 
-    } catch (error) {
-      console.error('❌❌❌ ERROR handleConfirmOrder:', error);
+      // Recargar datos
+      await loadAllData();
+
+    } catch (error: unknown) {
+      console.error("❌ ERROR GENERAL:", error);
       const msg = error instanceof Error ? error.message : String(error);
       alert(`❌ Error al confirmar el pedido:\n\n${msg}\n\nRevisa la consola (F12) para más detalles.`);
     }
@@ -1042,7 +1095,10 @@ export default function POS() {
                     <select
                       className="customer-compact-input"
                       value={selectedDriverId || ""}
-                      onChange={(e) => setSelectedDriverId(e.target.value ? Number(e.target.value) : null)}
+                      onChange={(e) => {
+                        setSelectedDriverId(e.target.value ? Number(e.target.value) : null);
+                        console.log('🔄 onChange repartidor:', e.target.value, selectedDriverId);
+                      }}
                     >
                       <option value="">Seleccionar repartidor</option>
                       {deliveryDrivers.filter(d => d.active).map(driver => (
