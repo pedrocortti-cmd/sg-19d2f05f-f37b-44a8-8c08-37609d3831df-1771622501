@@ -576,58 +576,22 @@ export default function POS() {
         console.log("  - Total final:", finalTotal);
 
         // Preparar datos de actualización
-        const updateData: {
-          customerName: string | null;
-          customerPhone: string | null;
-          customerAddress: string | null;
-          customerRuc: string | null;
-          customerBusinessName: string | null;
-          exempt: boolean;
-          orderType: string;
-          notes: string;
-          subtotal: number;
-          discountAmount: number;
-          total: number;
-          deliveryCost?: number;
-          driverId?: number | null;
-          deliveryDriverName?: string | null;
-        } = {
-          customerName: customerInfo.name || null,
-          customerPhone: customerInfo.phone || null,
-          customerAddress: customerInfo.address || null,
-          customerRuc: customerInfo.ruc || null,
-          customerBusinessName: customerInfo.businessName || null,
+        const updateData = {
+          customer_name: customerInfo.name || null,
+          customer_phone: customerInfo.phone || null,
+          customer_address: customerInfo.address || null,
+          customer_ruc: customerInfo.ruc || null,
+          customer_business_name: customerInfo.businessName || null,
           exempt: customerInfo.isExempt || false,
-          orderType: orderType,
+          order_type: orderType,
           notes: orderNote,
           subtotal: subtotal,
-          discountAmount: discountAmount,
+          discount_amount: discountAmount,
           total: finalTotal,
+          delivery_cost: orderType === "delivery" ? deliveryCost : 0,
+          driver_id: orderType === "delivery" && selectedDriverId ? selectedDriverId : null,
+          delivery_driver_name: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find((d) => d.id === selectedDriverId)?.name : null
         };
-
-        // Si es delivery, agregar datos de delivery
-        if (orderType === "delivery") {
-          updateData.deliveryCost = deliveryCost;
-
-          // ✅ Buscar repartidor seleccionado
-          if (selectedDriverId) {
-            const selectedDriver = deliveryDrivers.find((d) => d.id === selectedDriverId);
-            if (selectedDriver) {
-              updateData.driverId = selectedDriver.id;
-              updateData.deliveryDriverName = selectedDriver.name;
-              console.log("🛵 Repartidor encontrado:", selectedDriver);
-            } else {
-              console.warn("⚠️ No se encontró repartidor con ID:", selectedDriverId);
-            }
-          } else {
-            console.warn("⚠️ No hay repartidor seleccionado para delivery");
-          }
-        } else {
-          // Si NO es delivery, limpiar datos de delivery
-          updateData.deliveryCost = 0;
-          updateData.driverId = null;
-          updateData.deliveryDriverName = null;
-        }
 
         console.log("💾 DATOS A ACTUALIZAR:", updateData);
 
@@ -653,10 +617,10 @@ export default function POS() {
 
         // Insertar nuevos items
         const saleItems = cart.map((item) => ({
-          saleId: loadedSaleId,
-          productId: item.product.id,
-          productName: item.product.name,
-          productPrice: item.product.price,
+          sale_id: loadedSaleId,
+          product_id: item.product.id,
+          product_name: item.product.name,
+          product_price: item.product.price,
           quantity: item.quantity,
           subtotal: item.product.price * item.quantity
         }));
@@ -724,61 +688,25 @@ export default function POS() {
       console.log("  - Total final:", finalTotal);
 
       // Preparar datos de venta
-      const saleData: {
-        saleNumber: string;
-        saleDate: string; // Mapear a 'date' en la BD si es necesario, pero el esquema dice 'date'
-        date: string; // Agregar campo date explícito
-        customerName: string | null;
-        customerPhone: string | null;
-        customerAddress: string | null;
-        customerRuc: string | null;
-        customerBusinessName: string | null;
-        exempt: boolean;
-        orderType: string;
-        status: string;
-        notes: string;
-        subtotal: number;
-        discountAmount: number;
-        total: number;
-        deliveryCost?: number;
-        driverId?: number | null;
-        deliveryDriverName?: string | null;
-      } = {
-        saleNumber: saleNumber,
-        saleDate: today.toISOString(), // Mantener por compatibilidad si se usa en otro lado
-        date: today.toISOString(), // Campo correcto según esquema
-        customerName: customerInfo.name || null,
-        customerPhone: customerInfo.phone || null,
-        customerAddress: customerInfo.address || null,
-        customerRuc: customerInfo.ruc || null,
-        customerBusinessName: customerInfo.businessName || null,
+      const saleData = {
+        sale_number: saleNumber,
+        created_at: today.toISOString(),
+        customer_name: customerInfo.name || null,
+        customer_phone: customerInfo.phone || null,
+        customer_address: customerInfo.address || null,
+        customer_ruc: customerInfo.ruc || null,
+        customer_business_name: customerInfo.businessName || null,
         exempt: customerInfo.isExempt || false,
-        orderType: orderType,
+        order_type: orderType,
         status: "pending",
         notes: orderNote,
         subtotal: subtotal,
-        discountAmount: discountAmount,
+        discount_amount: discountAmount,
         total: finalTotal,
+        delivery_cost: orderType === "delivery" ? deliveryCost : 0,
+        driver_id: orderType === "delivery" ? (selectedDriverId || null) : null,
+        delivery_driver_name: orderType === "delivery" && selectedDriverId ? deliveryDrivers.find((d) => d.id === selectedDriverId)?.name : null
       };
-
-      // Si es delivery, agregar datos de delivery
-      if (orderType === "delivery") {
-        saleData.deliveryCost = deliveryCost;
-
-        // ✅ Buscar repartidor seleccionado
-        if (selectedDriverId) {
-          const selectedDriver = deliveryDrivers.find((d) => d.id === selectedDriverId);
-          if (selectedDriver) {
-            saleData.driverId = selectedDriver.id;
-            saleData.deliveryDriverName = selectedDriver.name;
-            console.log("🛵 Repartidor encontrado:", selectedDriver);
-          } else {
-            console.warn("⚠️ No se encontró repartidor con ID:", selectedDriverId);
-          }
-        } else {
-          console.warn("⚠️ No hay repartidor seleccionado para delivery");
-        }
-      }
 
       console.log("💾 DATOS COMPLETOS A GUARDAR:", saleData);
 
@@ -798,10 +726,10 @@ export default function POS() {
       if (sale) {
         console.log('💾 Guardando items de la venta...');
         const saleItems = cart.map(item => ({
-          saleId: sale.id,
-          productId: item.product.id,
-          productName: item.product.name,
-          productPrice: Number(item.product.price),
+          sale_id: sale.id,
+          product_id: item.product.id,
+          product_name: item.product.name,
+          product_price: Number(item.product.price),
           quantity: item.quantity,
           subtotal: Number(item.product.price) * item.quantity
         }));
@@ -931,26 +859,26 @@ export default function POS() {
         const finalBalance = Math.max(0, finalTotal - finalAmountPaid);
         
         const saleToInsert = {
-          saleNumber: saleNumber,
+          sale_number: saleNumber,
           total: finalTotal,
           subtotal: finalSubtotal,
-          discountAmount: finalDiscountAmount,
-          deliveryCost: finalDeliveryCost,
-          orderType: orderType,
-          paymentMethod: payments.length > 0 ? payments[0].method : "cash",
-          customerName: customerInfo.name || null,
-          customerPhone: customerInfo.phone || null,
-          customerAddress: customerInfo.address || null,
-          customerRuc: customerInfo.ruc || null,
-          customerBusinessName: customerInfo.businessName || null,
+          discount_amount: finalDiscountAmount,
+          delivery_cost: finalDeliveryCost,
+          order_type: orderType,
+          payment_method: payments.length > 0 ? payments[0].method : "cash",
+          customer_name: customerInfo.name || null,
+          customer_phone: customerInfo.phone || null,
+          customer_address: customerInfo.address || null,
+          customer_ruc: customerInfo.ruc || null,
+          customer_business_name: customerInfo.businessName || null,
           exempt: customerInfo.isExempt || false,
-          driverId: orderType === "delivery" ? (selectedDriverId || null) : null,
-          deliveryDriverName: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
+          driver_id: orderType === "delivery" && selectedDriverId ? selectedDriverId : null,
+          delivery_driver_name: orderType === "delivery" && selectedDriver ? selectedDriver.name : null,
           notes: note || orderNote || null,
-          status: "completed" as const,
-          amountPaid: finalAmountPaid,
+          status: "completed",
+          amount_paid: finalAmountPaid,
           balance: finalBalance,
-          createdBy: currentUser.name
+          created_by: currentUser.name
         };
 
         console.log('💾 Objeto a insertar:', JSON.stringify(saleToInsert, null, 2));
@@ -972,10 +900,10 @@ export default function POS() {
         if (saleData) {
           console.log('💾 Guardando items de la venta...');
           const saleItems = cart.map(item => ({
-            saleId: saleData.id,
-            productId: item.product.id,
-            productName: item.product.name,
-            productPrice: Number(item.product.price),
+            sale_id: saleData.id,
+            product_id: item.product.id,
+            product_name: item.product.name,
+            product_price: Number(item.product.price),
             quantity: item.quantity,
             subtotal: Number(item.product.price) * item.quantity
           }));
@@ -1022,7 +950,7 @@ export default function POS() {
       console.error("❌ Error completo al confirmar pago:", error);
       console.error("Stack trace:", error instanceof Error ? error.stack : 'No stack available');
       console.error("Error details:", {
-        message: error instanceof Error ? error.message : String(error),
+        message: error instanceof Error ? error.message : 'Error desconocido',
         name: error instanceof Error ? error.name : 'Unknown',
       });
       
