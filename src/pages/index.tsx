@@ -735,6 +735,14 @@ export default function POS() {
     } catch (error: unknown) {
       console.error("❌ Error al confirmar pedido:", error);
       const msg = error instanceof Error ? error.message : String(error);
+      
+      // Log detallado del error completo
+      if (error instanceof Error) {
+        console.error("Error name:", error.name);
+        console.error("Error stack:", error.stack);
+      }
+      console.error("Error object:", error);
+      
       alert(`❌ Error al confirmar el pedido:\n\n${msg}\n\nRevisa la consola (F12) para más detalles.`);
     }
   };
