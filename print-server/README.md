@@ -1,521 +1,377 @@
 # Print Server - De la Gran Burger POS
 
-Servidor de impresión local para impresoras térmicas USB (80mm) usando ESC/POS.
+Servidor de impresión local para impresoras térmicas USB 80mm con comandos ESC/POS.
 
----
+## 📋 Características
 
-## 🎯 Función
-
-Este servidor detecta automáticamente las impresoras térmicas USB conectadas y permite imprimir:
-- **Comandas de cocina** (sin precios)
-- **Tickets de cliente** (con precios)
-
----
-
-## 📋 Requisitos
-
-- ✅ Node.js v18+
-- ✅ Impresoras térmicas USB compatibles con ESC/POS (80mm)
-- ✅ Windows 10/11
-- ✅ Drivers de impresora instalados
+- ✅ Detección automática de impresoras USB
+- ✅ Impresión directa sin diálogo del navegador
+- ✅ Soporte para comandos ESC/POS
+- ✅ API REST simple (HTTP)
+- ✅ Configuración fácil desde la aplicación web
+- ✅ Logs detallados para debugging
+- ✅ Compatible con Windows, macOS y Linux
 
 ---
 
 ## 🚀 Instalación
 
+### **Paso 1: Instalar Node.js**
 ```bash
-# En la carpeta print-server/
+# Windows: Descargar de https://nodejs.org
+# macOS: brew install node
+# Linux: sudo apt install nodejs npm
+```
+
+### **Paso 2: Instalar Dependencias**
+```bash
+cd print-server
 npm install
 ```
 
+### **Paso 3: Conectar Impresora**
+- Conecta la impresora térmica USB a tu PC
+- En Windows: Instala los drivers del fabricante si es necesario
+- Verifica en "Dispositivos e impresoras" que aparece
+
 ---
 
-## ▶️ Uso
+## ▶️ Iniciar el Servidor
 
-### Opción 1: Inicio Manual (Para Pruebas)
-
+### **Modo Desarrollo (con logs):**
 ```bash
-npm start
+node server.js
 ```
 
-El servidor se iniciará en `http://localhost:3001`
+Verás algo como:
+```
+🖨️  Print Server iniciado en puerto 9100
+📋 Impresoras USB detectadas:
+  1. USB Thermal Printer (VID: 1234, PID: 5678)
+```
 
-### Opción 2: Con PM2 (Para Producción)
-
+### **Modo Producción (con PM2):**
 ```bash
 # Instalar PM2 globalmente
 npm install -g pm2
-npm install -g pm2-windows-startup
 
-# Configurar inicio automático con Windows
-pm2-startup install
-
-# Iniciar Print Server
+# Iniciar servidor
 pm2 start server.js --name "print-server"
-
-# Guardar configuración
-pm2 save
-```
-
-**Verificar estado:**
-```bash
-pm2 status
-pm2 logs print-server
-```
-
----
-
-## 📡 API Endpoints
-
-### GET /api/printers
-Lista todas las impresoras USB detectadas.
-
-**Respuesta exitosa:**
-```json
-{
-  "success": true,
-  "printers": [
-    {
-      "id": 0,
-      "name": "Epson TM-T20II",
-      "vendorId": 1234,
-      "productId": 5678
-    },
-    {
-      "id": 1,
-      "name": "Star TSP143",
-      "vendorId": 1234,
-      "productId": 5679
-    }
-  ]
-}
-```
-
----
-
-### POST /api/print/kitchen
-Imprime comanda de cocina (sin precios).
-
-**Body:**
-```json
-{
-  "data": {
-    "orderNumber": "##0023",
-    "date": "2026-02-20T14:30:00Z",
-    "orderType": "delivery",
-    "items": [
-      {
-        "product": { "name": "Carnívora" },
-        "quantity": 1
-      },
-      {
-        "product": { "name": "Papas Fritas" },
-        "quantity": 2
-      }
-    ],
-    "note": "Sin cebolla",
-    "customer": {
-      "name": "Juan Pérez",
-      "phone": "0981-123456",
-      "address": "Av. España 123"
-    }
-  },
-  "printerIndex": 0
-}
-```
-
-**Respuesta exitosa:**
-```json
-{
-  "success": true,
-  "message": "Comanda de cocina impresa correctamente"
-}
-```
-
----
-
-### POST /api/print/client
-Imprime ticket de cliente (con precios).
-
-**Body:**
-```json
-{
-  "data": {
-    "orderNumber": "##0023",
-    "date": "2026-02-20T14:30:00Z",
-    "items": [
-      {
-        "product": { "name": "Carnívora", "price": 22000 },
-        "quantity": 1
-      },
-      {
-        "product": { "name": "Papas Fritas", "price": 15000 },
-        "quantity": 2
-      }
-    ],
-    "subtotal": 52000,
-    "discountAmount": 2000,
-    "total": 50000,
-    "paymentMethod": "cash"
-  },
-  "printerIndex": 1
-}
-```
-
-**Respuesta exitosa:**
-```json
-{
-  "success": true,
-  "message": "Ticket de cliente impreso correctamente"
-}
-```
-
----
-
-### POST /api/print/both
-Imprime ambos tickets (comanda + cliente).
-
-**Body:**
-```json
-{
-  "data": {
-    "orderNumber": "##0023",
-    "date": "2026-02-20T14:30:00Z",
-    "orderType": "delivery",
-    "items": [...],
-    "subtotal": 52000,
-    "discountAmount": 2000,
-    "total": 50000,
-    "paymentMethod": "cash",
-    "note": "Sin cebolla",
-    "customer": {
-      "name": "Juan Pérez",
-      "phone": "0981-123456",
-      "address": "Av. España 123"
-    }
-  },
-  "kitchenPrinter": 0,
-  "clientPrinter": 1,
-  "copies": 1
-}
-```
-
-**Respuesta exitosa:**
-```json
-{
-  "success": true,
-  "message": "Impresión completa realizada",
-  "kitchenResult": {...},
-  "clientResult": {...}
-}
-```
-
----
-
-### POST /api/print/test
-Imprime ticket de prueba.
-
-**Body:**
-```json
-{
-  "printerIndex": 0
-}
-```
-
-**Respuesta exitosa:**
-```json
-{
-  "success": true,
-  "message": "Ticket de prueba impreso correctamente"
-}
-```
-
----
-
-## 🔧 Configuración
-
-### Detección Automática de Impresoras
-
-El servidor detecta automáticamente las impresoras USB al iniciar y cuando se conectan/desconectan.
-
-**Log de inicio:**
-```
-[Print Server] Servidor de impresión iniciado en puerto 3001
-
-[Impresoras USB detectadas]
-1. Epson TM-T20II (VID: 1234, PID: 5678)
-2. Star TSP143 (VID: 1234, PID: 5679)
-```
-
-### Configurar Impresoras en la App
-
-Para configurar qué impresora usar para cocina/cliente:
-1. Abrir **http://localhost:3000**
-2. Ir a **⚙️ Ajustes** → **Impresoras**
-3. Click en **"Actualizar Lista"**
-4. Seleccionar:
-   - **Impresora de Cocina** (index 0, 1, 2...)
-   - **Impresora de Cliente** (index 0, 1, 2...)
-5. Configurar:
-   - Tamaño: **80mm**
-   - Copias: **1** o más
-6. Click en **"Imprimir Prueba"**
-7. Click en **"Guardar"**
-
----
-
-## 🛠️ Solución de Problemas
-
-### ❌ No se detectan impresoras
-
-**Síntomas:**
-```json
-{
-  "success": true,
-  "printers": []
-}
-```
-
-**Soluciones:**
-
-1. **Verificar conexión USB:**
-   - Desconectar y reconectar la impresora
-   - Probar otro puerto USB
-
-2. **Verificar drivers:**
-   - Ir a **Configuración** → **Dispositivos** → **Impresoras y escáneres**
-   - La impresora debe aparecer y estar "Lista"
-   - Si no aparece, instalar drivers del fabricante
-
-3. **Reiniciar Print Server:**
-   ```bash
-   pm2 restart print-server
-   # o si es manual:
-   # Ctrl+C y luego npm start
-   ```
-
-4. **Permisos (Windows):**
-   - Ejecutar CMD/Terminal como Administrador
-   - Reiniciar el Print Server
-
-5. **Verificar VendorID y ProductID:**
-   ```bash
-   # Verificar en el log del servidor
-   pm2 logs print-server
-   ```
-
----
-
-### ❌ Error de impresión
-
-**Síntomas:**
-```json
-{
-  "success": false,
-  "message": "Error al imprimir..."
-}
-```
-
-**Soluciones:**
-
-1. **Verificar papel:**
-   - Impresora tiene papel
-   - Papel bien insertado
-   - Sin atascos
-
-2. **Estado de impresora:**
-   - Encendida
-   - Sin luces de error
-   - Tapa cerrada
-
-3. **Probar ticket de prueba:**
-   ```bash
-   curl -X POST http://localhost:3001/api/print/test \
-     -H "Content-Type: application/json" \
-     -d '{"printerIndex": 0}'
-   ```
-
-4. **Ver logs detallados:**
-   ```bash
-   pm2 logs print-server --lines 50
-   ```
-
-5. **Verificar compatibilidad:**
-   - La impresora debe soportar ESC/POS
-   - Verificar en manual del fabricante
-
----
-
-### ❌ Puerto ocupado
-
-**Síntomas:**
-```
-Error: listen EADDRINUSE: address already in use :::3001
-```
-
-**Solución:**
-
-```bash
-# Windows - Matar proceso en puerto 3001
-netstat -ano | findstr :3001
-taskkill /PID [PID_ENCONTRADO] /F
-
-# Luego reiniciar
-pm2 restart print-server
-```
-
----
-
-### ❌ Error de permisos USB
-
-**Síntomas:**
-```
-Error: LIBUSB_ERROR_ACCESS
-```
-
-**Solución:**
-
-1. Ejecutar terminal como **Administrador**
-2. Reiniciar Print Server
-3. Si persiste, reinstalar drivers de impresora
-
----
-
-## 📝 Logs
-
-El servidor muestra en consola:
-
-```
-✅ [2026-02-20 14:30:15] Impresoras detectadas
-ℹ️  [2026-02-20 14:30:20] POST /api/printers
-✅ [2026-02-20 14:30:25] Comanda impresa (Printer 0)
-✅ [2026-02-20 14:30:26] Ticket impreso (Printer 1)
-⚠️  [2026-02-20 14:30:30] Error: Impresora sin papel
-```
-
-**Ver logs con PM2:**
-```bash
-# Tiempo real
-pm2 logs print-server
-
-# Últimas 50 líneas
-pm2 logs print-server --lines 50
-
-# Guardar logs en archivo
-pm2 logs print-server > print-server-logs.txt
-```
-
----
-
-## 🔐 Seguridad
-
-### CORS
-
-El servidor usa CORS para permitir solo peticiones del frontend local:
-
-```javascript
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
-}));
-```
-
-### Recomendaciones
-
-⚠️ **Importante:** Este servidor solo debe correr localmente (`localhost`). No exponerlo a internet.
-
-✅ **Seguridad básica:**
-- Firewall activo
-- Solo acceso desde red local
-- No compartir credenciales
-- Monitorear logs regularmente
-
----
-
-## 🚀 Producción
-
-### PM2 en Producción
-
-```bash
-# Instalar
-npm install -g pm2 pm2-windows-startup
-
-# Configurar inicio con Windows
-pm2-startup install
-
-# Iniciar
-pm2 start server.js --name "print-server"
-
-# Ver estado
-pm2 status
 
 # Ver logs
 pm2 logs print-server
+
+# Ver estado
+pm2 status
 
 # Reiniciar
 pm2 restart print-server
 
 # Detener
 pm2 stop print-server
-
-# Guardar configuración
-pm2 save
-```
-
-### Monitoreo
-
-```bash
-# Ver recursos (CPU, RAM)
-pm2 monit
-
-# Ver lista de procesos
-pm2 list
-
-# Ver información detallada
-pm2 info print-server
 ```
 
 ---
 
-## 📚 Recursos
+## 🔧 Configuración en la Aplicación Web
 
-### Documentación Técnica
+### **Paso 1: Abrir Ajustes**
+1. Abre la aplicación web (http://localhost:3000)
+2. Click en **"Ajustes"** en el menú lateral
+3. Scroll hasta **"Configuración de Impresoras"**
 
-- **ESC/POS**: [Epson Commands](https://reference.epson-biz.com/modules/ref_escpos/index.php)
-- **escpos Library**: [GitHub](https://github.com/song940/node-escpos)
-- **USB Library**: [GitHub](https://github.com/node-usb/node-usb)
+### **Paso 2: Seleccionar Impresoras**
+1. **Print Server URL:** `http://localhost:9100` (default)
+2. **Impresora de Cocina:** Selecciona del dropdown
+3. **Impresora de Cliente:** Selecciona del dropdown
+4. **Tamaño de Papel:** 80mm (default)
+5. **Copias:** 1 (o más si necesitas)
 
-### Impresoras Compatibles
+### **Paso 3: Probar Impresión**
+1. Click en **"Probar Impresión"**
+2. Deberían imprimirse 2 tickets de prueba:
+   - Comanda de cocina (sin precios)
+   - Ticket cliente (con precios)
 
-✅ **Epson:**
-- TM-T20 / TM-T20II
-- TM-T88IV / TM-T88V
-- TM-U220
+---
 
-✅ **Star Micronics:**
-- TSP143
-- TSP650 / TSP654
+## 🖨️ Uso del Sistema de Impresión
 
-✅ **Bixolon:**
-- SRP-330
-- SRP-350
+### **Impresión Automática al Confirmar Pedido:**
 
-✅ **Otras:**
-- Cualquier impresora térmica USB con soporte ESC/POS
+Cuando confirmas un pedido en el POS:
+1. Se imprime automáticamente la **comanda de cocina**
+2. Se imprime automáticamente el **ticket cliente** (si está marcado)
+
+### **Impresión Manual:**
+
+1. En "Ventas", busca un pedido
+2. Click en **"Vista Previa"**
+3. Click en **"Imprimir"** en el modal
+
+---
+
+## 📡 API del Print Server
+
+El servidor expone endpoints HTTP simples:
+
+### **GET /printers**
+Lista todas las impresoras USB detectadas.
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "printers": [
+    {
+      "deviceName": "USB Thermal Printer",
+      "vendorId": 1234,
+      "productId": 5678
+    }
+  ]
+}
+```
+
+### **POST /print**
+Envía un trabajo de impresión.
+
+**Cuerpo (JSON):**
+```json
+{
+  "printerId": "1234:5678",
+  "content": "Texto a imprimir...",
+  "type": "kitchen" | "client"
+}
+```
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "message": "Impresión enviada correctamente"
+}
+```
+
+---
+
+## 🐛 Solución de Problemas
+
+### **Error: "No se detectan impresoras"**
+
+**Causa:** La impresora no está conectada o no tiene drivers instalados.
+
+**Solución:**
+1. Verifica la conexión USB
+2. En Windows: Panel de Control → Dispositivos e Impresoras
+3. Instala drivers del fabricante
+4. Reinicia el print-server: `pm2 restart print-server`
+
+---
+
+### **Error: "LIBUSB_ERROR_ACCESS"**
+
+**Causa:** Falta de permisos en Linux/macOS.
+
+**Solución Linux:**
+```bash
+# Agregar tu usuario al grupo dialout
+sudo usermod -a -G dialout $USER
+
+# Logout y login para aplicar cambios
+
+# O ejecutar el servidor con sudo (no recomendado)
+sudo node server.js
+```
+
+**Solución macOS:**
+```bash
+# Instalar libusb con Homebrew
+brew install libusb
+
+# Reiniciar el servidor
+```
+
+---
+
+### **Error: "LIBUSB_ERROR_NOT_SUPPORTED"**
+
+**Causa:** La impresora no soporta comandos ESC/POS directos por USB.
+
+**Solución:**
+1. Verifica el modelo de tu impresora
+2. Consulta el manual para confirmar soporte ESC/POS
+3. Intenta usar el driver genérico de Windows
+4. Como alternativa, usa impresión por red (LAN/WiFi)
+
+---
+
+### **La impresión no sale correctamente**
+
+**Causa:** Comandos ESC/POS incorrectos o configuración de papel.
+
+**Solución:**
+1. Verifica el tamaño de papel en Ajustes (debe ser 80mm)
+2. Revisa los logs del print-server: `pm2 logs print-server`
+3. Prueba con la impresión de prueba
+4. Consulta el manual de tu impresora para comandos específicos
+
+---
+
+### **El servidor se detiene solo**
+
+**Causa:** Error no manejado o falta de PM2.
+
+**Solución:**
+```bash
+# Usar PM2 para mantener el servidor corriendo
+pm2 start server.js --name "print-server"
+
+# Ver logs de errores
+pm2 logs print-server --err
+
+# Configurar reinicio automático
+pm2 startup
+pm2 save
+```
+
+---
+
+## 📊 Comandos ESC/POS Soportados
+
+El servidor usa comandos ESC/POS estándar:
+
+- **Texto:** Normal, negritas, subrayado
+- **Tamaños:** Normal, doble alto, doble ancho
+- **Alineación:** Izquierda, centro, derecha
+- **Corte:** Corte parcial, corte total
+- **Códigos de barras:** EAN13, CODE39, CODE128
+- **QR Codes:** Versión 1-40
+
+---
+
+## 🔒 Seguridad
+
+### **Recomendaciones:**
+1. El print-server solo debe correr en la red local
+2. NO expongas el puerto 9100 a internet
+3. Usa un firewall para bloquear acceso externo
+4. En producción, agrega autenticación básica (usuario/contraseña)
+
+### **Agregar Autenticación (Opcional):**
+```javascript
+// En server.js, agrega antes de los endpoints:
+const basicAuth = (req, res, next) => {
+  const auth = req.headers.authorization;
+  if (!auth || auth !== 'Basic ' + Buffer.from('usuario:contraseña').toString('base64')) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+  next();
+};
+
+app.use(basicAuth);
+```
+
+---
+
+## 📝 Logs y Debugging
+
+### **Ver logs en tiempo real:**
+```bash
+# Con PM2
+pm2 logs print-server --lines 100
+
+# Sin PM2 (se muestran automáticamente)
+node server.js
+```
+
+### **Nivel de detalle:**
+Los logs incluyen:
+- ✅ Impresoras detectadas al iniciar
+- ✅ Solicitudes de impresión recibidas
+- ✅ Errores de impresión
+- ✅ Comandos ESC/POS enviados (en modo debug)
+
+---
+
+## 🔄 Actualizar el Print Server
+
+```bash
+# Detener servidor
+pm2 stop print-server
+
+# Actualizar dependencias
+cd print-server
+npm install
+
+# Reiniciar servidor
+pm2 restart print-server
+```
+
+---
+
+## 🎨 Personalizar Tickets
+
+Los formatos de impresión se configuran desde:
+**Ajustes → Configuración de Formato de Impresión**
+
+Puedes personalizar:
+- Tamaño de fuente (título, productos, totales)
+- Mostrar/ocultar precios en comanda
+- Cantidad de copias
+- Mensaje de agradecimiento
+- Información del negocio (nombre, dirección, RUC)
+
+---
+
+## 📦 Dependencias
+
+```json
+{
+  "express": "^4.18.2",
+  "cors": "^2.8.5",
+  "escpos": "^3.0.0-alpha.6",
+  "escpos-usb": "^3.0.0-alpha.4",
+  "usb": "^2.11.0"
+}
+```
+
+---
+
+## 🌐 Arquitectura
+
+```
+┌─────────────────────┐
+│  Aplicación Web     │
+│  (Next.js)          │
+│  localhost:3000     │
+└──────────┬──────────┘
+           │ HTTP POST /print
+           ▼
+┌─────────────────────┐
+│  Print Server       │
+│  (Express)          │
+│  localhost:9100     │
+└──────────┬──────────┘
+           │ USB
+           ▼
+┌─────────────────────┐
+│  Impresora Térmica  │
+│  80mm USB           │
+│  ESC/POS            │
+└─────────────────────┘
+```
 
 ---
 
 ## 📞 Soporte
 
-Para problemas específicos del Print Server:
+Si tienes problemas con el print-server:
 
-- 📧 Email: soporte@delagranburguer.com
-- 📱 WhatsApp: +595 XXX XXXXXX
-- 💬 Incluir siempre:
-  - Modelo de impresora
-  - Sistema operativo
-  - Logs del servidor
-  - Capturas de pantalla del error
+1. Revisa esta documentación completa
+2. Verifica los logs: `pm2 logs print-server`
+3. Consulta el manual de tu impresora
+4. Contacta a soporte: soporte@delagranburguer.com
 
 ---
 
@@ -525,4 +381,4 @@ Para problemas específicos del Print Server:
 
 ---
 
-**Desarrollado con ❤️ para De la Gran Burger** 🍔🖨️
+**¡Listo para imprimir!** 🖨️✨

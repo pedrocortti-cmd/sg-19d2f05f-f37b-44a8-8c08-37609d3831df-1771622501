@@ -1,280 +1,257 @@
 # 🍔 De la Gran Burger - Sistema POS
 
-Sistema de Punto de Venta completo para hamburguesería, con gestión de pedidos, inventario, delivery y reportes.
+Sistema de Punto de Venta completo para hamburguesería con gestión de inventario, delivery, repartidores e impresión térmica.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Status](https://img.shields.io/badge/status-production-success.svg)
+## 🌟 Características Principales
 
----
+### 📱 **Punto de Venta (POS)**
+- ✅ Carrito de compras interactivo
+- ✅ Información completa del cliente
+- ✅ 3 tipos de pedido: Delivery, Para Retirar, En Local
+- ✅ Asignación de repartidores
+- ✅ Cálculo automático de costos de delivery
+- ✅ Sistema de descuentos (porcentaje o monto fijo)
+- ✅ Notas por pedido y por producto
+- ✅ Confirmación de pedidos (estado PENDIENTE)
+- ✅ Registro de pagos (estado COMPLETADO)
+- ✅ Edición de pedidos existentes
+- ✅ Vista previa de tickets
 
-## 🚀 Características Principales
+### 📋 **Historial de Ventas**
+- ✅ Lista completa con búsqueda avanzada
+- ✅ Filtros por estado (Todas, Pendientes, Completadas, Anuladas)
+- ✅ Filtros por tipo (Delivery, Retiro, Local)
+- ✅ Filtros por fecha (Hoy, Ayer, Semana, Mes)
+- ✅ Visualización del repartidor asignado
+- ✅ Carga de pedidos para edición
+- ✅ Eliminación de pedidos
+- ✅ Vista previa e impresión de tickets
 
-### 💳 Punto de Venta (POS)
-- ✅ Interfaz intuitiva tipo grilla con productos
-- ✅ Filtros por categoría
-- ✅ Búsqueda rápida de productos
-- ✅ Carrito en tiempo real
-- ✅ Gestión de cliente (nombre, teléfono, dirección)
-- ✅ Descuentos y notas por pedido
-- ✅ Tipos de pedido: Delivery / Para Retirar / En Local
-
-### 📦 Gestión de Productos
+### 🎯 **Gestión de Productos y Servicios**
 - ✅ CRUD completo de productos
-- ✅ Categorización por tipos
-- ✅ Control de productos activos/inactivos
-- ✅ Precios flexibles
+- ✅ CRUD completo de categorías
+- ✅ Búsqueda de productos
+- ✅ Control de stock
+- ✅ Gestión de precios
+- ✅ Activar/desactivar productos
+- ✅ Ordenamiento de categorías
+- ✅ Soporte para imágenes de productos
 
-### 🗂️ Categorías
-- ✅ Hamburguesas
-- ✅ Lomitos
-- ✅ Bebidas
-- ✅ Personalizable (agregar más categorías)
-
-### 📊 Ventas e Historial
-- ✅ Historial completo de ventas
-- ✅ Filtros por fecha
-- ✅ Estados: Pendiente / Completado / Cancelado
-- ✅ Detalle completo de cada venta
-- ✅ Gestión de pedidos pendientes
-- ✅ Cobro diferido (crear pedido → cobrar después)
-
-### 📦 Inventario
-- ✅ Control de stock en tiempo real
+### 📦 **Inventario**
+- ✅ Visualización de stock actual
+- ✅ Estadísticas de inventario
 - ✅ Alertas de stock bajo
+- ✅ Productos sin stock
+- ✅ Productos con stock crítico
 - ✅ Historial de movimientos
-- ✅ Entrada y salida de productos
+- ✅ Actualización manual de stock
+- ✅ Descuento automático al confirmar ventas
 
-### 🚚 Delivery
-- ✅ Gestión de conductores/repartidores
-- ✅ Asignación de pedidos
-- ✅ Control de entregas
-- ✅ Costos de envío configurables
+### 🛵 **Repartidores**
+- ✅ CRUD completo de repartidores
+- ✅ Gestión de nombres y teléfonos
+- ✅ Activar/desactivar repartidores
+- ✅ Asignación automática en pedidos delivery
+- ✅ Visualización en historial de ventas
+- ✅ Estadísticas de rendimiento
 
-### 🖨️ Impresión de Tickets
-- ✅ **Comanda de cocina** (sin precios, con nota destacada)
-- ✅ **Ticket de cliente** (con precios, detalle completo)
-- ✅ Impresión automática al confirmar pedido
-- ✅ Impresión en impresoras térmicas USB 80mm
-- ✅ Print Server local (ESC/POS)
+### 📊 **Informes y Reportes**
+- ✅ Resumen de ventas del día
+- ✅ Total vendido
+- ✅ Cantidad de pedidos
+- ✅ Ticket promedio
+- ✅ Ventas por tipo (Delivery, Retiro, Local)
+- ✅ Productos más vendidos (Top 10)
+- ✅ Estadísticas por categoría
+- ✅ Rendimiento de repartidores
+- ✅ Gráficos visuales
 
-### 💰 Medios de Pago
-- ✅ Efectivo
-- ✅ Tarjeta
-- ✅ QR / Transferencia
-- ✅ Pago mixto
-- ✅ Pago pendiente (cobrar después)
+### ⚙️ **Ajustes y Configuración**
+- ✅ Configuración de impresoras (cocina y cliente)
+- ✅ Formato de impresión personalizable
+- ✅ Información del negocio
+- ✅ Gestión de logo
+- ✅ Tamaño de papel (80mm/58mm)
+- ✅ Cantidad de copias
+- ✅ Mensajes personalizados en tickets
 
-### 👥 Usuarios y Permisos
-- ✅ Roles: Admin / Caja / Cocina
-- ✅ Control de acceso por rol
-- ✅ Sistema de autenticación seguro
-
-### 📈 Reportes
-- ✅ Ventas por período
-- ✅ Productos más vendidos
-- ✅ Ingresos por categoría
-- ✅ Estadísticas de repartidores
-- ✅ Reportes de inventario
-
----
-
-## 🛠️ Stack Tecnológico
-
-### Frontend
-- **Framework:** Next.js 15 (Pages Router)
-- **UI:** React 18 + TypeScript
-- **Styling:** Tailwind CSS + Shadcn/UI
-- **State:** React Hooks + Context API
-- **Icons:** Lucide React
-
-### Backend
-- **Database:** Supabase (PostgreSQL)
-- **Auth:** Supabase Auth
-- **Real-time:** Supabase Realtime
-- **Storage:** Supabase Storage (imágenes de productos)
-
-### Impresión
-- **Print Server:** Node.js + Express
-- **Driver:** escpos (ESC/POS commands)
-- **USB:** node-usb
-
----
-
-## 📋 Requisitos del Sistema
-
-### Hardware
-- PC/Laptop Windows 10/11
-- 4GB RAM mínimo (8GB recomendado)
-- Procesador Intel i3 o superior
-- 10GB espacio en disco
-- 2 impresoras térmicas USB 80mm
-
-### Software
-- Node.js 18 o superior
-- Navegador Chrome/Edge/Firefox actualizado
-- Drivers de impresoras térmicas
+### 🖨️ **Sistema de Impresión**
+- ✅ Print Server local para impresoras USB 80mm
+- ✅ Comandos ESC/POS
+- ✅ Impresión de comanda de cocina (sin precios)
+- ✅ Impresión de ticket cliente (con precios)
+- ✅ Detección automática de impresoras USB
+- ✅ Configuración separada cocina/cliente
+- ✅ Impresión silenciosa (sin diálogo del navegador)
 
 ---
 
 ## 🚀 Instalación Rápida
 
-### 1. Clonar el Proyecto
+### **Requisitos Previos**
+- Node.js 18+ y npm
+- Cuenta de Supabase (PostgreSQL)
+- Impresora térmica USB 80mm (opcional)
 
+### **Paso 1: Clonar e Instalar**
 ```bash
-git clone [URL_DEL_PROYECTO]
+# Clonar el repositorio
+git clone https://github.com/tu-usuario/delagranburguer-pos.git
 cd delagranburguer-pos
-```
 
-### 2. Instalar Dependencias
-
-```bash
+# Instalar dependencias
 npm install
 ```
 
-### 3. Configurar Variables de Entorno
-
-El archivo `.env.local` ya está configurado con Supabase.
-
-### 4. Iniciar el Servidor
-
-**Para desarrollo:**
-
+### **Paso 2: Configurar Base de Datos**
 ```bash
+# Crear cuenta en Supabase (https://supabase.com)
+# Crear nuevo proyecto
+# Copiar las credenciales (URL y anon key)
+
+# Ejecutar el schema SQL
+# Ve a: Supabase → SQL Editor → Pega el contenido de database/schema.sql
+```
+
+### **Paso 3: Configurar Variables de Entorno**
+```bash
+# Renombrar .env.example a .env.local
+cp .env.example .env.local
+
+# Editar .env.local con tus credenciales de Supabase
+NEXT_PUBLIC_SUPABASE_URL=tu_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key
+```
+
+### **Paso 4: Iniciar Aplicación**
+```bash
+# Desarrollo
 npm run dev
+
+# O con PM2 (recomendado para producción)
+npm install -g pm2
+pm2 start ecosystem.config.js
 ```
 
-**Para red local (acceso desde otros equipos):**
-
-```bash
-npm run dev -- -H 0.0.0.0
-```
-
-**Para producción:**
-
-```bash
-npm run build
-npm start
-```
-
-### 5. Acceder al Sistema
-
-- **Local:** http://localhost:3000
-- **Red Local:** http://[IP_DEL_SERVIDOR]:3000
+La aplicación estará disponible en: `http://localhost:3000`
 
 ---
 
-## 🖨️ Configuración de Impresoras
+## 🖨️ Configurar Print Server (Opcional)
 
-### 1. Instalar Print Server
-
+### **Paso 1: Instalar Dependencias**
 ```bash
 cd print-server
 npm install
 ```
 
-### 2. Configurar Nombres de Impresoras
-
-Edita `print-server/server.js`:
-
-```javascript
-const PRINTERS = {
-  kitchen: "Nombre_Impresora_Cocina",
-  client: "Nombre_Impresora_Cliente"
-};
-```
-
-### 3. Iniciar Print Server
-
+### **Paso 2: Iniciar Servidor de Impresión**
 ```bash
-npm start
+# Modo desarrollo (con logs)
+node server.js
+
+# O con PM2 (recomendado)
+pm2 start server.js --name "print-server"
 ```
 
-### 4. Configurar en el POS
-
-1. Ve a ⚙️ Ajustes → Configuración de Impresoras
-2. Selecciona las impresoras de cocina y cliente
-3. Guarda y prueba la impresión
+### **Paso 3: Configurar en la Aplicación**
+1. Abre la aplicación web
+2. Ve a **Ajustes** → **Configuración de Impresoras**
+3. Selecciona la impresora de cocina
+4. Selecciona la impresora de cliente
+5. Click en **"Probar Impresión"** para verificar
 
 ---
 
-## 📖 Guía de Uso
+## 📚 Uso del Sistema
 
-### Login Inicial
+### **Crear un Pedido**
 
-```
-Email: admin@delagranburguer.com
-Contraseña: admin123
-```
+1. **Agregar Productos:**
+   - Click en productos de la grilla
+   - Ajusta cantidades con botones +/-
+   - Agrega notas individuales si es necesario
 
-**⚠️ Cambia esta contraseña después del primer login**
+2. **Información del Cliente:**
+   - Nombre (requerido para delivery)
+   - Teléfono (opcional)
+   - Dirección (requerido para delivery)
+   - RUC y Razón Social (opcional, para facturas)
 
-### Crear una Venta
+3. **Tipo de Pedido:**
+   - **Delivery:** Requiere repartidor y costo de delivery
+   - **Para Retirar:** Cliente recoge en local
+   - **En Local:** Consumo en el restaurante
 
-1. ✅ Ir a **🛒 Punto de Venta**
-2. ✅ Buscar o filtrar productos por categoría
-3. ✅ Click en producto → se agrega al carrito
-4. ✅ Ajustar cantidades con +/-
-5. ✅ Completar datos del cliente (opcional)
-6. ✅ Seleccionar tipo: Delivery / Para Retirar / En Local
-7. ✅ **Opción A:** Click "Confirmar Pedido" (sin cobrar)
-8. ✅ **Opción B:** Click "Recibir Pago" (cobrar y completar)
+4. **Confirmar:**
+   - **"Confirmar Pedido"** → Guarda como PENDIENTE (para cocina)
+   - **"Recibir Pago"** → Registra pago y cambia a COMPLETADO
 
-### Cobrar Pedido Pendiente
+### **Editar un Pedido**
 
-1. ✅ Ir a **📋 Ventas**
-2. ✅ Click en pedido pendiente
-3. ✅ Se carga en el carrito
-4. ✅ Click "Recibir Pago"
-5. ✅ Seleccionar medio de pago
-6. ✅ Confirmar → Imprime tickets
+1. Ve a **"Ventas"**
+2. Busca el pedido (pendientes o completados)
+3. Click en **"Cargar"**
+4. Modifica lo necesario
+5. Click en **"Guardar Cambios"**
 
-### Gestionar Productos
+### **Gestionar Productos**
 
-1. ✅ Ir a **📦 Productos y Servicios**
-2. ✅ Click "Nuevo Producto"
-3. ✅ Completar datos (nombre, categoría, precio)
-4. ✅ Guardar
-5. ✅ El producto aparece en el POS
+1. Ve a **"Productos y Servicios"**
+2. **Agregar Producto:**
+   - Click en **"+ Nuevo Producto"**
+   - Completa: Nombre, Precio, Categoría, Stock
+   - Click en **"Guardar"**
 
-### Ver Reportes
+3. **Editar/Eliminar:**
+   - Click en el ícono de editar/eliminar en cada producto
 
-1. ✅ Ir a **📊 Informes**
-2. ✅ Seleccionar período (hoy, semana, mes)
-3. ✅ Ver estadísticas:
-   - Total de ventas
+### **Ver Reportes**
+
+1. Ve a **"Informes"**
+2. Selecciona el rango de fechas
+3. Visualiza:
+   - Ventas totales
    - Productos más vendidos
-   - Ingresos por categoría
-   - Performance de repartidores
+   - Rendimiento de repartidores
+   - Estadísticas por categoría
 
 ---
 
-## 🌐 Despliegue en Producción
+## 🗄️ Estructura de la Base de Datos
 
-### Opción 1: Red Local (Recomendado para locales físicos)
+### **Tablas Principales**
+- `categories` - Categorías de productos
+- `products` - Productos y servicios
+- `delivery_drivers` - Repartidores
+- `sales` - Ventas/pedidos
+- `sale_items` - Items de cada venta
+- `inventory_movements` - Movimientos de stock
 
-```bash
-# Instalar PM2
-npm install -g pm2
+### **Políticas RLS (Row Level Security)**
+El sistema usa políticas públicas para lectura de datos.
+En producción, deberías agregar autenticación de usuarios.
 
-# Iniciar con PM2
-pm2 start npm --name "pos" -- run dev -- -H 0.0.0.0
-pm2 save
-pm2 startup
-```
+---
 
-### Opción 2: Vercel (Acceso desde Internet)
+## 🛠️ Tecnologías Utilizadas
 
-```bash
-# Instalar Vercel CLI
-npm install -g vercel
+### **Frontend**
+- **Next.js 15** (Page Router)
+- **React 18**
+- **TypeScript**
+- **Tailwind CSS v3**
+- **Shadcn/UI** (componentes)
+- **Lucide Icons**
 
-# Login
-vercel login
+### **Backend**
+- **Supabase** (PostgreSQL + Auth + Storage)
+- **Next.js API Routes**
 
-# Desplegar
-vercel --prod
-```
+### **Impresión**
+- **Express.js** (Print Server)
+- **node-escpos** (comandos ESC/POS)
+- **usb** (comunicación USB)
 
 ---
 
@@ -283,106 +260,153 @@ vercel --prod
 ```
 delagranburguer-pos/
 ├── src/
-│   ├── components/
-│   │   ├── pos/              # Componentes del POS
-│   │   │   ├── ProductsManager.tsx
-│   │   │   ├── SalesHistory.tsx
-│   │   │   ├── PaymentModal.tsx
+│   ├── components/          # Componentes React
+│   │   ├── pos/            # Componentes del POS
+│   │   │   ├── DeliveryDrivers.tsx
 │   │   │   ├── Inventory.tsx
+│   │   │   ├── LogoSettings.tsx
+│   │   │   ├── PaymentModal.tsx
+│   │   │   ├── PrinterSettings.tsx
+│   │   │   ├── PrintFormatSettings.tsx
+│   │   │   ├── ProductsManager.tsx
 │   │   │   ├── Reports.tsx
-│   │   │   └── DeliveryDrivers.tsx
-│   │   ├── ui/               # Componentes Shadcn/UI
-│   │   └── SEO.tsx
-│   ├── pages/
-│   │   ├── index.tsx         # POS principal
+│   │   │   ├── SalePreviewModal.tsx
+│   │   │   └── SalesHistory.tsx
+│   │   ├── ui/             # Componentes Shadcn/UI
+│   │   ├── SEO.tsx
+│   │   └── ThemeSwitch.tsx
+│   ├── contexts/           # Context API
+│   ├── hooks/              # Custom hooks
+│   ├── integrations/       # Integraciones externas
+│   │   └── supabase/       # Cliente Supabase
+│   ├── lib/                # Utilidades
+│   │   ├── utils.ts
+│   │   └── printService.ts
+│   ├── pages/              # Páginas Next.js
+│   │   ├── api/            # API routes
 │   │   ├── _app.tsx
-│   │   └── api/
-│   ├── services/             # Servicios de API
-│   │   ├── authService.ts
-│   │   ├── productService.ts
+│   │   ├── _document.tsx
+│   │   └── index.tsx       # POS principal
+│   ├── services/           # Servicios backend
 │   │   ├── categoryService.ts
-│   │   ├── saleService.ts
+│   │   ├── driverService.ts
 │   │   ├── inventoryService.ts
-│   │   └── driverService.ts
-│   ├── types/                # Tipos TypeScript
-│   │   └── pos.ts
-│   ├── integrations/
-│   │   └── supabase/         # Configuración Supabase
-│   ├── styles/               # Estilos CSS
-│   └── lib/                  # Utilidades
-│       ├── utils.ts
-│       └── printService.ts
-├── print-server/             # Servidor de impresión
+│   │   ├── productService.ts
+│   │   └── saleService.ts
+│   ├── styles/             # Estilos CSS
+│   │   ├── globals.css
+│   │   ├── pos.css
+│   │   ├── drivers.css
+│   │   ├── inventory.css
+│   │   ├── reports.css
+│   │   ├── logo-settings.css
+│   │   └── preview-modal.css
+│   └── types/              # Tipos TypeScript
+│       └── pos.ts
+├── print-server/           # Servidor de impresión
 │   ├── server.js
 │   ├── package.json
 │   └── README.md
-├── database/
-│   └── schema.sql            # Schema de BD
-├── public/                   # Archivos públicos
-├── .env.local                # Variables de entorno
-├── INSTALACION.md            # Guía completa de instalación
-└── README.md                 # Este archivo
+├── database/               # Scripts SQL
+│   └── schema.sql
+├── public/                 # Archivos estáticos
+├── .env.local             # Variables de entorno
+├── package.json
+├── tsconfig.json
+├── tailwind.config.ts
+├── next.config.mjs
+└── README.md              # Este archivo
 ```
 
 ---
 
-## 🔐 Seguridad
+## 🐛 Solución de Problemas
 
-- ✅ Autenticación con Supabase Auth
-- ✅ Row Level Security (RLS) en base de datos
-- ✅ Variables de entorno para credenciales
-- ✅ Sesiones seguras con JWT
-- ✅ Control de acceso por roles
+### **Error: "Error al cargar datos"**
+- Verifica la conexión a Supabase en `.env.local`
+- Confirma que ejecutaste el schema SQL completo
+- Revisa las políticas RLS en Supabase
 
----
+### **Los productos no aparecen**
+- Verifica que tengas productos activos en la BD
+- Ejecuta: `SELECT * FROM products WHERE active = true;`
+- Revisa la consola del navegador (F12) para errores
 
-## 🐛 Troubleshooting
+### **Impresora no detectada**
+- Verifica que el print-server esté corriendo
+- Confirma la conexión USB de la impresora
+- Revisa los logs del print-server
+- En Windows: Instala drivers del fabricante
 
-### No puedo acceder desde otro equipo
-
-```bash
-# Verificar firewall
-netsh advfirewall firewall add rule name="Next.js" dir=in action=allow protocol=TCP localport=3000
-```
-
-### Las impresoras no funcionan
-
-1. ✅ Verificar que estén instaladas en Windows
-2. ✅ Revisar nombres en `print-server/server.js`
-3. ✅ Reiniciar Print Server: `pm2 restart print-server`
-
-### Error de conexión a Supabase
-
-1. ✅ Verificar Internet
-2. ✅ Revisar `.env.local`
-3. ✅ Reiniciar servidor
+### **Error al confirmar pedido**
+- Abre la consola (F12) y revisa el error exacto
+- Verifica que las tablas `sales` y `sale_items` existan
+- Confirma las políticas RLS en Supabase
 
 ---
 
-## 📞 Soporte
+## 📖 Documentación Adicional
 
-- 📧 Email: soporte@delagranburguer.com
-- 📱 WhatsApp: +595 XXX XXX XXX
-- 💬 Chat en el sistema (⚙️ Ajustes → Soporte)
+### **Manuales:**
+- **INSTALACION.md** - Guía detallada de instalación
+- **print-server/README.md** - Configuración de impresoras
+
+### **Base de Datos:**
+- **database/schema.sql** - Schema completo con comentarios
+
+### **Tipos TypeScript:**
+- **src/types/pos.ts** - Definiciones de tipos
+
+---
+
+## 🤝 Contribuir
+
+¿Encontraste un bug? ¿Tienes una idea para mejorar el sistema?
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+---
+
+## 📝 Roadmap
+
+### **v1.1 (En desarrollo)**
+- [ ] Autenticación de usuarios (Admin, Caja, Cocina)
+- [ ] Módulo de gastos
+- [ ] Reportes avanzados con gráficos
+- [ ] Exportación a Excel/PDF
+- [ ] Backup automático de base de datos
+
+### **v1.2 (Futuro)**
+- [ ] App móvil para repartidores
+- [ ] Notificaciones push
+- [ ] Integración con WhatsApp
+- [ ] Panel de cocina en tiempo real
+- [ ] Multi-tienda
 
 ---
 
 ## 📄 Licencia
 
-MIT License - Ver archivo LICENSE para más detalles
+© 2026 De la Gran Burger. Todos los derechos reservados.
+
+Este software es propietario y confidencial. Prohibida su distribución sin autorización.
 
 ---
 
-## 🎉 Créditos
+## 📞 Soporte
 
-Desarrollado con ❤️ por el equipo de De la Gran Burger
-
-Powered by:
-- [Next.js](https://nextjs.org/)
-- [Supabase](https://supabase.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Shadcn/UI](https://ui.shadcn.com/)
+**Email:** soporte@delagranburguer.com  
+**WhatsApp:** +595 981-999888  
+**Horario:** Lunes a Viernes, 8:00 AM - 6:00 PM
 
 ---
 
-**🍔 ¡Buen provecho y buenas ventas!** 🚀
+## 🎉 ¡Gracias por usar De la Gran Burger POS!
+
+Si el sistema te resulta útil, no olvides darle una ⭐ en GitHub.
+
+**¡Buenas ventas!** 🍔🚀
