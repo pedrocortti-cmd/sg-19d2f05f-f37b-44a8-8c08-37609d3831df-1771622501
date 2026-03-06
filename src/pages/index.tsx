@@ -147,18 +147,22 @@ export default function POS() {
 
       // Cargar productos
       const productsData = await productService.getActive();
+      console.log("📦 Productos cargados:", productsData.length);
       setProducts(productsData);
 
       // Cargar categorías
       const categoriesData = await categoryService.getAll();
+      console.log("📂 Categorías cargadas:", categoriesData.length);
       setCategories(categoriesData);
 
       // Cargar repartidores
       const driversData = await driverService.getAll();
+      console.log("🛵 Repartidores cargados:", driversData.length);
       setDeliveryDrivers(driversData);
 
       // Cargar ventas
       const salesData = await saleService.getAll();
+      console.log("💰 Ventas cargadas:", salesData.length);
       setSales(salesData);
 
       console.log("✅ Datos actualizados correctamente");
@@ -166,7 +170,15 @@ export default function POS() {
     } catch (error) {
       console.error("❌ Error al cargar datos:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
-      alert(`⚠️ Error al cargar datos: ${errorMessage}\nVerifica la consola para más detalles.`);
+      
+      // Mostrar error detallado
+      alert(`⚠️ Error al cargar datos: ${errorMessage}\n\nVerifica la consola para más detalles.`);
+      
+      // Mostrar mensaje en la UI si las tablas están vacías
+      if (errorMessage.includes("undefined")) {
+        alert(`⚠️ PROBLEMA DETECTADO:\n\nLos servicios de backend no están funcionando correctamente.\n\nPor favor:\n1. Refresca la página (Ctrl + Shift + R)\n2. Si el problema persiste, contacta al soporte`);
+      }
+      
       setLoading(false);
     }
   };

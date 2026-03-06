@@ -224,3 +224,139 @@ export function printClientTicket(data: PrintOrderData): void {
   const html = generateClientTicketHTML(data);
   printTicket(html, `Ticket-${data.orderNumber}`);
 }
+
+// Servicio de impresión para tickets térmicos
+import type { CartItem, CustomerInfo, DeliveryDriver, OrderType } from "@/types/pos";
+
+const PRINT_SERVER_URL = "http://localhost:9100";
+
+interface PrintData {
+  orderNumber: string;
+  date: Date;
+  customerInfo: CustomerInfo;
+  items: CartItem[];
+  orderType: OrderType;
+  deliveryDriver?: DeliveryDriver;
+  deliveryCost?: number;
+  subtotal: number;
+  discount: number;
+  total: number;
+  note?: string;
+}
+
+export const printKitchenOrder = async (data: PrintData) => {
+  try {
+    console.log("🖨️ Iniciando impresión de comanda de cocina...");
+    
+    // Validar que el print server esté disponible
+    const response = await fetch(`${PRINT_SERVER_URL}/print`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: "kitchen",
+        data: {
+          orderNumber: data.orderNumber,
+          date: data.date.toLocaleString("es-PY"),
+          orderType: data.orderType,
+          items: data.items.map(item => ({
+            name: item.product.name,
+            quantity: item.quantity,
+            note: item.itemNote || ""
+          })),
+          note: data.note || "",
+          customerName: data.customerInfo.name || "",
+          customerPhone: data.customerInfo.phone || "",
+          customerAddress: data.customerInfo.address || "",
+          deliveryDriver: data.deliveryDriver?.name || ""
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error del servidor de impresión: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("✅ Comanda de cocina impresa exitosamente");
+    return result;
+  } catch (error) {
+    console.error("❌ Error al imprimir comanda de cocina:", error);
+    
+    // Mensaje más amigable para el usuario
+    if (error instanceof Error && error.message.includes("fetch")) {
+      alert(
+        "⚠️ No se pudo conectar al servidor de impresión.\n\n" +
+        "Verifica que:\n" +
+        "1. El Print Server esté corriendo (puerto 9100)\n" +
+        "2. La impresora esté conectada\n\n" +
+        "La venta se guardó correctamente, pero no se imprimió."
+      );
+    } else {
+      alert(
+        "⚠️ Error al imprimir comanda.\n\n" +
+        "La venta se guardó correctamente.\n" +
+        "Puedes reimprimir desde 'Ventas' → Vista Previa → Imprimir"
+      );
+    }
+    
+    throw error;
+  }
+};
+
+export const printClientTicket = async (data: PrintData) => {
+  try {
+    console.log("🖨️ Iniciando impresión de ticket cliente...");
+    
+    const response = await fetch(`${PRINT_SERVER_URL}/print`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: "client",
+        data: {
+          orderNumber: data.orderNumber,
+          date: data.date.toLocaleString("es-PY"),
+          orderType: data.orderType,
+          items: data.items.map(item => ({
+            name: item.product.name,
+            quantity: item.quantity,
+            price: item.product.price,
+            subtotal: item.product.price * item.quantity
+          })),
+          customerName: data.customerInfo.name || "Cliente",
+          subtotal: data.subtotal,
+          discount: data.discount,
+          deliveryCost: data.deliveryCost || 0,
+          total: data.total
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error del servidor de impresión: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("✅ Ticket cliente impreso exitosamente");
+    return result;
+  } catch (error) {
+    console.error("❌ Error al imprimir ticket cliente:", error);
+    throw error;
+  }
+};
+
+// Verificar disponibilidad del print server
+export const checkPrintServer = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${PRINT_SERVER_URL}/printers`, {
+      method: "GET",
+    });
+    return response.ok;
+  } catch (error) {
+    console.warn("⚠️ Print Server no disponible");
+    return false;
+  }
+};
