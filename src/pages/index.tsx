@@ -103,7 +103,7 @@ export default function POS() {
     ticketHeaderSize: 14,
     ticketProductSize: 12,
     ticketTotalSize: 14,
-    ticketThankYouMessage: "¡Gracias por su compra!",
+    ticketThankYouMessage: "¡Gracias por tu compra!",
     ticketShowLogo: true,
     businessInfo: {
       name: "De la Gran Burger",
@@ -188,6 +188,55 @@ export default function POS() {
 
       console.log("✅ Repartidores cargados:", loadedDrivers.length);
       setDeliveryDrivers(loadedDrivers);
+
+      const { data: salesData, error: salesError } = await supabase
+        .from("sales")
+        .select(`
+          *,
+          sale_items(*)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (salesError) {
+        console.error("❌ Error al cargar ventas:", salesError);
+      } else {
+        const loadedSales: Sale[] = (salesData || []).map((sale: any) => ({
+          id: sale.id,
+          saleNumber: sale.sale_number,
+          date: sale.created_at,
+          total: sale.total,
+          subtotal: sale.subtotal,
+          discount: sale.discount_amount || 0,
+          deliveryCost: sale.delivery_cost || 0,
+          paymentMethod: sale.payment_method || "Efectivo",
+          orderType: sale.order_type || "local",
+          status: sale.status || "completed",
+          note: sale.notes || "",
+          customer: sale.customer_name ? {
+            name: sale.customer_name,
+            phone: sale.customer_phone || "",
+            address: sale.customer_address || "",
+            ruc: sale.customer_ruc || "",
+            businessName: sale.customer_business_name || "",
+            isExempt: sale.exempt || false,
+            exempt: sale.exempt || false
+          } : undefined,
+          deliveryDriverName: sale.delivery_driver_name || undefined,
+          items: (sale.sale_items || []).map((item: any) => ({
+            product: {
+              id: item.product_id,
+              name: item.product_name,
+              price: item.product_price,
+              categoryId: 0,
+              active: true,
+              createdAt: new Date().toISOString()
+            },
+            quantity: item.quantity
+          }))
+        }));
+        console.log("✅ Ventas cargadas:", loadedSales.length);
+        setSales(loadedSales);
+      }
 
       console.log("🎉 Todos los datos cargados exitosamente");
       setLoading(false);
@@ -920,6 +969,7 @@ export default function POS() {
       }
 
       setLoadedSaleId(saleId);
+      setActiveView("pos");
       alert(`📝 Venta #${sale.saleNumber} cargada para editar`);
     } catch (error: unknown) {
       console.error("❌ Error al cargar venta:", error);
@@ -982,7 +1032,7 @@ export default function POS() {
         </div>
 
         <div className="bg-green-600 text-white text-center py-2 text-xs font-bold">
-          🔄 v2026-03-09-LAYOUT-FIX ✅
+          🔄 v2026-03-09-SCROLL-FIX ✅
         </div>
 
         <nav className="flex-1 py-6">
@@ -1068,131 +1118,129 @@ export default function POS() {
       <main className="flex-1 overflow-hidden">
         {activeView === "pos" && (
           <div className="h-full flex">
-            <div className="w-[400px] bg-white border-r flex flex-col">
-              <div className="flex-1 overflow-y-auto">
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex items-center gap-3 mb-4">
-                    <ShoppingCart className="w-5 h-5" />
-                    <span className="text-sm font-medium">CLIENTE</span>
-                  </div>
-
-                  <div className="customer-compact">
-                    <div className="customer-compact-field">
-                      <label className="customer-compact-label">NOMBRE</label>
-                      <input
-                        type="text"
-                        className="customer-compact-input"
-                        placeholder="Nombre del cliente"
-                        value={customerInfo.name}
-                        onChange={(e) =>
-                          setCustomerInfo({ ...customerInfo, name: e.target.value })
-                        }
-                      />
-                    </div>
-
-                    {orderType === "delivery" && (
-                      <>
-                        <div className="customer-compact-field">
-                          <label className="customer-compact-label">REPARTIDOR</label>
-                          <select
-                            className="customer-compact-input"
-                            value={selectedDriverId || ""}
-                            onChange={(e) => {
-                              setSelectedDriverId(e.target.value ? Number(e.target.value) : null);
-                            }}
-                          >
-                            <option value="">Seleccionar repartidor</option>
-                            {deliveryDrivers.filter(d => d.active).map(driver => (
-                              <option key={driver.id} value={driver.id}>
-                                🛵 {driver.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="customer-compact-field">
-                          <label className="customer-compact-label">COSTO DELIVERY</label>
-                          <input
-                            type="number"
-                            className="customer-compact-input"
-                            placeholder="0"
-                            value={deliveryCost || ""}
-                            onChange={(e) => setDeliveryCost(Math.max(0, Number(e.target.value) || 0))}
-                            min="0"
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
+            <div className="w-[400px] bg-white border-r flex flex-col overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center gap-3 mb-4">
+                  <ShoppingCart className="w-5 h-5" />
+                  <span className="text-sm font-medium">CLIENTE</span>
                 </div>
 
-                <div className="p-6">
-                  <div className="cart-items-section">
-                    {cart.length === 0 ? (
-                      <div className="cart-empty-state">
-                        <ShoppingCart className="cart-empty-icon" />
-                        <p>No hay productos en el carrito</p>
-                      </div>
-                    ) : (
-                      cart.map((item) => (
-                        <div key={item.product.id} className="cart-item-card">
-                          <div className="cart-item-header">
-                            <div className="cart-item-name-container">
-                              <span className="cart-item-name">{item.product.name}</span>
-                              {item.itemNote && (
-                                <span className="cart-item-note-indicator">
-                                  <MessageSquare className="w-3 h-3" />
-                                </span>
-                              )}
-                            </div>
-                            <span className="cart-item-price">{formatCurrency(item.product.price * item.quantity)}</span>
-                          </div>
-                          
-                          {item.itemNote && (
-                            <div className="cart-item-note-display">
-                              📝 {item.itemNote}
-                            </div>
-                          )}
-                          
-                          <div className="cart-item-controls">
-                            <button 
-                              className="cart-item-qty-btn" 
-                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                            >
-                              -
-                            </button>
-                            <span className="cart-item-quantity">{item.quantity}</span>
-                            <button 
-                              className="cart-item-qty-btn" 
-                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                            >
-                              +
-                            </button>
-                            <button 
-                              className="cart-item-remove" 
-                              onClick={() => removeFromCart(item.product.id)}
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                          
-                          <div className="cart-item-note-input">
-                            <input
-                              type="text"
-                              placeholder="Agregar nota (ej: Sin Huevo)"
-                              value={item.itemNote || ""}
-                              onChange={(e) => updateItemNote(item.product.id, e.target.value)}
-                              className="cart-item-note-field"
-                            />
-                          </div>
-                        </div>
-                      ))
-                    )}
+                <div className="customer-compact">
+                  <div className="customer-compact-field">
+                    <label className="customer-compact-label">NOMBRE</label>
+                    <input
+                      type="text"
+                      className="customer-compact-input"
+                      placeholder="Nombre del cliente"
+                      value={customerInfo.name}
+                      onChange={(e) =>
+                        setCustomerInfo({ ...customerInfo, name: e.target.value })
+                      }
+                    />
                   </div>
+
+                  {orderType === "delivery" && (
+                    <>
+                      <div className="customer-compact-field">
+                        <label className="customer-compact-label">REPARTIDOR</label>
+                        <select
+                          className="customer-compact-input"
+                          value={selectedDriverId || ""}
+                          onChange={(e) => {
+                            setSelectedDriverId(e.target.value ? Number(e.target.value) : null);
+                          }}
+                        >
+                          <option value="">Seleccionar repartidor</option>
+                          {deliveryDrivers.filter(d => d.active).map(driver => (
+                            <option key={driver.id} value={driver.id}>
+                              🛵 {driver.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="customer-compact-field">
+                        <label className="customer-compact-label">COSTO DELIVERY</label>
+                        <input
+                          type="number"
+                          className="customer-compact-input"
+                          placeholder="0"
+                          value={deliveryCost || ""}
+                          onChange={(e) => setDeliveryCost(Math.max(0, Number(e.target.value) || 0))}
+                          min="0"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
-              <div className="border-t p-6">
+              <div className="p-6">
+                <div className="cart-items-section">
+                  {cart.length === 0 ? (
+                    <div className="cart-empty-state">
+                      <ShoppingCart className="cart-empty-icon" />
+                      <p>No hay productos en el carrito</p>
+                    </div>
+                  ) : (
+                    cart.map((item) => (
+                      <div key={item.product.id} className="cart-item-card">
+                        <div className="cart-item-header">
+                          <div className="cart-item-name-container">
+                            <span className="cart-item-name">{item.product.name}</span>
+                            {item.itemNote && (
+                              <span className="cart-item-note-indicator">
+                                <MessageSquare className="w-3 h-3" />
+                              </span>
+                            )}
+                          </div>
+                          <span className="cart-item-price">{formatCurrency(item.product.price * item.quantity)}</span>
+                        </div>
+                        
+                        {item.itemNote && (
+                          <div className="cart-item-note-display">
+                            📝 {item.itemNote}
+                          </div>
+                        )}
+                        
+                        <div className="cart-item-controls">
+                          <button 
+                            className="cart-item-qty-btn" 
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          >
+                            -
+                          </button>
+                          <span className="cart-item-quantity">{item.quantity}</span>
+                          <button 
+                            className="cart-item-qty-btn" 
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          >
+                            +
+                          </button>
+                          <button 
+                            className="cart-item-remove" 
+                            onClick={() => removeFromCart(item.product.id)}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        
+                        <div className="cart-item-note-input">
+                          <input
+                            type="text"
+                            placeholder="Agregar nota (ej: Sin Huevo)"
+                            value={item.itemNote || ""}
+                            onChange={(e) => updateItemNote(item.product.id, e.target.value)}
+                            className="cart-item-note-field"
+                          />
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="p-6 border-t">
                 <div className="cart-footer">
                   <div className="order-type-buttons">
                     <button
