@@ -1025,14 +1025,14 @@ export default function POS() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <aside className="w-64 bg-[#2c3e50] text-white flex flex-col">
+      <aside className="w-64 bg-[#2c3e50] text-white flex flex-col flex-shrink-0">
         <div className="p-6 border-b border-gray-700">
           <h1 className="text-2xl font-bold">{printFormatConfig.businessInfo.name}</h1>
           <p className="text-sm text-gray-400 mt-1">Sistema POS</p>
         </div>
 
         <div className="bg-green-600 text-white text-center py-2 text-xs font-bold">
-          🔄 v2026-03-09-SCROLL-FIX ✅
+          🔄 v2026-03-09-PANEL-FIX ✅
         </div>
 
         <nav className="flex-1 py-6">
@@ -1115,10 +1115,10 @@ export default function POS() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-hidden flex">
         {activeView === "pos" && (
-          <div className="h-full flex">
-            <div className="w-[400px] bg-white border-r flex flex-col overflow-y-auto">
+          <>
+            <div className="w-[400px] bg-white border-r flex flex-col overflow-y-auto flex-shrink-0">
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center gap-3 mb-4">
                   <ShoppingCart className="w-5 h-5" />
@@ -1351,8 +1351,8 @@ export default function POS() {
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col bg-gray-50">
-              <div className="p-6 border-b border-gray-200 bg-white">
+            <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden">
+              <div className="p-6 border-b border-gray-200 bg-white flex-shrink-0">
                 <div className="flex items-center gap-3 mb-4">
                   <Package className="w-5 h-5" />
                   <span className="text-sm font-medium">PRODUCTOS</span>
@@ -1410,7 +1410,7 @@ export default function POS() {
                 </div>
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {activeView === "sales" && (
@@ -1455,7 +1455,7 @@ export default function POS() {
         )}
 
         {activeView === "settings" && (
-          <div className="h-full overflow-y-auto p-6">
+          <div className="h-full overflow-y-auto p-6 flex-1">
             <PrinterSettings />
           </div>
         )}
