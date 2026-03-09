@@ -15,16 +15,13 @@ export const driverService = {
         throw error;
       }
 
-      if (!data) {
-        return [];
-      }
+      if (!data) return [];
 
-      // Transformar de snake_case a camelCase
-      return data.map((driver) => ({
+      return data.map(driver => ({
         id: driver.id,
         name: driver.name,
-        phone: driver.phone || "",
-        active: driver.active,
+        phone: driver.phone || undefined,
+        active: driver.active
       }));
     } catch (error) {
       console.error("Error en driverService.getAll:", error);
@@ -46,15 +43,13 @@ export const driverService = {
         throw error;
       }
 
-      if (!data) {
-        return [];
-      }
+      if (!data) return [];
 
-      return data.map((driver) => ({
+      return data.map(driver => ({
         id: driver.id,
         name: driver.name,
-        phone: driver.phone || "",
-        active: driver.active,
+        phone: driver.phone || undefined,
+        active: driver.active
       }));
     } catch (error) {
       console.error("Error en driverService.getActive:", error);
@@ -76,15 +71,13 @@ export const driverService = {
         throw error;
       }
 
-      if (!data) {
-        return null;
-      }
+      if (!data) return null;
 
       return {
         id: data.id,
         name: data.name,
-        phone: data.phone || "",
-        active: data.active,
+        phone: data.phone || undefined,
+        active: data.active
       };
     } catch (error) {
       console.error("Error en driverService.getById:", error);
@@ -92,62 +85,26 @@ export const driverService = {
     }
   },
 
-  // Crear repartidor
-  async create(driver: Omit<DeliveryDriver, "id">): Promise<DeliveryDriver | null> {
+  // Guardar repartidor (crear o actualizar)
+  async save(driver: DeliveryDriver): Promise<boolean> {
     try {
-      const { data, error } = await supabase
-        .from("delivery_drivers")
-        .insert({
-          name: driver.name,
-          phone: driver.phone || null,
-          active: driver.active,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error al crear repartidor:", error);
-        throw error;
-      }
-
-      if (!data) {
-        return null;
-      }
-
-      return {
-        id: data.id,
-        name: data.name,
-        phone: data.phone || "",
-        active: data.active,
-      };
-    } catch (error) {
-      console.error("Error en driverService.create:", error);
-      return null;
-    }
-  },
-
-  // Actualizar repartidor
-  async update(id: number, driver: Partial<DeliveryDriver>): Promise<boolean> {
-    try {
-      const updateData: Record<string, unknown> = {};
-      
-      if (driver.name !== undefined) updateData.name = driver.name;
-      if (driver.phone !== undefined) updateData.phone = driver.phone;
-      if (driver.active !== undefined) updateData.active = driver.active;
-
       const { error } = await supabase
         .from("delivery_drivers")
-        .update(updateData)
-        .eq("id", id);
+        .upsert({
+          id: driver.id,
+          name: driver.name,
+          phone: driver.phone || null,
+          active: driver.active
+        });
 
       if (error) {
-        console.error("Error al actualizar repartidor:", error);
+        console.error("Error al guardar repartidor:", error);
         throw error;
       }
 
       return true;
     } catch (error) {
-      console.error("Error en driverService.update:", error);
+      console.error("Error en driverService.save:", error);
       return false;
     }
   },

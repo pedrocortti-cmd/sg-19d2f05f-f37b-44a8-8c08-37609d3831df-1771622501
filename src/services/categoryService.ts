@@ -15,17 +15,14 @@ export const categoryService = {
         throw error;
       }
 
-      if (!data) {
-        return [];
-      }
+      if (!data) return [];
 
-      // Transformar de snake_case a camelCase
-      return data.map((cat) => ({
+      return data.map(cat => ({
         id: cat.id,
         name: cat.name,
-        icon: cat.icon,
+        icon: cat.icon || undefined,
         active: cat.active,
-        order: cat.order || 0,
+        order: cat.order || 0
       }));
     } catch (error) {
       console.error("Error en categoryService.getAll:", error);
@@ -47,16 +44,14 @@ export const categoryService = {
         throw error;
       }
 
-      if (!data) {
-        return [];
-      }
+      if (!data) return [];
 
-      return data.map((cat) => ({
+      return data.map(cat => ({
         id: cat.id,
         name: cat.name,
-        icon: cat.icon,
+        icon: cat.icon || undefined,
         active: cat.active,
-        order: cat.order || 0,
+        order: cat.order || 0
       }));
     } catch (error) {
       console.error("Error en categoryService.getActive:", error);
@@ -64,65 +59,27 @@ export const categoryService = {
     }
   },
 
-  // Crear categoría
-  async create(category: Omit<Category, "id">): Promise<Category | null> {
+  // Guardar categoría (crear o actualizar)
+  async save(category: Category): Promise<boolean> {
     try {
-      const { data, error } = await supabase
-        .from("categories")
-        .insert({
-          name: category.name,
-          icon: category.icon,
-          active: category.active,
-          order: category.order || 0,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error al crear categoría:", error);
-        throw error;
-      }
-
-      if (!data) {
-        return null;
-      }
-
-      return {
-        id: data.id,
-        name: data.name,
-        icon: data.icon,
-        active: data.active,
-        order: data.order || 0,
-      };
-    } catch (error) {
-      console.error("Error en categoryService.create:", error);
-      return null;
-    }
-  },
-
-  // Actualizar categoría
-  async update(id: number, category: Partial<Category>): Promise<boolean> {
-    try {
-      const updateData: Record<string, unknown> = {};
-      
-      if (category.name !== undefined) updateData.name = category.name;
-      if (category.icon !== undefined) updateData.icon = category.icon;
-      if (category.active !== undefined) updateData.active = category.active;
-      if (category.order !== undefined) updateData.order = category.order;
-
       const { error } = await supabase
         .from("categories")
-        .update(updateData)
-        .eq("id", id);
+        .upsert({
+          id: category.id,
+          name: category.name,
+          icon: category.icon || null,
+          active: category.active,
+          order: category.order || 0
+        });
 
       if (error) {
-        console.error("Error al actualizar categoría:", error);
+        console.error("Error al guardar categoría:", error);
         throw error;
       }
 
       return true;
     } catch (error) {
-      console.error("Error en categoryService.update:", error);
+      console.error("Error en categoryService.save:", error);
       return false;
     }
   },

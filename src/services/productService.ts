@@ -15,19 +15,16 @@ export const productService = {
         throw error;
       }
 
-      if (!data) {
-        return [];
-      }
+      if (!data) return [];
 
-      // Transformar de snake_case a camelCase
-      return data.map((prod) => ({
+      return data.map(prod => ({
         id: prod.id,
         name: prod.name,
         price: prod.price,
         categoryId: prod.category_id,
         active: prod.active,
         stock: prod.stock || 0,
-        image: prod.image || undefined,
+        image: prod.image || undefined
       }));
     } catch (error) {
       console.error("Error en productService.getAll:", error);
@@ -49,18 +46,16 @@ export const productService = {
         throw error;
       }
 
-      if (!data) {
-        return [];
-      }
+      if (!data) return [];
 
-      return data.map((prod) => ({
+      return data.map(prod => ({
         id: prod.id,
         name: prod.name,
         price: prod.price,
         categoryId: prod.category_id,
         active: prod.active,
         stock: prod.stock || 0,
-        image: prod.image || undefined,
+        image: prod.image || undefined
       }));
     } catch (error) {
       console.error("Error en productService.getActive:", error);
@@ -82,9 +77,7 @@ export const productService = {
         throw error;
       }
 
-      if (!data) {
-        return null;
-      }
+      if (!data) return null;
 
       return {
         id: data.id,
@@ -93,7 +86,7 @@ export const productService = {
         categoryId: data.category_id,
         active: data.active,
         stock: data.stock || 0,
-        image: data.image || undefined,
+        image: data.image || undefined
       };
     } catch (error) {
       console.error("Error en productService.getById:", error);
@@ -101,71 +94,29 @@ export const productService = {
     }
   },
 
-  // Crear producto
-  async create(product: Omit<Product, "id">): Promise<Product | null> {
+  // Guardar producto (crear o actualizar)
+  async save(product: Product): Promise<boolean> {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("products")
-        .insert({
+        .upsert({
+          id: product.id,
           name: product.name,
           price: product.price,
           category_id: product.categoryId,
           active: product.active,
           stock: product.stock || 0,
-          image: product.image || null,
-        })
-        .select()
-        .single();
+          image: product.image || null
+        });
 
       if (error) {
-        console.error("Error al crear producto:", error);
-        throw error;
-      }
-
-      if (!data) {
-        return null;
-      }
-
-      return {
-        id: data.id,
-        name: data.name,
-        price: data.price,
-        categoryId: data.category_id,
-        active: data.active,
-        stock: data.stock || 0,
-        image: data.image || undefined,
-      };
-    } catch (error) {
-      console.error("Error en productService.create:", error);
-      return null;
-    }
-  },
-
-  // Actualizar producto
-  async update(id: number, product: Partial<Product>): Promise<boolean> {
-    try {
-      const updateData: Record<string, unknown> = {};
-      
-      if (product.name !== undefined) updateData.name = product.name;
-      if (product.price !== undefined) updateData.price = product.price;
-      if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
-      if (product.active !== undefined) updateData.active = product.active;
-      if (product.stock !== undefined) updateData.stock = product.stock;
-      if (product.image !== undefined) updateData.image = product.image;
-
-      const { error } = await supabase
-        .from("products")
-        .update(updateData)
-        .eq("id", id);
-
-      if (error) {
-        console.error("Error al actualizar producto:", error);
+        console.error("Error al guardar producto:", error);
         throw error;
       }
 
       return true;
     } catch (error) {
-      console.error("Error en productService.update:", error);
+      console.error("Error en productService.save:", error);
       return false;
     }
   },
@@ -191,32 +142,24 @@ export const productService = {
   },
 
   // Actualizar stock
-  async updateStock(id: number, quantity: number): Promise<boolean> {
+  async updateStock(productId: number, quantityChange: number): Promise<boolean> {
     try {
-      // Obtener stock actual
-      const { data: product, error: getError } = await supabase
-        .from("products")
-        .select("stock")
-        .eq("id", id)
-        .single();
-
-      if (getError) {
-        console.error("Error al obtener stock actual:", getError);
-        throw getError;
+      const product = await this.getById(productId);
+      if (!product) {
+        console.error("Producto no encontrado");
+        return false;
       }
 
-      const currentStock = product?.stock || 0;
-      const newStock = Math.max(0, currentStock + quantity);
+      const newStock = (product.stock || 0) + quantityChange;
 
-      // Actualizar stock
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from("products")
-        .update({ stock: newStock })
-        .eq("id", id);
+        .update({ stock: Math.max(0, newStock) })
+        .eq("id", productId);
 
-      if (updateError) {
-        console.error("Error al actualizar stock:", updateError);
-        throw updateError;
+      if (error) {
+        console.error("Error al actualizar stock:", error);
+        throw error;
       }
 
       return true;
